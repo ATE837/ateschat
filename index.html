@@ -1,12 +1,12 @@
 <!DOCTYPE html>
-<html>
+<html lang="tr">
 
 <head>
 
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>AteşChat</title>
+<title>AteşChat V30 Stable 🔥</title>
 
 <link rel="stylesheet" href="style.css">
 
@@ -14,25 +14,22 @@
 
 <body>
 
-<!-- LOGIN PANEL -->
+<!-- LOGIN -->
 
 <div id="login">
 
-<h1>AteşChat 🔥</h1>
+<h2>AteşChat 🔥</h2>
 
-<input id="username" type="text" placeholder="Kullanıcı adı">
+<input id="username" placeholder="Kullanıcı adı">
 
 <input id="password" type="password" placeholder="Şifre">
-
-<input id="photo" type="text" placeholder="Profil foto linki (opsiyonel)">
 
 <button id="registerBtn">Kayıt Ol</button>
 
 <button id="loginBtn">Giriş Yap</button>
 
-<div id="error"></div>
-
 </div>
+
 
 
 <!-- CHAT APP -->
@@ -43,9 +40,12 @@
 
 <h3>Odalar</h3>
 
-<div onclick="openRoom('global')">🌍 Global</div>
-<div onclick="openRoom('sohbet')">💬 Sohbet</div>
-<div onclick="openRoom('gaming')">🎮 Gaming</div>
+<div class="room" onclick="openRoom('global')">🌍 Global</div>
+
+<div class="room" onclick="openRoom('sohbet')">💬 Sohbet</div>
+
+<div class="room" onclick="openRoom('gaming')">🎮 Gaming</div>
+
 
 <h3>Kullanıcılar</h3>
 
@@ -54,23 +54,24 @@
 </div>
 
 
+
 <div id="chat">
 
 <div id="top">
 
-<div id="roomName">Global</div>
+<span id="roomName">Global</span>
 
 <button onclick="logout()">Çıkış</button>
 
 </div>
 
+
 <div id="messages"></div>
 
-<div id="sendArea">
+
+<div id="sendBox">
 
 <input id="messageInput" placeholder="Mesaj yaz...">
-
-<button onclick="openEmoji()">😀</button>
 
 <button onclick="send()">Gönder</button>
 
@@ -81,45 +82,33 @@
 </div>
 
 
-<!-- EMOJI PANEL -->
 
-<div id="emojiPanel" style="display:none;">
-
-<span onclick="addEmoji('😀')">😀</span>
-<span onclick="addEmoji('😂')">😂</span>
-<span onclick="addEmoji('🔥')">🔥</span>
-<span onclick="addEmoji('❤️')">❤️</span>
-
-</div>
-
-
-<!-- FIREBASE -->
+<!-- Firebase -->
 
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
 
-<!-- PROJECT FILES -->
+
+<!-- Scripts -->
 
 <script src="firebase.js"></script>
+
 <script src="auth.js"></script>
+
 <script src="chat.js"></script>
+
 <script src="dm.js"></script>
-<script src="admin.js"></script>
+
 <script src="emoji.js"></script>
 
+<script src="admin.js"></script>
 
-<script>
+<script src="ui.js"></script>
 
-document.getElementById("registerBtn").onclick = function(){
-register()
-}
+<script src="app.js"></script>
 
-document.getElementById("loginBtn").onclick = function(){
-login()
-}
-
-</script>
 
 </body>
 
