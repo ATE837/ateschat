@@ -47,6 +47,10 @@ width:80%;
 font-size:18px;
 }
 
+#error{
+color:red;
+}
+
 #chat{
 display:none;
 height:100vh;
@@ -62,7 +66,7 @@ font-size:18px;
 
 #container{
 display:flex;
-height:80vh;
+height:75vh;
 }
 
 #messages{
@@ -121,6 +125,8 @@ font-size:18px;
 <button onclick="register()">Kayıt Ol</button>
 <button onclick="login()">Giriş Yap</button>
 
+<div id="error"></div>
+
 </div>
 
 
@@ -157,11 +163,9 @@ font-size:18px;
 </div>
 
 
-
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
-
 
 <script>
 
@@ -181,7 +185,9 @@ firebase.initializeApp(firebaseConfig);
 const auth=firebase.auth();
 const db=firebase.database();
 
-
+function showError(msg){
+document.getElementById("error").innerText=msg
+}
 
 function register(){
 
@@ -190,9 +196,19 @@ let password=document.getElementById("password").value
 
 auth.createUserWithEmailAndPassword(email,password)
 
+.then(()=>{
+
+alert("Kayıt başarılı!")
+
+})
+
+.catch(e=>{
+
+showError(e.message)
+
+})
+
 }
-
-
 
 function login(){
 
@@ -201,9 +217,13 @@ let password=document.getElementById("password").value
 
 auth.signInWithEmailAndPassword(email,password)
 
+.catch(e=>{
+
+showError(e.message)
+
+})
+
 }
-
-
 
 auth.onAuthStateChanged(user=>{
 
@@ -223,28 +243,22 @@ loadUsers()
 
 })
 
-
-
 function send(){
 
 let text=document.getElementById("messageInput").value
 
-if(text=="")return
+if(text=="") return
 
 let user=auth.currentUser
 
 db.ref("messages").push({
-
 name:user.email,
 text:text
-
 })
 
 document.getElementById("messageInput").value=""
 
 }
-
-
 
 function loadMessages(){
 
@@ -254,7 +268,6 @@ let m=snap.val()
 
 let div=document.createElement("div")
 div.className="msg"
-
 div.innerText=m.name+" : "+m.text
 
 document.getElementById("messages").appendChild(div)
@@ -264,8 +277,6 @@ document.getElementById("messages").scrollTop=999999
 })
 
 }
-
-
 
 function loadUsers(){
 
@@ -289,15 +300,11 @@ document.getElementById("users").appendChild(div)
 
 }
 
-
-
 function emoji(){
 
 document.getElementById("messageInput").value+="😀"
 
 }
-
-
 
 function logout(){
 
@@ -314,4 +321,4 @@ location.reload()
 </script>
 
 </body>
-</html>
+  </html>
