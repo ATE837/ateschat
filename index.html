@@ -2,7 +2,9 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>AteşChat 🔥</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>AteşChat V21 🔥</title>
 
 <style>
 
@@ -13,29 +15,35 @@ background:#0f0f0f;
 color:white;
 }
 
+h1{
+font-size:40px;
+}
+
 #login{
 display:flex;
 flex-direction:column;
 align-items:center;
 margin-top:120px;
-gap:10px;
+gap:15px;
 }
 
 input{
-padding:12px;
-border-radius:8px;
+padding:16px;
+border-radius:10px;
 border:none;
-width:220px;
+width:80%;
+font-size:18px;
 }
 
 button{
-padding:12px;
+padding:16px;
 border:none;
-border-radius:8px;
+border-radius:10px;
 background:#ff6a00;
 color:white;
 font-weight:bold;
-width:150px;
+width:80%;
+font-size:18px;
 }
 
 #chat{
@@ -45,22 +53,24 @@ height:100vh;
 
 #top{
 background:#1a1a1a;
-padding:10px;
+padding:15px;
 display:flex;
 justify-content:space-between;
+font-size:18px;
 }
 
 #messages{
-height:75vh;
+height:70vh;
 overflow:auto;
-padding:10px;
+padding:15px;
 }
 
 .msg{
-margin:5px 0;
-padding:8px;
-background:#222;
-border-radius:6px;
+margin:10px 0;
+padding:14px;
+background:#1e1e1e;
+border-radius:10px;
+font-size:18px;
 }
 
 #sendArea{
@@ -68,10 +78,13 @@ position:fixed;
 bottom:0;
 width:100%;
 display:flex;
+background:#111;
+padding:10px;
 }
 
 #messageInput{
 flex:1;
+font-size:18px;
 }
 
 </style>
@@ -96,15 +109,20 @@ flex:1;
 <div id="chat">
 
 <div id="top">
+
 <div id="user"></div>
+
 <button onclick="logout()">Çıkış</button>
+
 </div>
 
 <div id="messages"></div>
 
 <div id="sendArea">
+
 <input id="messageInput" placeholder="Mesaj yaz...">
 <button onclick="send()">Gönder</button>
+
 </div>
 
 </div>
@@ -113,6 +131,7 @@ flex:1;
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
 
 <script>
 
@@ -127,10 +146,10 @@ const firebaseConfig = {
   measurementId: "G-1CBZNR0W3E"
 };
 
-firebase.initializeApp(firebaseConfig);
+firebase.initializeApp(firebaseConfig)
 
-const auth = firebase.auth();
-const db = firebase.database();
+const auth = firebase.auth()
+const db = firebase.database()
 
 function register(){
 
@@ -167,7 +186,13 @@ document.getElementById("login").style.display="none"
 document.getElementById("chat").style.display="block"
 
 db.ref("users/"+user.uid).once("value",snap=>{
-document.getElementById("user").innerText=snap.val().username
+
+let data=snap.val()
+
+if(data){
+document.getElementById("user").innerText=data.username
+}
+
 })
 
 loadMessages()
@@ -179,15 +204,24 @@ loadMessages()
 function send(){
 
 let text=document.getElementById("messageInput").value
+
+if(text=="") return
+
 let user=auth.currentUser
 
 db.ref("users/"+user.uid).once("value",snap=>{
 
-let name=snap.val().username
+let name="Misafir"
+
+if(snap.val()){
+name=snap.val().username
+}
 
 db.ref("messages").push({
+
 name:name,
 text:text
+
 })
 
 })
@@ -204,9 +238,12 @@ let m=snap.val()
 
 let div=document.createElement("div")
 div.className="msg"
+
 div.innerText=m.name+" : "+m.text
 
 document.getElementById("messages").appendChild(div)
+
+window.scrollTo(0,document.body.scrollHeight)
 
 })
 
