@@ -1,9 +1,8 @@
 <!DOCTYPE html>
 <html>
 <head>
-
 <title>AteşChat</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 
 <style>
 
@@ -47,43 +46,6 @@ height:100%;
 display:flex;
 }
 
-.servers{
-width:80px;
-background:#2b2d31;
-display:flex;
-flex-direction:column;
-align-items:center;
-padding:10px;
-overflow-y:auto;
-}
-
-.server{
-background:#404249;
-margin:6px 0;
-padding:12px;
-border-radius:10px;
-cursor:pointer;
-font-size:14px;
-text-align:center;
-}
-
-.channels{
-width:180px;
-background:#313338;
-padding:10px;
-}
-
-.channel{
-padding:6px;
-margin:5px 0;
-border-radius:5px;
-cursor:pointer;
-}
-
-.channel:hover{
-background:#404249;
-}
-
 .chat{
 flex:1;
 display:flex;
@@ -119,31 +81,6 @@ flex:1;
 margin-right:6px;
 }
 
-.users{
-width:160px;
-background:#2b2d31;
-padding:10px;
-}
-
-.user{
-background:#404249;
-padding:6px;
-margin:5px 0;
-border-radius:6px;
-}
-
-@media(max-width:800px){
-
-.channels{
-display:none;
-}
-
-.users{
-display:none;
-}
-
-}
-
 </style>
 
 </head>
@@ -154,174 +91,104 @@ display:none;
 
 <h2>🔥 AteşChat</h2>
 
-<input id="user" placeholder="Kullanıcı adı"><br>
-<input id="pass" type="password" placeholder="Şifre"><br>
-
+<input id="username" placeholder="Kullanıcı adı"><br>
 <button onclick="login()">Giriş</button>
-
-<p>
-Admin: Ateş Bey<br>
-Şifre: Ateş123
-</p>
 
 </div>
 
 <div id="app">
 
-<div class="servers" id="serverList">
-
-<div class="server" onclick="openServer('Genel')">💬</div>
-<div class="server" onclick="openServer('Oyun')">🎮</div>
-<div class="server" onclick="openServer('Müzik')">🎵</div>
-
-<hr style="width:60%;opacity:0.3">
-
-<div id="privateServers"></div>
-
-<div class="server" onclick="createServer()">+</div>
-
-</div>
-
-<div class="channels">
-
-<h3>Kanallar</h3>
-
-<div class="channel"># genel</div>
-
-</div>
-
 <div class="chat">
 
-<div class="top" id="roomName">Genel</div>
+<div class="top">💬 Genel Sohbet</div>
 
-<div class="messages" id="chatBox"></div>
+<div class="messages" id="chat"></div>
 
 <div class="send">
 
-<input id="msg" placeholder="Mesaj yaz..." onkeypress="enterSend(event)">
+<input id="message" placeholder="Mesaj yaz..." onkeypress="enterSend(event)">
 <button onclick="send()">Gönder</button>
 
 </div>
 
 </div>
 
-<div class="users">
-
-<h3>Kullanıcılar</h3>
-
-<div class="user">👑 Ateş Bey</div>
-
 </div>
 
-</div>
+<!-- Firebase -->
+
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
 <script>
 
-let currentUser=""
-let currentServer="Genel"
+const firebaseConfig = {
+  apiKey: "AIzaSyCwwqd4FfhvLRQu8DUUfbdorIu3iJpkHMM",
+  authDomain: "ateschat-cd9f4.firebaseapp.com",
+  projectId: "ateschat-cd9f4",
+  storageBucket: "ateschat-cd9f4.firebasestorage.app",
+  messagingSenderId: "174732212740",
+  appId: "1:174732212740:web:dcd4b60ed7cc380ca95351",
+  measurementId: "G-1CBZNR0W3E"
+};
 
-let chats={
-Genel:[],
-Oyun:[],
-Müzik:[]
-}
+firebase.initializeApp(firebaseConfig);
+
+const db = firebase.database();
+
+let user="";
 
 function login(){
 
-let u=document.getElementById("user").value
-let p=document.getElementById("pass").value
+user=document.getElementById("username").value;
 
-if(u=="Ateş Bey" && p=="Ateş123"){
+if(user=="") return alert("Kullanıcı adı yaz");
 
-currentUser=u
+document.getElementById("login").style.display="none";
+document.getElementById("app").style.display="flex";
 
-document.getElementById("login").style.display="none"
-document.getElementById("app").style.display="flex"
-
-}else{
-
-alert("Hatalı giriş")
-
-}
-
-}
-
-function openServer(name){
-
-currentServer=name
-
-document.getElementById("roomName").innerText=name
-
-renderMessages()
-
-}
-
-function renderMessages(){
-
-let box=document.getElementById("chatBox")
-
-box.innerHTML=""
-
-if(!chats[currentServer]) chats[currentServer]=[]
-
-chats[currentServer].forEach(m=>{
-
-box.innerHTML+=`<div class="msg"><b>${m.user}</b>: ${m.text}</div>`
-
-})
+loadMessages();
 
 }
 
 function send(){
 
-let msg=document.getElementById("msg").value
+let text=document.getElementById("message").value;
 
-if(msg=="") return
+if(text=="") return;
 
-if(!chats[currentServer]) chats[currentServer]=[]
+db.ref("messages").push({
+user:user,
+text:text
+});
 
-chats[currentServer].push({
-user:currentUser,
-text:msg
-})
-
-document.getElementById("msg").value=""
-
-renderMessages()
+document.getElementById("message").value="";
 
 }
 
 function enterSend(e){
 
-if(e.key==="Enter") send()
+if(e.key==="Enter") send();
 
 }
 
-function createServer(){
+function loadMessages(){
 
-let name=prompt("Sunucu adı")
+db.ref("messages").on("child_added",function(snapshot){
 
-if(!name) return
+let msg=snapshot.val();
 
-let code=Math.random().toString(36).substring(2,7).toUpperCase()
+let div=document.createElement("div");
 
-alert("Sunucu oluşturuldu!\nDavet kodu: "+code)
+div.className="msg";
 
-let div=document.createElement("div")
+div.innerHTML="<b>"+msg.user+"</b>: "+msg.text;
 
-div.className="server"
+document.getElementById("chat").appendChild(div);
 
-div.innerText="🔥"
+document.getElementById("chat").scrollTop=999999;
 
-div.onclick=function(){
-
-openServer(name)
-
-}
-
-document.getElementById("privateServers").appendChild(div)
-
-chats[name]=[]
+});
 
 }
 
