@@ -1,148 +1,17 @@
-<!DOCTYPE html>
-<html>
-<head>
-
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-
-<title>AteşChat</title>
-
-<style>
-
-body{
-margin:0;
-font-family:Arial;
-background:#36393f;
-color:white;
-height:100vh;
-display:flex;
-flex-direction:column;
-}
-
-#top{
-background:#202225;
-padding:10px;
-display:flex;
-gap:10px;
-}
-
-#app{
-flex:1;
-display:flex;
-}
-
-#rooms{
-width:150px;
-background:#2f3136;
-padding:10px;
-}
-
-#rooms button{
-width:100%;
-margin-bottom:10px;
-}
-
-#roomList div{
-padding:6px;
-cursor:pointer;
-}
-
-#chat{
-flex:1;
-display:flex;
-flex-direction:column;
-}
-
-#messages{
-flex:1;
-overflow:auto;
-padding:10px;
-}
-
-.msg{
-display:flex;
-margin-bottom:10px;
-}
-
-.msg img{
-width:34px;
-height:34px;
-border-radius:50%;
-margin-right:8px;
-}
-
-#input{
-display:flex;
-background:#40444b;
-padding:10px;
-}
-
-#text{
-flex:1;
-padding:10px;
-border:none;
-background:#303339;
-color:white;
-}
-
-button{
-background:#5865f2;
-border:none;
-color:white;
-padding:8px;
-border-radius:5px;
-}
-
-</style>
-
-</head>
-<body>
-
-<div id="top">
-
-<input type="file" id="profileFile" accept="image/*">
-<button onclick="uploadProfile()">Profil Yükle</button>
-
-</div>
-
-<div id="app">
-
-<div id="rooms">
-
-<h3>Odalar</h3>
-
-<button onclick="addRoom()">+ Oda</button>
-
-<div id="roomList"></div>
-
-</div>
-
-<div id="chat">
-
-<div id="messages"></div>
-
-<div id="input">
-
-<input id="text" placeholder="Mesaj yaz">
-
-<button onclick="sendMessage()">Gönder</button>
-
-</div>
-
-</div>
-
-</div>
-
 <script type="module">
 
-import { initializeApp }
-from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getDatabase, ref, push, onChildAdded } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
-import { getDatabase, ref, push, onChildAdded, off }
-from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
-
-import { getStorage, ref as sRef, uploadBytes, getDownloadURL }
-from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
+import {
+getAuth,
+createUserWithEmailAndPassword,
+signInWithEmailAndPassword,
+GoogleAuthProvider,
+signInWithPopup,
+onAuthStateChanged
+}
+from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
 const firebaseConfig={
 apiKey:"AIzaSyCwwqd4FfhvLRQu8DUUfbdorIu3iJpkHMM",
@@ -155,64 +24,65 @@ appId:"1:174732212740:web:dcd4b60ed7cc380ca95351"
 };
 
 const app=initializeApp(firebaseConfig);
-
 const db=getDatabase(app);
+const auth=getAuth(app);
 
-const storage=getStorage(app);
+let user=null;
 
-let currentRoom="genel";
+onAuthStateChanged(auth,(u)=>{
 
-let profileURL="";
+if(u){
+user=u;
 
-let messageRef=null;
-
-function createDefaultRoom(){
-
-let div=document.createElement("div");
-
-div.innerText="# genel";
-
-div.onclick=()=>{
-
-currentRoom="genel";
+document.getElementById("login").style.display="none";
+document.getElementById("app").style.display="flex";
 
 loadMessages();
 
-};
+}else{
 
-document.getElementById("roomList").appendChild(div);
+document.getElementById("login").style.display="flex";
+document.getElementById("app").style.display="none";
+
+}
+
+});
+
+window.register=function(){
+
+let email=document.getElementById("email").value;
+let password=document.getElementById("password").value;
+
+createUserWithEmailAndPassword(auth,email,password);
+
+}
+
+window.login=function(){
+
+let email=document.getElementById("email").value;
+let password=document.getElementById("password").value;
+
+signInWithEmailAndPassword(auth,email,password);
+
+}
+
+window.googleLogin=function(){
+
+const provider=new GoogleAuthProvider();
+
+signInWithPopup(auth,provider);
 
 }
 
 function loadMessages(){
 
-document.getElementById("messages").innerHTML="";
-
-if(messageRef) off(messageRef);
-
-messageRef=ref(db,"rooms/"+currentRoom+"/messages");
-
-onChildAdded(messageRef,(data)=>{
+onChildAdded(ref(db,"messages"),(data)=>{
 
 let msg=data.val();
 
 let div=document.createElement("div");
 
-div.className="msg";
-
-div.innerHTML=`
-
-<img src="${msg.photo || "https://i.imgur.com/6VBx3io.png"}">
-
-<div>
-
-<b>${msg.user}</b><br>
-
-${msg.text}
-
-</div>
-
-`;
+div.innerHTML="<b>"+msg.user+"</b>: "+msg.text;
 
 document.getElementById("messages").appendChild(div);
 
@@ -224,13 +94,10 @@ window.sendMessage=function(){
 
 let text=document.getElementById("text").value;
 
-if(text=="") return;
+push(ref(db,"messages"),{
 
-push(ref(db,"rooms/"+currentRoom+"/messages"),{
-
-user:"Kullanıcı",
-text:text,
-photo:profileURL
+user:user.email,
+text:text
 
 });
 
@@ -238,69 +105,4 @@ document.getElementById("text").value="";
 
 }
 
-window.uploadProfile=function(){
-
-let file=document.getElementById("profileFile").files[0];
-
-if(!file){
-alert("Fotoğraf seç");
-return;
-}
-
-if(!file.type.startsWith("image")){
-alert("Sadece fotoğraf seç");
-return;
-}
-
-let storageRef=sRef(storage,"profiles/"+Date.now());
-
-uploadBytes(storageRef,file).then(()=>{
-
-getDownloadURL(storageRef).then(url=>{
-
-profileURL=url;
-
-alert("Profil yüklendi");
-
-});
-
-});
-
-}
-
-window.addRoom=function(){
-
-let name=prompt("Oda adı");
-
-if(!name) return;
-
-let div=document.createElement("div");
-
-div.innerText="# "+name;
-
-div.onclick=()=>{
-
-currentRoom=name;
-
-loadMessages();
-
-};
-
-document.getElementById("roomList").appendChild(div);
-
-}
-
-document.getElementById("text").addEventListener("keypress",function(e){
-
-if(e.key==="Enter") sendMessage();
-
-});
-
-createDefaultRoom();
-
-loadMessages();
-
-</script>
-
-</body>
-</html>
+  </script>
