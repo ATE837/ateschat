@@ -10,38 +10,91 @@
 <style>
 
 body{
-background:black;
-color:white;
-font-family:Arial;
-text-align:center;
 margin:0;
-padding:0;
+font-family:Arial;
+background:#1e1f22;
+color:white;
 }
 
-.container{
-margin-top:100px;
+#login{
+text-align:center;
+margin-top:120px;
 }
 
 input{
 padding:10px;
 margin:5px;
+border:none;
+border-radius:5px;
 }
 
 button{
 padding:10px 20px;
+border:none;
+background:#5865F2;
+color:white;
+border-radius:5px;
 cursor:pointer;
 }
 
-#chatBox{
-height:300px;
-overflow:auto;
-border:1px solid white;
-margin:20px;
+#app{
+display:none;
+height:100vh;
+}
+
+.sidebar{
+width:80px;
+background:#2b2d31;
+height:100%;
+float:left;
+text-align:center;
+padding-top:10px;
+}
+
+.server{
+background:#404249;
+margin:10px;
+padding:15px;
+border-radius:10px;
+cursor:pointer;
+}
+
+.server:hover{
+background:#5865F2;
+}
+
+.chatArea{
+margin-left:80px;
+height:100%;
+display:flex;
+flex-direction:column;
+}
+
+.top{
+background:#313338;
 padding:10px;
 }
 
-.hidden{
-display:none;
+.messages{
+flex:1;
+padding:10px;
+overflow:auto;
+}
+
+.msg{
+background:#404249;
+margin:5px;
+padding:8px;
+border-radius:5px;
+}
+
+.sendBox{
+padding:10px;
+background:#313338;
+}
+
+.sendBox input{
+width:70%;
 }
 
 </style>
@@ -50,94 +103,65 @@ display:none;
 
 <body>
 
+<div id="login">
+
 <h1>🔥 AteşChat</h1>
 
-<div id="login" class="container">
-
-<h2>Giriş Yap</h2>
-
-<input id="username" placeholder="Kullanıcı adı"><br>
-<input id="password" type="password" placeholder="Şifre"><br>
+<input id="user" placeholder="Kullanıcı adı"><br>
+<input id="pass" type="password" placeholder="Şifre"><br>
 
 <button onclick="login()">Giriş</button>
-<button onclick="showRegister()">Kayıt Ol</button>
 
 </div>
 
-<div id="register" class="container hidden">
+<div id="app">
 
-<h2>Kayıt Ol</h2>
+<div class="sidebar">
 
-<input id="newUser" placeholder="Kullanıcı adı"><br>
-<input id="newPass" type="password" placeholder="Şifre"><br>
-
-<button onclick="register()">Kaydet</button>
-<button onclick="showLogin()">Geri</button>
+<div class="server" onclick="room('Genel')">💬</div>
+<div class="server" onclick="room('Oyun')">🎮</div>
+<div class="server" onclick="room('Müzik')">🎵</div>
 
 </div>
 
-<div id="lobby" class="hidden">
+<div class="chatArea">
 
-<h2>Lobi</h2>
+<div class="top">
 
-<p id="welcome"></p>
+<span id="roomName">Genel</span>
 
-<div id="chatBox"></div>
+</div>
 
-<input id="message" placeholder="Mesaj yaz...">
+<div class="messages" id="chat"></div>
 
+<div class="sendBox">
+
+<input id="msg" placeholder="Mesaj yaz...">
 <button onclick="send()">Gönder</button>
+
+</div>
+
+</div>
 
 </div>
 
 <script>
 
-let users = {
+let users={
 "Ateş Bey":"Ateş123"
 }
 
-function showRegister(){
-document.getElementById("login").classList.add("hidden")
-document.getElementById("register").classList.remove("hidden")
-}
-
-function showLogin(){
-document.getElementById("register").classList.add("hidden")
-document.getElementById("login").classList.remove("hidden")
-}
-
-function register(){
-
-let u = document.getElementById("newUser").value
-let p = document.getElementById("newPass").value
-
-if(u && p){
-
-users[u]=p
-
-alert("Kayıt başarılı!")
-
-showLogin()
-
-}
-
-}
+let currentRoom="Genel"
 
 function login(){
 
-let u = document.getElementById("username").value
-let p = document.getElementById("password").value
+let u=document.getElementById("user").value
+let p=document.getElementById("pass").value
 
 if(users[u] && users[u]==p){
 
-document.getElementById("login").classList.add("hidden")
-document.getElementById("lobby").classList.remove("hidden")
-
-document.getElementById("welcome").innerHTML="Hoşgeldin "+u
-
-if(u=="Ateş Bey"){
-document.getElementById("welcome").innerHTML+=" (ADMIN)"
-}
+document.getElementById("login").style.display="none"
+document.getElementById("app").style.display="block"
 
 }else{
 
@@ -147,15 +171,25 @@ alert("Hatalı giriş")
 
 }
 
+function room(name){
+
+currentRoom=name
+
+document.getElementById("roomName").innerText=name
+
+document.getElementById("chat").innerHTML=""
+
+}
+
 function send(){
 
-let msg = document.getElementById("message").value
+let msg=document.getElementById("msg").value
 
-let chat = document.getElementById("chatBox")
+let chat=document.getElementById("chat")
 
-chat.innerHTML += "<p>"+msg+"</p>"
+chat.innerHTML += "<div class='msg'>"+msg+"</div>"
 
-document.getElementById("message").value=""
+document.getElementById("msg").value=""
 
 }
 
