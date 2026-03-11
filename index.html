@@ -1,11 +1,8 @@
 <!DOCTYPE html>
-<html lang="tr">
+<html>
 <head>
-
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<title>AteşChat V19 🔥</title>
+<title>AteşChat V20 🔥</title>
 
 <style>
 
@@ -16,7 +13,7 @@ background:#0f0f0f;
 color:white;
 }
 
-#loginPage{
+#login{
 display:flex;
 flex-direction:column;
 align-items:center;
@@ -25,61 +22,69 @@ gap:10px;
 }
 
 input{
-padding:10px;
-border-radius:6px;
+padding:12px;
+border-radius:8px;
 border:none;
+width:220px;
 }
 
 button{
-padding:10px;
-background:#ff6a00;
+padding:12px;
 border:none;
-border-radius:6px;
+border-radius:8px;
+background:#ff6a00;
 color:white;
-cursor:pointer;
+font-weight:bold;
+width:150px;
 }
 
-#chatPage{
+#chat{
 display:none;
 height:100vh;
 }
 
-#messages{
-height:70vh;
-overflow-y:auto;
-padding:15px;
-}
-
-.message{
-background:#1c1c1c;
+#top{
+background:#1a1a1a;
 padding:10px;
-margin-bottom:10px;
-border-radius:8px;
-}
-
-#sendBar{
 display:flex;
-padding:10px;
-background:#111;
+justify-content:space-between;
 }
 
-#sendBar input{
+#messages{
+height:75vh;
+overflow:auto;
+padding:10px;
+}
+
+.msg{
+margin:5px 0;
+padding:8px;
+background:#222;
+border-radius:6px;
+}
+
+#sendArea{
+position:fixed;
+bottom:0;
+width:100%;
+display:flex;
+}
+
+#messageInput{
 flex:1;
-margin-right:10px;
 }
 
 </style>
-
 </head>
 
 <body>
 
-<div id="loginPage">
+<div id="login">
 
 <h1>AteşChat 🔥</h1>
 
 <input id="email" placeholder="Email">
-<input id="password" type="password" placeholder="Şifre">
+<input id="password" placeholder="Şifre" type="password">
 <input id="username" placeholder="Kullanıcı adı">
 
 <button onclick="register()">Kayıt Ol</button>
@@ -87,41 +92,36 @@ margin-right:10px;
 
 </div>
 
-<div id="chatPage">
 
-<h2 style="text-align:center">Genel Oda</h2>
+<div id="chat">
+
+<div id="top">
+
+<div id="user"></div>
+
+<button onclick="logout()">Çıkış</button>
+
+</div>
 
 <div id="messages"></div>
 
-<div id="sendBar">
+<div id="sendArea">
 
-<input id="messageInput" placeholder="Mesaj yaz">
-
-<button onclick="sendMessage()">Gönder</button>
-
-</div>
+<input id="messageInput" placeholder="Mesaj yaz...">
+<button onclick="send()">Gönder</button>
 
 </div>
 
-<script type="module">
+</div>
 
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js"
 
-import {
-getAuth,
-createUserWithEmailAndPassword,
-signInWithEmailAndPassword,
-onAuthStateChanged
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js"
 
-import {
-getDatabase,
-ref,
-push,
-set,
-onChildAdded
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js"
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
+
+<script>
 
 const firebaseConfig = {
 
@@ -135,48 +135,52 @@ appId: "APP_ID"
 
 }
 
-const app = initializeApp(firebaseConfig)
+firebase.initializeApp(firebaseConfig)
 
-const auth = getAuth(app)
+const auth = firebase.auth()
+const db = firebase.database()
 
-const db = getDatabase(app)
+function register(){
 
+let email=document.getElementById("email").value
+let password=document.getElementById("password").value
+let username=document.getElementById("username").value
 
-window.register=function(){
+auth.createUserWithEmailAndPassword(email,password)
 
-createUserWithEmailAndPassword(auth,email.value,password.value)
+.then(user=>{
 
-.then(()=>{
+db.ref("users/"+user.user.uid).set({
 
-set(ref(db,"users/"+auth.currentUser.uid),{
-
-name:username.value
+username:username
 
 })
 
 })
 
-.catch(e=>alert(e.message))
+}
+
+function login(){
+
+let email=document.getElementById("email").value
+let password=document.getElementById("password").value
+
+auth.signInWithEmailAndPassword(email,password)
 
 }
 
-
-window.login=function(){
-
-signInWithEmailAndPassword(auth,email.value,password.value)
-
-.catch(e=>alert(e.message))
-
-}
-
-
-onAuthStateChanged(auth,(user)=>{
+auth.onAuthStateChanged(user=>{
 
 if(user){
 
-loginPage.style.display="none"
+document.getElementById("login").style.display="none"
+document.getElementById("chat").style.display="block"
 
-chatPage.style.display="block"
+db.ref("users/"+user.uid).once("value",snap=>{
+
+document.getElementById("user").innerText=snap.val().username
+
+})
 
 loadMessages()
 
@@ -184,37 +188,51 @@ loadMessages()
 
 })
 
+function send(){
 
-window.sendMessage=function(){
+let text=document.getElementById("messageInput").value
 
-push(ref(db,"messages"),{
+let user=auth.currentUser
 
-user:username.value,
-text:messageInput.value,
-time:Date.now()
+db.ref("users/"+user.uid).once("value",snap=>{
+
+let name=snap.val().username
+
+db.ref("messages").push({
+
+name:name,
+text:text
 
 })
 
-messageInput.value=""
+})
+
+document.getElementById("messageInput").value=""
 
 }
 
-
 function loadMessages(){
 
-onChildAdded(ref(db,"messages"),(data)=>{
+db.ref("messages").on("child_added",snap=>{
 
-let m=data.val()
+let m=snap.val()
 
 let div=document.createElement("div")
+div.className="msg"
 
-div.className="message"
+div.innerText=m.name+" : "+m.text
 
-div.innerHTML="<b>"+m.user+"</b><br>"+m.text
-
-messages.appendChild(div)
+document.getElementById("messages").appendChild(div)
 
 })
+
+}
+
+function logout(){
+
+auth.signOut()
+
+location.reload()
 
 }
 
