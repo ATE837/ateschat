@@ -14,10 +14,10 @@ gap:15px;
 }
 
 input{
-padding:15px;
+padding:14px;
 border:none;
 border-radius:8px;
-width:250px;
+width:260px;
 }
 
 button{
@@ -35,15 +35,15 @@ height:100vh;
 }
 
 #sidebar{
-width:200px;
+width:220px;
 background:#151515;
 position:fixed;
 height:100%;
-padding:10px;
+padding:15px;
 }
 
 #chat{
-margin-left:200px;
+margin-left:220px;
 }
 
 #top{
@@ -64,6 +64,15 @@ background:#1e1e1e;
 margin:10px;
 padding:10px;
 border-radius:8px;
+display:flex;
+align-items:center;
+gap:10px;
+}
+
+.msg img{
+width:35px;
+height:35px;
+border-radius:50%;
 }
 
 #sendArea{
