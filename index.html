@@ -3,7 +3,7 @@
 <head>
 
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 
 <title>AteşChat</title>
 
@@ -94,8 +94,8 @@ border-radius:5px;
 }
 
 </style>
-</head>
 
+</head>
 <body>
 
 <div id="top">
@@ -138,7 +138,7 @@ border-radius:5px;
 import { initializeApp }
 from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 
-import { getDatabase, ref, push, onChildAdded }
+import { getDatabase, ref, push, onChildAdded, off }
 from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
 import { getStorage, ref as sRef, uploadBytes, getDownloadURL }
@@ -164,13 +164,35 @@ let currentRoom="genel";
 
 let profileURL="";
 
+let messageRef=null;
+
+function createDefaultRoom(){
+
+let div=document.createElement("div");
+
+div.innerText="# genel";
+
+div.onclick=()=>{
+
+currentRoom="genel";
+
+loadMessages();
+
+};
+
+document.getElementById("roomList").appendChild(div);
+
+}
+
 function loadMessages(){
 
 document.getElementById("messages").innerHTML="";
 
-let messagesRef=ref(db,"rooms/"+currentRoom+"/messages");
+if(messageRef) off(messageRef);
 
-onChildAdded(messagesRef,(data)=>{
+messageRef=ref(db,"rooms/"+currentRoom+"/messages");
+
+onChildAdded(messageRef,(data)=>{
 
 let msg=data.val();
 
@@ -204,9 +226,7 @@ let text=document.getElementById("text").value;
 
 if(text=="") return;
 
-let messagesRef=ref(db,"rooms/"+currentRoom+"/messages");
-
-push(messagesRef,{
+push(ref(db,"rooms/"+currentRoom+"/messages"),{
 
 user:"Kullanıcı",
 text:text,
@@ -223,7 +243,7 @@ window.uploadProfile=function(){
 let file=document.getElementById("profileFile").files[0];
 
 if(!file){
-alert("Resim seç");
+alert("Fotoğraf seç");
 return;
 }
 
@@ -269,6 +289,14 @@ loadMessages();
 document.getElementById("roomList").appendChild(div);
 
 }
+
+document.getElementById("text").addEventListener("keypress",function(e){
+
+if(e.key==="Enter") sendMessage();
+
+});
+
+createDefaultRoom();
 
 loadMessages();
 
