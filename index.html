@@ -34,13 +34,22 @@ display:flex;
 align-items:center;
 justify-content:center;
 margin-bottom:10px;
-cursor:pointer;
 }
 
 .channelBar{
 width:220px;
 background:#2b2d31;
 padding:10px;
+}
+
+.channel{
+cursor:pointer;
+padding:6px;
+border-radius:6px;
+}
+
+.channel:hover{
+background:#404249;
 }
 
 .chat{
@@ -94,6 +103,12 @@ color:white;
 cursor:pointer;
 }
 
+.users{
+width:200px;
+background:#2b2d31;
+padding:10px;
+}
+
 .login{
 position:fixed;
 top:0;
@@ -132,14 +147,19 @@ color:white;
 </div>
 
 <div class="channelBar">
+
 <h3>AteşChat</h3>
-<p># genel</p>
+
+<div class="channel" onclick="changeChannel('genel')"># genel</div>
+<div class="channel" onclick="changeChannel('sohbet')"># sohbet</div>
+<div class="channel" onclick="changeChannel('oyun')"># oyun</div>
+
 </div>
 
 <div class="chat">
 
-<div class="header">
-# genel sohbet
+<div class="header" id="channelName">
+# genel
 </div>
 
 <div id="messages" class="messages"></div>
@@ -148,6 +168,14 @@ color:white;
 <input id="messageInput" placeholder="Mesaj yaz...">
 <button onclick="sendMessage()">Gönder</button>
 </div>
+
+</div>
+
+<div class="users">
+
+<h4>ONLINE</h4>
+
+<div id="userList"></div>
 
 </div>
 
@@ -164,7 +192,7 @@ color:white;
 <script type="module">
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getDatabase, ref, push, onChildAdded } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+import { getDatabase, ref, push, onChildAdded, set } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
 const firebaseConfig = {
 apiKey: "AIzaSyCwwqd4FfhvLRQu8DUUfbdorIu3iJpkHMM",
@@ -180,6 +208,7 @@ const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
 let username="";
+let currentChannel="genel";
 
 window.login = function(){
 
@@ -189,28 +218,31 @@ if(input.value.trim()=="") return;
 
 username=input.value;
 
-document.getElementById("login").style.display="none";
-
-}
-
-window.sendMessage = function(){
-
-const input=document.getElementById("messageInput");
-
-if(input.value.trim()=="") return;
-
-push(ref(db,"messages"),{
-
-user:username,
-text:input.value
-
+set(ref(db,"users/"+username),{
+online:true
 });
 
-input.value="";
+document.getElementById("login").style.display="none";
+
+loadMessages();
 
 }
 
-const messagesRef = ref(db,"messages");
+window.changeChannel=function(channel){
+
+currentChannel=channel;
+
+document.getElementById("messages").innerHTML="";
+
+document.getElementById("channelName").innerText="# "+channel;
+
+loadMessages();
+
+}
+
+function loadMessages(){
+
+const messagesRef=ref(db,"messages/"+currentChannel);
 
 onChildAdded(messagesRef,(data)=>{
 
@@ -223,6 +255,39 @@ div.className="message";
 div.innerHTML="<span class='username'>"+msg.user+":</span> "+msg.text;
 
 document.getElementById("messages").appendChild(div);
+
+});
+
+}
+
+window.sendMessage=function(){
+
+const input=document.getElementById("messageInput");
+
+if(input.value.trim()=="") return;
+
+push(ref(db,"messages/"+currentChannel),{
+
+user:username,
+text:input.value
+
+});
+
+input.value="";
+
+}
+
+const usersRef=ref(db,"users");
+
+onChildAdded(usersRef,(data)=>{
+
+const user=data.key;
+
+const div=document.createElement("div");
+
+div.innerText=user;
+
+document.getElementById("userList").appendChild(div);
 
 });
 
