@@ -1,6 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, serverTimestamp, deleteDoc, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyCwwqd4FfhvLRQu8DUUfbdorIu3iJpkHMM",
@@ -53,7 +53,7 @@ onAuthStateChanged(auth, (user) => {
         authContainer.classList.add('hidden');
         mainLayout.classList.remove('hidden');
 
-        if (userAvatar) userAvatar.src = user.photoURL || "https://via.placeholder.com/32";
+        if (userAvatar) userAvatar.src = user.photoURL || "https://ui-avatars.com/api/?name=" + encodeURIComponent(user.displayName || "A") + "&background=5865f2&color=fff";
         if (userName) userName.textContent = user.displayName || "Kullanıcı";
 
         loadMessages();
@@ -69,12 +69,15 @@ chatForm.onsubmit = async (e) => {
     const messageText = msgInput.value.trim();
     if (!messageText) return;
 
+    const user = auth.currentUser;
+    if (!user) return;
+
     try {
         await addDoc(collection(db, "messages"), {
             text: messageText,
-            name: auth.currentUser.displayName || "Anonim",
-            photo: auth.currentUser.photoURL || "https://via.placeholder.com/40",
-            uid: auth.currentUser.uid,
+            name: user.displayName || "Kullanıcı",
+            photo: user.photoURL || "https://ui-avatars.com/api/?name=" + encodeURIComponent(user.displayName || "A") + "&background=5865f2&color=fff",
+            uid: user.uid,
             createdAt: serverTimestamp()
         });
         msgInput.value = "";
@@ -91,12 +94,17 @@ function loadMessages() {
         msgContainer.innerHTML = "";
         snapshot.forEach((doc) => {
             const data = doc.data();
+
+            // null olan eski mesajları gösterme
+            if (!data.name || data.name === "null") return;
+
             const time = data.createdAt?.toDate().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }) || "";
+            const photo = data.photo && data.photo !== "null" ? data.photo : "https://ui-avatars.com/api/?name=" + encodeURIComponent(data.name) + "&background=5865f2&color=fff";
 
             const div = document.createElement('div');
             div.className = "message-item";
             div.innerHTML = `
-                <img src="${data.photo}" alt="avatar">
+                <img src="${photo}" alt="avatar" onerror="this.src='https://ui-avatars.com/api/?name=A&background=5865f2&color=fff'">
                 <div class="msg-content">
                     <div style="display:flex; align-items:baseline; gap:6px;">
                         <span class="msg-name">${data.name}</span>
