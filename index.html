@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html lang="tr">
 
 <head>
 
@@ -13,7 +13,6 @@
 </head>
 
 <body>
-
 
 <!-- LOGIN -->
 
@@ -32,27 +31,30 @@
 </div>
 
 
-<!-- CHAT -->
+<!-- CHAT APP -->
 
-<div id="app" style="display:none">
+<div id="app">
 
-<div id="messages"></div>
+<div id="chatHeader">
 
-<div id="sendBox">
-
-<input id="messageInput" placeholder="Mesaj yaz">
-
-<button onclick="send()">Gönder</button>
+<h3>Genel Sohbet</h3>
 
 <button onclick="logout()">Çıkış</button>
 
 </div>
 
+<div id="messages"></div>
+
+<div id="sendBox">
+
+<input id="messageInput" placeholder="Mesaj yaz...">
+
+<button onclick="send()">Gönder</button>
+
 </div>
 
+</div>
 
-
-<!-- FIREBASE -->
 
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
 
@@ -61,14 +63,9 @@
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
 
-<!-- JS DOSYALARI -->
-
 <script src="firebase.js"></script>
-
 <script src="auth.js"></script>
-
 <script src="chat.js"></script>
-
 <script src="ui.js"></script>
 
 </body>
