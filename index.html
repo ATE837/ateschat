@@ -3,79 +3,45 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AteşChat v2</title>
+<title>AteşChat</title>
 
 <style>
-*{
-margin:0;
-padding:0;
-box-sizing:border-box;
-font-family:Arial, Helvetica, sans-serif;
-}
 
 body{
+margin:0;
+font-family:Arial;
 background:#1e1f22;
 color:white;
-height:100vh;
 display:flex;
+height:100vh;
 }
-
-/* SERVER BAR */
 
 .serverBar{
 width:70px;
-background:#111214;
+background:#111;
 display:flex;
 flex-direction:column;
 align-items:center;
 padding-top:10px;
-gap:10px;
 }
 
 .server{
 width:50px;
 height:50px;
-background:#2b2d31;
+background:#333;
 border-radius:15px;
 display:flex;
 align-items:center;
 justify-content:center;
+margin-bottom:10px;
 cursor:pointer;
-font-size:20px;
-transition:0.2s;
 }
-
-.server:hover{
-background:#5865f2;
-}
-
-/* CHANNEL BAR */
 
 .channelBar{
 width:220px;
 background:#2b2d31;
-padding:15px;
+padding:10px;
 }
-
-.channelTitle{
-font-size:18px;
-font-weight:bold;
-margin-bottom:20px;
-}
-
-.channel{
-padding:8px;
-border-radius:6px;
-cursor:pointer;
-color:#b5bac1;
-}
-
-.channel:hover{
-background:#404249;
-color:white;
-}
-
-/* CHAT */
 
 .chat{
 flex:1;
@@ -83,23 +49,19 @@ display:flex;
 flex-direction:column;
 }
 
-.chatHeader{
-height:55px;
+.header{
 background:#313338;
-display:flex;
-align-items:center;
-padding-left:20px;
-font-weight:bold;
+padding:15px;
 }
 
 .messages{
 flex:1;
-padding:20px;
 overflow-y:auto;
+padding:20px;
 }
 
 .message{
-margin-bottom:12px;
+margin-bottom:10px;
 }
 
 .username{
@@ -108,35 +70,29 @@ font-weight:bold;
 }
 
 .inputArea{
-height:70px;
-background:#313338;
 display:flex;
-align-items:center;
+background:#313338;
 padding:10px;
-gap:10px;
 }
 
 .inputArea input{
 flex:1;
-height:40px;
+padding:10px;
 border:none;
-border-radius:8px;
-padding-left:10px;
+border-radius:6px;
 background:#1e1f22;
 color:white;
 }
 
 .inputArea button{
-height:40px;
-padding:0 20px;
+margin-left:10px;
+padding:10px 20px;
 border:none;
-border-radius:8px;
+border-radius:6px;
 background:#5865f2;
 color:white;
 cursor:pointer;
 }
-
-/* LOGIN */
 
 .login{
 position:fixed;
@@ -146,61 +102,44 @@ width:100%;
 height:100%;
 background:#1e1f22;
 display:flex;
+flex-direction:column;
 align-items:center;
 justify-content:center;
-flex-direction:column;
-gap:20px;
 }
 
 .login input{
-width:220px;
-height:40px;
+padding:10px;
 border:none;
-border-radius:8px;
-padding-left:10px;
+border-radius:6px;
+margin-bottom:10px;
 }
 
 .login button{
-height:40px;
-padding:0 20px;
+padding:10px 20px;
 border:none;
-border-radius:8px;
+border-radius:6px;
 background:#5865f2;
 color:white;
-cursor:pointer;
 }
+
 </style>
 </head>
 
 <body>
 
-<!-- SERVER BAR -->
-
 <div class="serverBar">
-
 <div class="server">🔥</div>
-<div class="server">+</div>
-
 </div>
-
-<!-- CHANNEL BAR -->
 
 <div class="channelBar">
-
-<div class="channelTitle">AteşChat</div>
-
-<div class="channel"># genel</div>
-<div class="channel"># sohbet</div>
-<div class="channel"># oyun</div>
-
+<h3>AteşChat</h3>
+<p># genel</p>
 </div>
-
-<!-- CHAT -->
 
 <div class="chat">
 
-<div class="chatHeader">
-# genel
+<div class="header">
+# genel sohbet
 </div>
 
 <div id="messages" class="messages"></div>
@@ -212,8 +151,6 @@ cursor:pointer;
 
 </div>
 
-<!-- LOGIN -->
-
 <div class="login" id="login">
 
 <h2>🔥 AteşChat</h2>
@@ -224,11 +161,27 @@ cursor:pointer;
 
 </div>
 
-<script>
+<script type="module">
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getDatabase, ref, push, onChildAdded } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
+const firebaseConfig = {
+apiKey: "AIzaSyCwwqd4FfhvLRQu8DUUfbdorIu3iJpkHMM",
+authDomain: "ateschat-cd9f4.firebaseapp.com",
+projectId: "ateschat-cd9f4",
+storageBucket: "ateschat-cd9f4.firebasestorage.app",
+messagingSenderId: "174732212740",
+appId: "1:174732212740:web:dcd4b60ed7cc380ca95351",
+measurementId: "G-1CBZNR0W3E"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
 
 let username="";
 
-function login(){
+window.login = function(){
 
 const input=document.getElementById("usernameInput");
 
@@ -240,27 +193,38 @@ document.getElementById("login").style.display="none";
 
 }
 
-function sendMessage(){
+window.sendMessage = function(){
 
 const input=document.getElementById("messageInput");
 
 if(input.value.trim()=="") return;
 
-const messages=document.getElementById("messages");
+push(ref(db,"messages"),{
+
+user:username,
+text:input.value
+
+});
+
+input.value="";
+
+}
+
+const messagesRef = ref(db,"messages");
+
+onChildAdded(messagesRef,(data)=>{
+
+const msg=data.val();
 
 const div=document.createElement("div");
 
 div.className="message";
 
-div.innerHTML="<span class='username'>"+username+":</span> "+input.value;
+div.innerHTML="<span class='username'>"+msg.user+":</span> "+msg.text;
 
-messages.appendChild(div);
+document.getElementById("messages").appendChild(div);
 
-input.value="";
-
-messages.scrollTop=messages.scrollHeight;
-
-}
+});
 
 </script>
 
