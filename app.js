@@ -1,181 +1,210 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-import { getFirestore, collection, addDoc, doc, getDoc, setDoc, updateDoc, arrayUnion, query, orderBy, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { getFirestore, collection, addDoc, doc, getDoc, setDoc, updateDoc, arrayUnion, query, orderBy, onSnapshot, serverTimestamp, getDocs, where } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyCwwqd4FfhvLRQu8DUUfbdorIu3iJpkHMM",
   authDomain: "ateschat-cd9f4.firebaseapp.com",
-  databaseURL: "https://ateschat-cd9f4-default-rtdb.firebaseio.com",
   projectId: "ateschat-cd9f4",
   storageBucket: "ateschat-cd9f4.firebasestorage.app",
   messagingSenderId: "174732212740",
-  appId: "1:174732212740:web:dcd4b60ed7cc380ca95351",
-  measurementId: "G-1CBZNR0W3E"
+  appId: "1:174732212740:web:dcd4b60ed7cc380ca95351"
 };
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-let currentServerId = null;
 let currentUser = null;
-let messagesUnsub = null;
-let membersUnsub = null;
+let currentServerId = null;
+let msgUnsub = null;
+let memberUnsub = null;
 
-function randomCode() {
-    return Math.random().toString(36).substring(2, 8).toUpperCase();
-}
+// Global fonksiyonlar - HTML onclick için
+window.showTab = (tab) => {
+    document.getElementById('form-login').style.display = tab === 'login' ? 'block' : 'none';
+    document.getElementById('form-register').style.display = tab === 'register' ? 'block' : 'none';
+    document.getElementById('tab-login').classList.toggle('active', tab === 'login');
+    document.getElementById('tab-register').classList.toggle('active', tab === 'register');
+};
 
-// --- AUTH SEKMELERİ ---
-document.getElementById('tab-login').addEventListener('click', () => {
-    document.getElementById('tab-login').classList.add('active');
-    document.getElementById('tab-register').classList.remove('active');
-    document.getElementById('form-login').classList.remove('hidden');
-    document.getElementById('form-register').classList.add('hidden');
-});
-
-document.getElementById('tab-register').addEventListener('click', () => {
-    document.getElementById('tab-register').classList.add('active');
-    document.getElementById('tab-login').classList.remove('active');
-    document.getElementById('form-register').classList.remove('hidden');
-    document.getElementById('form-login').classList.add('hidden');
-});
-
-// --- GİRİŞ ---
-document.getElementById('login-btn').addEventListener('click', async () => {
+window.doLogin = async () => {
     const email = document.getElementById('login-email').value.trim();
     const password = document.getElementById('login-password').value;
-    const errorEl = document.getElementById('login-error');
-    errorEl.textContent = '';
-
-    if (!email || !password) { 
-        errorEl.textContent = 'E-posta ve şifre giriniz.'; 
-        return; 
-    }
-
-    errorEl.textContent = 'Giriş yapılıyor...';
-    errorEl.style.color = '#23a55a';
-
+    const err = document.getElementById('login-error');
+    err.style.color = '#949ba4';
+    err.textContent = 'Giriş yapılıyor...';
     try {
         await signInWithEmailAndPassword(auth, email, password);
     } catch (e) {
-        errorEl.style.color = '#ed4245';
-        if (e.code === 'auth/user-not-found' || e.code === 'auth/wrong-password' || e.code === 'auth/invalid-credential') {
-            errorEl.textContent = 'E-posta veya şifre hatalı.';
-        } else {
-            errorEl.textContent = 'Hata: ' + e.message;
-        }
+        err.style.color = '#ed4245';
+        err.textContent = e.code === 'auth/invalid-credential' ? 'E-posta veya şifre hatalı.' : 'Hata: ' + e.message;
     }
-});
+};
 
-// --- KAYIT ---
-document.getElementById('register-btn').addEventListener('click', async () => {
+window.doRegister = async () => {
     const name = document.getElementById('reg-name').value.trim();
     const email = document.getElementById('reg-email').value.trim();
     const password = document.getElementById('reg-password').value;
-    const errorEl = document.getElementById('reg-error');
-    errorEl.textContent = '';
-
-    if (!name || !email || !password) { 
-        errorEl.textContent = 'Tüm alanları doldurunuz.'; 
-        return; 
-    }
-    if (password.length < 6) { 
-        errorEl.textContent = 'Şifre en az 6 karakter olmalı.'; 
-        return; 
-    }
-
-    errorEl.textContent = 'Kayıt yapılıyor...';
-    errorEl.style.color = '#23a55a';
-
+    const err = document.getElementById('reg-error');
+    err.style.color = '#949ba4';
+    if (!name || !email || !password) { err.style.color = '#ed4245'; err.textContent = 'Tüm alanları doldurun.'; return; }
+    if (password.length < 6) { err.style.color = '#ed4245'; err.textContent = 'Şifre en az 6 karakter olmalı.'; return; }
+    err.textContent = 'Kayıt yapılıyor...';
     try {
-        const result = await createUserWithEmailAndPassword(auth, email, password);
-        await updateProfile(result.user, { displayName: name });
+        const r = await createUserWithEmailAndPassword(auth, email, password);
+        await updateProfile(r.user, { displayName: name });
+        err.style.color = '#23a55a';
+        err.textContent = 'Kayıt başarılı!';
     } catch (e) {
-        errorEl.style.color = '#ed4245';
-        if (e.code === 'auth/email-already-in-use') {
-            errorEl.textContent = 'Bu e-posta zaten kayıtlı.';
-        } else {
-            errorEl.textContent = 'Hata: ' + e.message;
-        }
+        err.style.color = '#ed4245';
+        err.textContent = e.code === 'auth/email-already-in-use' ? 'Bu e-posta zaten kayıtlı.' : 'Hata: ' + e.message;
     }
-});
+};
 
-// --- ÇIKIŞ ---
-document.getElementById('logout-btn').addEventListener('click', () => signOut(auth));
+window.doLogout = () => signOut(auth);
 
-// --- OTURUM DURUMU ---
+window.showModal = (id) => document.getElementById(id).style.display = 'flex';
+window.hideModal = (id) => document.getElementById(id).style.display = 'none';
+
+window.showServerScreen = () => {
+    document.getElementById('server-screen').style.display = 'flex';
+    document.getElementById('main-layout').style.display = 'none';
+};
+
+window.sendMessage = async () => {
+    const input = document.getElementById('msg-input');
+    const text = input.value.trim();
+    if (!text || !currentServerId || !currentUser) return;
+    input.value = '';
+    await addDoc(collection(db, 'servers', currentServerId, 'messages'), {
+        text,
+        name: currentUser.displayName || currentUser.email,
+        uid: currentUser.uid,
+        createdAt: serverTimestamp()
+    });
+};
+
+window.createServer = async () => {
+    const name = document.getElementById('new-server-name').value.trim();
+    const err = document.getElementById('create-error');
+    if (!name) { err.textContent = 'Sunucu adı girin.'; return; }
+
+    const serverId = Math.random().toString(36).substring(2, 14).toUpperCase();
+    const inviteCode = Math.random().toString(36).substring(2, 8).toUpperCase();
+
+    await setDoc(doc(db, 'servers', serverId), {
+        name, inviteCode,
+        ownerId: currentUser.uid,
+        members: [{ uid: currentUser.uid, name: currentUser.displayName || currentUser.email }]
+    });
+    await setDoc(doc(db, 'users', currentUser.uid), { servers: arrayUnion({ id: serverId, name }) }, { merge: true });
+
+    hideModal('modal-create');
+    document.getElementById('new-server-name').value = '';
+    loadUserServers();
+};
+
+window.joinServer = async () => {
+    const code = document.getElementById('join-code').value.trim().toUpperCase();
+    const err = document.getElementById('join-error');
+    if (!code) { err.textContent = 'Davet kodu girin.'; return; }
+    err.textContent = 'Aranıyor...';
+
+    const snap = await getDocs(query(collection(db, 'servers'), where('inviteCode', '==', code)));
+    if (snap.empty) { err.style.color = '#ed4245'; err.textContent = 'Geçersiz kod.'; return; }
+
+    const serverDoc = snap.docs[0];
+    await updateDoc(doc(db, 'servers', serverDoc.id), {
+        members: arrayUnion({ uid: currentUser.uid, name: currentUser.displayName || currentUser.email })
+    });
+    await setDoc(doc(db, 'users', currentUser.uid), {
+        servers: arrayUnion({ id: serverDoc.id, name: serverDoc.data().name })
+    }, { merge: true });
+
+    hideModal('modal-join');
+    document.getElementById('join-code').value = '';
+    loadUserServers();
+};
+
+window.showInvite = async () => {
+    if (!currentServerId) return;
+    const snap = await getDoc(doc(db, 'servers', currentServerId));
+    document.getElementById('invite-code').textContent = snap.data()?.inviteCode || '???';
+    showModal('modal-invite');
+};
+
+window.copyInvite = () => {
+    const code = document.getElementById('invite-code').textContent;
+    navigator.clipboard.writeText(code);
+    const btn = event.target;
+    btn.textContent = '✅ Kopyalandı!';
+    setTimeout(() => btn.textContent = 'Kopyala', 2000);
+};
+
+// Oturum durumu
 onAuthStateChanged(auth, async (user) => {
     if (user) {
         currentUser = user;
-        document.getElementById('auth-container').classList.add('hidden');
-
-        const letter = (user.displayName || user.email || 'A')[0].toUpperCase();
-        document.getElementById('user-avatar-text').textContent = letter;
-        document.getElementById('user-name').textContent = user.displayName || user.email;
-
-        await loadUserServers();
+        document.getElementById('auth-container').style.display = 'none';
+        document.getElementById('my-avatar').textContent = (user.displayName || user.email)[0].toUpperCase();
+        document.getElementById('my-name').textContent = user.displayName || user.email;
+        loadUserServers();
     } else {
         currentUser = null;
-        document.getElementById('auth-container').classList.remove('hidden');
-        document.getElementById('main-layout').classList.add('hidden');
-        document.getElementById('server-screen').classList.add('hidden');
+        document.getElementById('auth-container').style.display = 'flex';
+        document.getElementById('main-layout').style.display = 'none';
+        document.getElementById('server-screen').style.display = 'none';
     }
 });
 
-// --- KULLANICI SUNUCULARINI YÜKLE ---
 async function loadUserServers() {
     const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
     const servers = userDoc.exists() ? (userDoc.data().servers || []) : [];
 
     if (servers.length === 0) {
-        document.getElementById('server-screen').classList.remove('hidden');
-        document.getElementById('main-layout').classList.add('hidden');
+        document.getElementById('server-screen').style.display = 'flex';
+        document.getElementById('main-layout').style.display = 'none';
     } else {
-        document.getElementById('server-screen').classList.add('hidden');
-        document.getElementById('main-layout').classList.remove('hidden');
-        renderServerIcons(servers);
+        document.getElementById('server-screen').style.display = 'none';
+        document.getElementById('main-layout').style.display = 'flex';
+        renderServers(servers);
         openServer(servers[0]);
     }
 }
 
-function renderServerIcons(servers) {
-    const list = document.getElementById('server-icons-list');
+function renderServers(servers) {
+    const list = document.getElementById('server-icons');
     list.innerHTML = '';
     servers.forEach(s => {
-        const icon = document.createElement('div');
-        icon.className = 'server-icon' + (s.id === currentServerId ? ' active' : '');
-        icon.textContent = s.name[0].toUpperCase();
-        icon.title = s.name;
-        icon.addEventListener('click', () => openServer(s));
-        list.appendChild(icon);
+        const el = document.createElement('div');
+        el.className = 'server-icon' + (s.id === currentServerId ? ' active' : '');
+        el.textContent = s.name[0].toUpperCase();
+        el.title = s.name;
+        el.onclick = () => openServer(s);
+        list.appendChild(el);
     });
 }
 
-async function openServer(server) {
+function openServer(server) {
     currentServerId = server.id;
-    document.getElementById('channel-server-name').textContent = '🔥 ' + server.name;
+    document.getElementById('server-title').textContent = '🔥 ' + server.name;
+    document.querySelectorAll('.server-icon').forEach(el => el.classList.toggle('active', el.title === server.name));
 
-    document.querySelectorAll('.server-icon').forEach(el => {
-        el.classList.toggle('active', el.title === server.name);
-    });
-
-    if (messagesUnsub) messagesUnsub();
+    if (msgUnsub) msgUnsub();
     const q = query(collection(db, 'servers', server.id, 'messages'), orderBy('createdAt', 'asc'));
-    messagesUnsub = onSnapshot(q, (snapshot) => {
-        const container = document.getElementById('messages-container');
+    msgUnsub = onSnapshot(q, snap => {
+        const container = document.getElementById('messages');
         container.innerHTML = '';
-        snapshot.forEach((d) => {
+        snap.forEach(d => {
             const data = d.data();
-            if (!data.name || data.name === 'null') return;
             const time = data.createdAt?.toDate().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }) || '';
-            const letter = (data.name || 'A')[0].toUpperCase();
             const div = document.createElement('div');
-            div.className = 'message-item';
+            div.className = 'msg';
             div.innerHTML = `
-                <div class="msg-avatar">${letter}</div>
-                <div class="msg-content">
-                    <div><span class="msg-name">${data.name}</span><span class="msg-time">${time}</span></div>
+                <div class="msg-av">${(data.name||'A')[0].toUpperCase()}</div>
+                <div class="msg-body">
+                    <div><span class="msg-name">${data.name||''}</span><span class="msg-time">${time}</span></div>
                     <span class="msg-text">${data.text}</span>
                 </div>`;
             container.appendChild(div);
@@ -183,127 +212,16 @@ async function openServer(server) {
         container.scrollTop = container.scrollHeight;
     });
 
-    if (membersUnsub) membersUnsub();
-    membersUnsub = onSnapshot(doc(db, 'servers', server.id), (snap) => {
+    if (memberUnsub) memberUnsub();
+    memberUnsub = onSnapshot(doc(db, 'servers', server.id), snap => {
         const members = snap.data()?.members || [];
         const list = document.getElementById('members-list');
         list.innerHTML = '';
         members.forEach(m => {
             const div = document.createElement('div');
-            div.className = 'member-item';
-            div.innerHTML = `
-                <div class="member-avatar">${m.name[0].toUpperCase()}</div>
-                <span class="member-name">${m.name}</span>`;
+            div.className = 'member';
+            div.innerHTML = `<div class="member-av">${m.name[0].toUpperCase()}</div><span class="member-name">${m.name}</span>`;
             list.appendChild(div);
         });
     });
 }
-
-// --- MESAJ GÖNDER ---
-document.getElementById('chat-form').onsubmit = async (e) => {
-    e.preventDefault();
-    const text = document.getElementById('message-input').value.trim();
-    if (!text || !currentServerId) return;
-    try {
-        await addDoc(collection(db, 'servers', currentServerId, 'messages'), {
-            text,
-            name: currentUser.displayName || currentUser.email,
-            uid: currentUser.uid,
-            createdAt: serverTimestamp()
-        });
-        document.getElementById('message-input').value = '';
-    } catch (e) {
-        alert('Mesaj gönderilemedi: ' + e.message);
-    }
-};
-
-// --- SUNUCU OLUŞTUR ---
-document.getElementById('create-server-btn').addEventListener('click', () => {
-    document.getElementById('modal-create').classList.remove('hidden');
-});
-document.getElementById('cancel-create').addEventListener('click', () => {
-    document.getElementById('modal-create').classList.add('hidden');
-});
-document.getElementById('confirm-create-btn').addEventListener('click', async () => {
-    const name = document.getElementById('new-server-name').value.trim();
-    const errorEl = document.getElementById('create-error');
-    if (!name) { errorEl.textContent = 'Sunucu adı giriniz.'; return; }
-
-    const serverId = randomCode() + randomCode();
-    const inviteCode = randomCode();
-
-    await setDoc(doc(db, 'servers', serverId), {
-        name,
-        inviteCode,
-        ownerId: currentUser.uid,
-        members: [{ uid: currentUser.uid, name: currentUser.displayName || currentUser.email }]
-    });
-
-    await setDoc(doc(db, 'users', currentUser.uid), {
-        servers: arrayUnion({ id: serverId, name })
-    }, { merge: true });
-
-    document.getElementById('modal-create').classList.add('hidden');
-    document.getElementById('new-server-name').value = '';
-    await loadUserServers();
-});
-
-// --- SUNUCUYA KATIL ---
-document.getElementById('join-server-btn').addEventListener('click', () => {
-    document.getElementById('modal-join').classList.remove('hidden');
-});
-document.getElementById('cancel-join').addEventListener('click', () => {
-    document.getElementById('modal-join').classList.add('hidden');
-});
-document.getElementById('confirm-join-btn').addEventListener('click', async () => {
-    const code = document.getElementById('join-code-input').value.trim().toUpperCase();
-    const errorEl = document.getElementById('join-error');
-    if (!code) { errorEl.textContent = 'Davet kodu giriniz.'; return; }
-
-    const { getDocs, where } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
-    const q = query(collection(db, 'servers'), where('inviteCode', '==', code));
-    const snap = await getDocs(q);
-
-    if (snap.empty) { errorEl.textContent = 'Geçersiz davet kodu.'; return; }
-
-    const serverDoc = snap.docs[0];
-    const serverId = serverDoc.id;
-    const serverName = serverDoc.data().name;
-
-    await updateDoc(doc(db, 'servers', serverId), {
-        members: arrayUnion({ uid: currentUser.uid, name: currentUser.displayName || currentUser.email })
-    });
-
-    await setDoc(doc(db, 'users', currentUser.uid), {
-        servers: arrayUnion({ id: serverId, name: serverName })
-    }, { merge: true });
-
-    document.getElementById('modal-join').classList.add('hidden');
-    document.getElementById('join-code-input').value = '';
-    await loadUserServers();
-});
-
-// --- DAVET KODU ---
-document.getElementById('invite-btn').addEventListener('click', async () => {
-    if (!currentServerId) return;
-    const snap = await getDoc(doc(db, 'servers', currentServerId));
-    const code = snap.data()?.inviteCode || '???';
-    document.getElementById('invite-code-display').textContent = code;
-    document.getElementById('modal-invite').classList.remove('hidden');
-});
-document.getElementById('cancel-invite').addEventListener('click', () => {
-    document.getElementById('modal-invite').classList.add('hidden');
-});
-document.getElementById('copy-invite-btn').addEventListener('click', () => {
-    const code = document.getElementById('invite-code-display').textContent;
-    navigator.clipboard.writeText(code).then(() => {
-        document.getElementById('copy-invite-btn').textContent = '✅ Kopyalandı!';
-        setTimeout(() => document.getElementById('copy-invite-btn').textContent = 'Kodu Kopyala', 2000);
-    });
-});
-
-// --- + BUTONU ---
-document.getElementById('add-server-icon').addEventListener('click', () => {
-    document.getElementById('server-screen').classList.remove('hidden');
-    document.getElementById('main-layout').classList.add('hidden');
-});
