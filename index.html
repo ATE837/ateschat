@@ -3,24 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ateş Chat</title>
+    <title>Ateş Chat | Discord</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
     <div id="auth-container" class="auth-box">
         <h1>🔥 Ateş Chat</h1>
-        <p>Giriş yap ve sohbete katıl!</p>
+        <p>Sohbete katılmak için giriş yapın</p>
         <button id="google-login-btn" class="login-btn">
-            <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="20">
+            <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="20" style="margin-right:10px;">
             Google ile Giriş Yap
         </button>
     </div>
 
     <div id="main-layout" class="hidden">
-        <div id="messages-container"></div>
-        <form id="chat-form">
-            <input type="text" id="message-input" placeholder="Mesaj yazın..." autocomplete="off">
+        <div id="messages-container" class="messages-area"></div>
+        <form id="chat-form" class="input-area">
+            <input type="text" id="message-input" placeholder="Mesaj gönder..." autocomplete="off">
         </form>
     </div>
 
