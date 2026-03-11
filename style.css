@@ -37,7 +37,7 @@ body {
     background-color: var(--discord-blue);
     color: white;
     border: none;
-    padding: 12px 24px;
+    padding: 12px 28px;
     border-radius: 4px;
     font-size: 16px;
     font-weight: 600;
@@ -45,14 +45,66 @@ body {
     display: flex;
     align-items: center;
     transition: background 0.2s;
-    margin-top: 20px;
+    margin: 20px auto 0 auto;
 }
 
 .login-btn:hover {
     background-color: #4752c4;
 }
 
-/* Ana Layout (Chat Ekranı) */
+/* Üst Bar */
+#top-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background-color: var(--discord-black);
+    padding: 12px 20px;
+    border-bottom: 1px solid #1a1b1e;
+    height: 50px;
+}
+
+#top-bar-title {
+    font-weight: 700;
+    font-size: 16px;
+    color: white;
+}
+
+#user-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+#user-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+}
+
+#user-name {
+    color: var(--discord-text);
+    font-size: 14px;
+    font-weight: 600;
+}
+
+#logout-btn {
+    background-color: transparent;
+    color: var(--discord-muted);
+    border: 1px solid var(--discord-muted);
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+#logout-btn:hover {
+    background-color: #ed4245;
+    color: white;
+    border-color: #ed4245;
+}
+
+/* Ana Layout */
 #main-layout {
     display: flex;
     flex-direction: column;
@@ -69,16 +121,30 @@ body {
     gap: 16px;
 }
 
-/* Tekil Mesaj Tasarımı */
+#messages-container::-webkit-scrollbar {
+    width: 6px;
+}
+
+#messages-container::-webkit-scrollbar-track {
+    background: var(--discord-dark);
+}
+
+#messages-container::-webkit-scrollbar-thumb {
+    background: var(--discord-black);
+    border-radius: 3px;
+}
+
+/* Tekil Mesaj */
 .message-item {
     display: flex;
     align-items: flex-start;
     padding: 4px 8px;
+    border-radius: 4px;
     transition: background 0.1s;
 }
 
 .message-item:hover {
-    background-color: rgba(255, 255, 255, 0.02);
+    background-color: rgba(255, 255, 255, 0.03);
 }
 
 .message-item img {
@@ -86,44 +152,96 @@ body {
     height: 40px;
     border-radius: 50%;
     margin-right: 16px;
+    flex-shrink: 0;
 }
 
-.message-item div {
+.message-item .msg-content {
     display: flex;
     flex-direction: column;
 }
 
-.message-item strong {
+.message-item .msg-name {
     color: #ffffff;
     font-size: 15px;
+    font-weight: 600;
     margin-bottom: 2px;
+}
+
+.message-item .msg-text {
+    color: var(--discord-text);
+    font-size: 15px;
+    line-height: 1.4;
+    word-break: break-word;
+}
+
+.message-item .msg-time {
+    font-size: 11px;
+    color: var(--discord-muted);
+    margin-left: 8px;
+    align-self: flex-end;
 }
 
 /* Mesaj Giriş Alanı */
 .input-area {
-    padding: 20px;
+    padding: 16px 20px;
     background-color: var(--discord-dark);
 }
 
-#message-input {
-    width: 100%;
-    padding: 14px;
-    border-radius: 8px;
-    border: none;
+#chat-form {
+    display: flex;
+    gap: 10px;
+    align-items: center;
     background-color: var(--discord-input);
+    border-radius: 8px;
+    padding: 4px 4px 4px 16px;
+}
+
+#message-input {
+    flex: 1;
+    padding: 10px 0;
+    border: none;
+    background-color: transparent;
     color: #ffffff;
-    font-size: 16px;
+    font-size: 15px;
     outline: none;
 }
 
-/* Gizleme Sınıfı (Çok Önemli!) */
+#message-input::placeholder {
+    color: var(--discord-muted);
+}
+
+#send-btn {
+    background-color: var(--discord-blue);
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+#send-btn:hover {
+    background-color: #4752c4;
+}
+
+/* Gizleme */
 .hidden {
     display: none !important;
 }
 
-/* Mobil Düzenleme */
+/* Mobil */
 @media (max-width: 600px) {
     #messages-container {
         padding: 10px;
+    }
+
+    #top-bar {
+        padding: 10px 14px;
+    }
+
+    .input-area {
+        padding: 10px 14px;
     }
 }
