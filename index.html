@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html>
-
 <head>
 
 <title>AteşChat</title>
@@ -16,6 +15,8 @@ background:#1e1f22;
 color:white;
 }
 
+/* LOGIN */
+
 #login{
 text-align:center;
 margin-top:120px;
@@ -30,20 +31,24 @@ border-radius:5px;
 
 button{
 padding:10px 20px;
-border:none;
 background:#5865F2;
+border:none;
 color:white;
 border-radius:5px;
 cursor:pointer;
 }
+
+/* APP */
 
 #app{
 display:none;
 height:100vh;
 }
 
-.sidebar{
-width:80px;
+/* LEFT SERVER BAR */
+
+.servers{
+width:70px;
 background:#2b2d31;
 height:100%;
 float:left;
@@ -59,12 +64,30 @@ border-radius:10px;
 cursor:pointer;
 }
 
-.server:hover{
-background:#5865F2;
+/* CHANNELS */
+
+.channels{
+width:200px;
+background:#313338;
+height:100%;
+float:left;
+padding:10px;
 }
 
-.chatArea{
-margin-left:80px;
+.channel{
+padding:8px;
+cursor:pointer;
+border-radius:5px;
+}
+
+.channel:hover{
+background:#404249;
+}
+
+/* CHAT AREA */
+
+.chat{
+margin-left:270px;
 margin-right:200px;
 height:100%;
 display:flex;
@@ -78,8 +101,8 @@ padding:10px;
 
 .messages{
 flex:1;
-padding:10px;
 overflow:auto;
+padding:10px;
 }
 
 .msg{
@@ -89,14 +112,12 @@ padding:8px;
 border-radius:5px;
 }
 
-.sendBox{
-padding:10px;
+.send{
 background:#313338;
+padding:10px;
 }
 
-.sendBox input{
-width:70%;
-}
+/* USERS */
 
 .users{
 width:200px;
@@ -113,6 +134,7 @@ padding:5px;
 background:#404249;
 margin:5px 0;
 border-radius:5px;
+cursor:pointer;
 }
 
 .admin{
@@ -126,6 +148,8 @@ font-weight:bold;
 
 <body>
 
+<!-- LOGIN -->
+
 <div id="login">
 
 <h1>🔥 AteşChat</h1>
@@ -137,17 +161,29 @@ font-weight:bold;
 
 </div>
 
+<!-- APP -->
+
 <div id="app">
 
-<div class="sidebar">
+<div class="servers">
 
-<div class="server" onclick="room('Genel')">💬</div>
-<div class="server" onclick="room('Oyun')">🎮</div>
-<div class="server" onclick="room('Müzik')">🎵</div>
+<div class="server">💬</div>
+<div class="server">🎮</div>
+<div class="server">🎵</div>
 
 </div>
 
-<div class="chatArea">
+<div class="channels">
+
+<h3>Kanallar</h3>
+
+<div class="channel" onclick="openRoom('Genel')"># genel</div>
+<div class="channel" onclick="openRoom('Oyun')"># oyun</div>
+<div class="channel" onclick="openRoom('Müzik')"># müzik</div>
+
+</div>
+
+<div class="chat">
 
 <div class="top">
 
@@ -155,9 +191,9 @@ font-weight:bold;
 
 </div>
 
-<div class="messages" id="chat"></div>
+<div class="messages" id="chatBox"></div>
 
-<div class="sendBox">
+<div class="send">
 
 <input id="msg" placeholder="Mesaj yaz...">
 <button onclick="send()">Gönder</button>
@@ -168,7 +204,7 @@ font-weight:bold;
 
 <div class="users">
 
-<h3>Online</h3>
+<h3>Kullanıcılar</h3>
 
 <div id="userList"></div>
 
@@ -223,13 +259,13 @@ list.innerHTML += "<div class='user'>"+currentUser+"</div>"
 
 }
 
-function room(name){
+function openRoom(name){
 
 currentRoom=name
 
 document.getElementById("roomName").innerText=name
 
-document.getElementById("chat").innerHTML=""
+document.getElementById("chatBox").innerHTML=""
 
 }
 
@@ -237,7 +273,7 @@ function send(){
 
 let msg=document.getElementById("msg").value
 
-let chat=document.getElementById("chat")
+let chat=document.getElementById("chatBox")
 
 chat.innerHTML += "<div class='msg'><b>"+currentUser+":</b> "+msg+"</div>"
 
@@ -248,5 +284,4 @@ document.getElementById("msg").value=""
 </script>
 
 </body>
-
 </html>
