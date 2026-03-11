@@ -3,46 +3,121 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ateş Chat | Sohbetin Merkezi</title>
+    <title>Ateş Chat</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-    <!-- GİRİŞ EKRANI -->
-    <div id="auth-container" class="auth-box">
-        <div class="auth-card">
-            <h1 style="font-size: 56px; margin-bottom: 8px;">🔥</h1>
-            <h1 class="auth-title">Ateş Chat</h1>
-            <p class="auth-subtitle">Arkadaşlarınla buluşmanın en sıcak yolu.</p>
-            <div class="auth-tabs">
-                <button class="tab-btn active" id="tab-login">Giriş Yap</button>
-                <button class="tab-btn" id="tab-register">Kayıt Ol</button>
-            </div>
-            <div id="form-login">
-                <input type="email" id="login-email" class="auth-input" placeholder="E-posta">
-                <input type="password" id="login-password" class="auth-input" placeholder="Şifre">
-                <button id="login-btn" class="auth-btn">Giriş Yap</button>
-                <p id="login-error" class="auth-error"></p>
-            </div>
-            <div id="form-register" class="hidden">
-                <input type="text" id="reg-name" class="auth-input" placeholder="Kullanıcı Adı">
-                <input type="email" id="reg-email" class="auth-input" placeholder="E-posta">
-                <input type="password" id="reg-password" class="auth-input" placeholder="Şifre (min. 6 karakter)">
-                <button id="register-btn" class="auth-btn">Kayıt Ol</button>
-                <p id="reg-error" class="auth-error"></p>
-            </div>
+<!-- GİRİŞ EKRANI -->
+<div id="auth-container">
+    <div class="auth-card">
+        <div class="auth-logo">🔥</div>
+        <h1 class="auth-title">Ateş Chat</h1>
+        <p class="auth-subtitle">Arkadaşlarınla buluşmanın en sıcak yolu.</p>
+
+        <div class="auth-tabs">
+            <button id="tab-login" class="tab-btn active" onclick="showTab('login')">Giriş Yap</button>
+            <button id="tab-register" class="tab-btn" onclick="showTab('register')">Kayıt Ol</button>
+        </div>
+
+        <!-- GİRİŞ FORMU -->
+        <div id="form-login">
+            <input type="email" id="login-email" class="auth-input" placeholder="E-posta">
+            <input type="password" id="login-password" class="auth-input" placeholder="Şifre">
+            <button class="auth-btn" onclick="doLogin()">Giriş Yap</button>
+            <p id="login-error" class="auth-error"></p>
+        </div>
+
+        <!-- KAYIT FORMU -->
+        <div id="form-register" style="display:none">
+            <input type="text" id="reg-name" class="auth-input" placeholder="Kullanıcı Adı">
+            <input type="email" id="reg-email" class="auth-input" placeholder="E-posta">
+            <input type="password" id="reg-password" class="auth-input" placeholder="Şifre (min. 6 karakter)">
+            <button class="auth-btn" onclick="doRegister()">Kayıt Ol</button>
+            <p id="reg-error" class="auth-error"></p>
+        </div>
+    </div>
+</div>
+
+<!-- SUNUCU SEÇİM EKRANI -->
+<div id="server-screen" style="display:none">
+    <div class="auth-card">
+        <div class="auth-logo">🔥</div>
+        <h2 class="auth-title">Hoş Geldin!</h2>
+        <p class="auth-subtitle">Bir sunucuya katıl veya yeni oluştur.</p>
+        <button class="auth-btn" style="margin-bottom:10px" onclick="showModal('modal-create')">+ Sunucu Oluştur</button>
+        <button class="auth-btn secondary" onclick="showModal('modal-join')">Sunucuya Katıl</button>
+    </div>
+</div>
+
+<!-- ANA LAYOUT -->
+<div id="main-layout" style="display:none">
+
+    <!-- SOL SUNUCU LİSTESİ -->
+    <div id="server-list">
+        <div id="server-icons"></div>
+        <button class="add-server-btn" onclick="showServerScreen()" title="Sunucu Ekle">+</button>
+    </div>
+
+    <!-- ORTA MESAJ ALANI -->
+    <div id="chat-area">
+        <div id="chat-header">
+            <span id="server-title">🔥 Ateş Chat</span>
+            <button class="invite-btn" onclick="showInvite()">🔗 Davet</button>
+        </div>
+        <div id="messages"></div>
+        <div id="chat-input-area">
+            <input type="text" id="msg-input" placeholder="Mesaj gönder..." onkeydown="if(event.key==='Enter') sendMessage()">
+            <button onclick="sendMessage()">Gönder</button>
         </div>
     </div>
 
-    <!-- SUNUCU EKRANI (giriş sonrası ilk ekran) -->
-    <div id="server-screen" class="hidden">
-        <div class="server-screen-inner">
-            <h2 class="server-screen-title">🔥 Ateş Chat'e Hoş Geldin!</h2>
-            <p class="server-screen-sub">Bir sunucuya katıl ya da yeni bir sunucu oluştur.</p>
-            <button id="create-server-btn" class="auth-btn" style="margin-bottom:12px;">+ Sunucu Oluştur</button>
-            <button id="join-server-btn" class="auth-btn" style="background:#2b2d31; border: 1px solid #5865f2;">Sunucuya Katıl</button>
-            <p id="server-screen-error" class="auth-error"></p>
+    <!-- SAĞ ÜYELER -->
+    <div id="members-panel">
+        <div class="members-title">Üyeler</div>
+        <div id="members-list"></div>
+        <div id="user-bar">
+            <div class="user-avatar" id="my-avatar">?</div>
+            <span id="my-name">Kullanıcı</span>
+            <button onclick="doLogout()">Çıkış</button>
         </div>
     </div>
 
-    <!-- SUNUCU OLUŞTUR MODAL -->
+</div>
+
+<!-- MODAL: SUNUCU OLUŞTUR -->
+<div id="modal-create" class="modal" style="display:none">
+    <div class="modal-box">
+        <h3>Sunucu Oluştur</h3>
+        <input type="text" id="new-server-name" class="auth-input" placeholder="Sunucu adı">
+        <button class="auth-btn" onclick="createServer()">Oluştur</button>
+        <button class="modal-cancel" onclick="hideModal('modal-create')">İptal</button>
+        <p id="create-error" class="auth-error"></p>
+    </div>
+</div>
+
+<!-- MODAL: SUNUCUYA KATIL -->
+<div id="modal-join" class="modal" style="display:none">
+    <div class="modal-box">
+        <h3>Sunucuya Katıl</h3>
+        <input type="text" id="join-code" class="auth-input" placeholder="Davet kodu">
+        <button class="auth-btn" onclick="joinServer()">Katıl</button>
+        <button class="modal-cancel" onclick="hideModal('modal-join')">İptal</button>
+        <p id="join-error" class="auth-error"></p>
+    </div>
+</div>
+
+<!-- MODAL: DAVET KODU -->
+<div id="modal-invite" class="modal" style="display:none">
+    <div class="modal-box">
+        <h3>Davet Kodu</h3>
+        <p style="color:#949ba4;font-size:13px;margin-bottom:12px">Arkadaşlarınla paylaş</p>
+        <div id="invite-code" class="invite-code-box"></div>
+        <button class="auth-btn" style="margin-top:12px" onclick="copyInvite()">Kopyala</button>
+        <button class="modal-cancel" onclick="hideModal('modal-invite')">Kapat</button>
+    </div>
+</div>
+
+<script type="module" src="app.js"></script>
+</body>
+            </html>
