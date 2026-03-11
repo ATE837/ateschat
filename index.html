@@ -10,15 +10,33 @@
 
     <!-- GİRİŞ EKRANI -->
     <div id="auth-container" class="auth-box">
-        <div style="text-align: center;">
-            <h1 style="font-size: 64px; margin-bottom: 10px;">🔥</h1>
-            <h1 style="color: white; margin-bottom: 8px; font-size: 32px;">Ateş Chat</h1>
-            <p style="color: #b5bac1; margin-bottom: 30px;">Arkadaşlarınla buluşmanın en sıcak yolu.</p>
-            
-            <button id="google-login-btn" class="login-btn">
-                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="20" style="margin-right:10px;">
-                Google ile Giriş Yap
-            </button>
+        <div class="auth-card">
+            <h1 style="font-size: 56px; margin-bottom: 8px;">🔥</h1>
+            <h1 class="auth-title">Ateş Chat</h1>
+            <p class="auth-subtitle">Arkadaşlarınla buluşmanın en sıcak yolu.</p>
+
+            <!-- SEKME -->
+            <div class="auth-tabs">
+                <button class="tab-btn active" id="tab-login">Giriş Yap</button>
+                <button class="tab-btn" id="tab-register">Kayıt Ol</button>
+            </div>
+
+            <!-- GİRİŞ FORMU -->
+            <div id="form-login">
+                <input type="email" id="login-email" class="auth-input" placeholder="E-posta">
+                <input type="password" id="login-password" class="auth-input" placeholder="Şifre">
+                <button id="login-btn" class="auth-btn">Giriş Yap</button>
+                <p id="login-error" class="auth-error"></p>
+            </div>
+
+            <!-- KAYIT FORMU -->
+            <div id="form-register" class="hidden">
+                <input type="text" id="reg-name" class="auth-input" placeholder="Kullanıcı Adı">
+                <input type="email" id="reg-email" class="auth-input" placeholder="E-posta">
+                <input type="password" id="reg-password" class="auth-input" placeholder="Şifre (min. 6 karakter)">
+                <button id="register-btn" class="auth-btn">Kayıt Ol</button>
+                <p id="reg-error" class="auth-error"></p>
+            </div>
         </div>
     </div>
 
@@ -29,9 +47,9 @@
         <div id="top-bar">
             <span id="top-bar-title">🔥 Ateş Chat</span>
             <div id="user-info">
-                <img id="user-avatar" src="" alt="avatar">
+                <div id="user-avatar-text"></div>
                 <span id="user-name"></span>
-                <button id="logout-btn">Çıkış Yap</button>
+                <button id="logout-btn">Çıkış</button>
             </div>
         </div>
 
@@ -41,9 +59,13 @@
         <!-- MESAJ GİRİŞ ALANI -->
         <div class="input-area">
             <form id="chat-form">
-                <input type="text" id="message-input" placeholder="Ateş Chat'e mesaj gönder..." autocomplete="off">
+                <input type="text" id="message-input" placeholder="Mesaj gönder..." autocomplete="off">
                 <button type="submit" id="send-btn">Gönder</button>
             </form>
         </div>
 
     </div>
+
+    <script type="module" src="app.js"></script>
+</body>
+</html>
