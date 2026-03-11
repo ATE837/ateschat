@@ -1,19 +1,61 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getAuth, GoogleAuthProvider } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-import { getFirestore } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+* { box-sizing: border-box; }
+body, html {
+    margin: 0; padding: 0;
+    width: 100%; height: 100%;
+    background-color: #313338;
+    color: #dbdee1;
+    font-family: 'Segoe UI', sans-serif;
+    overflow: hidden;
+}
 
-const firebaseConfig = {
-  apiKey: "AIzaSyCwwqd4FfhvLRQu8DUUfbdorIu3iJpkHMM",
-  authDomain: "ateschat-cd9f4.firebaseapp.com",
-  databaseURL: "https://ateschat-cd9f4-default-rtdb.firebaseio.com",
-  projectId: "ateschat-cd9f4",
-  storageBucket: "ateschat-cd9f4.firebasestorage.app",
-  messagingSenderId: "174732212740",
-  appId: "1:174732212740:web:dcd4b60ed7cc380ca95351",
-  measurementId: "G-1CBZNR0W3E"
-};
+.hidden { display: none !important; }
 
-const app = initializeApp(firebaseConfig);
-export const auth = getAuth(app);
-export const db = getFirestore(app);
-export const provider = new GoogleAuthProvider();
+/* Giriş Ekranı */
+.auth-box {
+    display: flex; justify-content: center; align-items: center;
+    height: 100vh; background-color: #1e1f22; text-align: center;
+}
+.auth-content h1 { font-size: 32px; margin-bottom: 10px; }
+.login-btn {
+    background: #5865f2; color: white; border: none; padding: 12px 24px;
+    border-radius: 4px; cursor: pointer; display: flex; align-items: center; gap: 10px;
+    font-size: 16px; margin: 20px auto;
+}
+
+/* Ana Düzen */
+#main-layout { display: flex; height: 100vh; width: 100vw; }
+
+/* Yan Menü */
+.sidebar { width: 300px; display: flex; background: #2b2d31; }
+.server-list { width: 72px; background: #1e1f22; padding: 12px 0; display: flex; flex-direction: column; align-items: center; }
+.channel-list { flex: 1; padding: 20px 10px; position: relative; }
+.user-panel { position: absolute; bottom: 0; left: 0; width: 100%; background: #232428; padding: 10px; display: flex; align-items: center; gap: 8px; }
+#user-avatar { width: 32px; height: 32px; border-radius: 50%; }
+
+/* Mesaj Alanı */
+.chat-area { flex: 1; display: flex; flex-direction: column; background: #313338; }
+.chat-header { height: 48px; border-bottom: 1px solid #26272b; display: flex; align-items: center; padding: 0 16px; font-weight: bold; }
+
+/* İŞTE ÇÖZÜM: Kaydırılabilir Mesaj Kutusu */
+.messages-container {
+    flex: 1;
+    overflow-y: auto; /* Aşağı yukarı kaymayı sağlar */
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.message-item { display: flex; gap: 16px; }
+.message-item img { width: 40px; height: 40px; border-radius: 50%; }
+
+.message-input-container { padding: 0 20px 20px; }
+#message-input {
+    width: 100%; padding: 12px; border-radius: 8px; border: none;
+    background: #383a40; color: white; outline: none;
+}
+
+/* Mobilde Yan Menüyü Gizle (Opsiyonel) */
+@media (max-width: 600px) {
+    .sidebar { display: none; }
+}
