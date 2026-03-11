@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>AteşChat V20 🔥</title>
+<title>AteşChat 🔥</title>
 
 <style>
 
@@ -96,49 +96,41 @@ flex:1;
 <div id="chat">
 
 <div id="top">
-
 <div id="user"></div>
-
 <button onclick="logout()">Çıkış</button>
-
 </div>
 
 <div id="messages"></div>
 
 <div id="sendArea">
-
 <input id="messageInput" placeholder="Mesaj yaz...">
 <button onclick="send()">Gönder</button>
-
 </div>
 
 </div>
-
 
 
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
-
 <script>
 
 const firebaseConfig = {
+  apiKey: "AIzaSyCwwqd4FfhvLRQu8DUUfbdorIu3iJpkHMM",
+  authDomain: "ateschat-cd9f4.firebaseapp.com",
+  databaseURL: "https://ateschat-cd9f4-default-rtdb.firebaseio.com",
+  projectId: "ateschat-cd9f4",
+  storageBucket: "ateschat-cd9f4.firebasestorage.app",
+  messagingSenderId: "174732212740",
+  appId: "1:174732212740:web:dcd4b60ed7cc380ca95351",
+  measurementId: "G-1CBZNR0W3E"
+};
 
-apiKey: "API_KEY",
-authDomain: "AUTH_DOMAIN",
-databaseURL: "DATABASE_URL",
-projectId: "PROJECT_ID",
-storageBucket: "STORAGE_BUCKET",
-messagingSenderId: "SENDER_ID",
-appId: "APP_ID"
+firebase.initializeApp(firebaseConfig);
 
-}
-
-firebase.initializeApp(firebaseConfig)
-
-const auth = firebase.auth()
-const db = firebase.database()
+const auth = firebase.auth();
+const db = firebase.database();
 
 function register(){
 
@@ -151,9 +143,7 @@ auth.createUserWithEmailAndPassword(email,password)
 .then(user=>{
 
 db.ref("users/"+user.user.uid).set({
-
 username:username
-
 })
 
 })
@@ -177,9 +167,7 @@ document.getElementById("login").style.display="none"
 document.getElementById("chat").style.display="block"
 
 db.ref("users/"+user.uid).once("value",snap=>{
-
 document.getElementById("user").innerText=snap.val().username
-
 })
 
 loadMessages()
@@ -191,7 +179,6 @@ loadMessages()
 function send(){
 
 let text=document.getElementById("messageInput").value
-
 let user=auth.currentUser
 
 db.ref("users/"+user.uid).once("value",snap=>{
@@ -199,10 +186,8 @@ db.ref("users/"+user.uid).once("value",snap=>{
 let name=snap.val().username
 
 db.ref("messages").push({
-
 name:name,
 text:text
-
 })
 
 })
@@ -219,7 +204,6 @@ let m=snap.val()
 
 let div=document.createElement("div")
 div.className="msg"
-
 div.innerText=m.name+" : "+m.text
 
 document.getElementById("messages").appendChild(div)
@@ -231,7 +215,6 @@ document.getElementById("messages").appendChild(div)
 function logout(){
 
 auth.signOut()
-
 location.reload()
 
 }
