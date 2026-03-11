@@ -14,21 +14,16 @@
         <div class="auth-logo">🔥</div>
         <h1 class="auth-title">Ateş Chat</h1>
         <p class="auth-subtitle">Arkadaşlarınla buluşmanın en sıcak yolu.</p>
-
         <div class="auth-tabs">
             <button id="tab-login" class="tab-btn active" onclick="showTab('login')">Giriş Yap</button>
             <button id="tab-register" class="tab-btn" onclick="showTab('register')">Kayıt Ol</button>
         </div>
-
-        <!-- GİRİŞ FORMU -->
         <div id="form-login">
             <input type="email" id="login-email" class="auth-input" placeholder="E-posta">
             <input type="password" id="login-password" class="auth-input" placeholder="Şifre">
             <button class="auth-btn" onclick="doLogin()">Giriş Yap</button>
             <p id="login-error" class="auth-error"></p>
         </div>
-
-        <!-- KAYIT FORMU -->
         <div id="form-register" style="display:none">
             <input type="text" id="reg-name" class="auth-input" placeholder="Kullanıcı Adı">
             <input type="email" id="reg-email" class="auth-input" placeholder="E-posta">
@@ -63,24 +58,26 @@
     <div id="chat-area">
         <div id="chat-header">
             <span id="server-title">🔥 Ateş Chat</span>
-            <button class="invite-btn" onclick="showInvite()">🔗 Davet</button>
+            <div id="header-buttons">
+                <button class="invite-btn" onclick="showInvite()">🔗 Davet</button>
+                <div id="user-info-bar">
+                    <div class="user-avatar-small" id="my-avatar">?</div>
+                    <span id="my-name">Kullanıcı</span>
+                </div>
+                <button class="logout-btn" onclick="doLogout()">⬅ Çıkış</button>
+            </div>
         </div>
         <div id="messages"></div>
-        <div id="chat-input-area">
+        <div id="chat-input-wrap">
             <input type="text" id="msg-input" placeholder="Mesaj gönder..." onkeydown="if(event.key==='Enter') sendMessage()">
             <button onclick="sendMessage()">Gönder</button>
         </div>
     </div>
 
-    <!-- SAĞ ÜYELER -->
+    <!-- SAĞ ÜYELER (masaüstü) -->
     <div id="members-panel">
         <div class="members-title">Üyeler</div>
         <div id="members-list"></div>
-        <div id="user-bar">
-            <div class="user-avatar" id="my-avatar">?</div>
-            <span id="my-name">Kullanıcı</span>
-            <button onclick="doLogout()">Çıkış</button>
-        </div>
     </div>
 
 </div>
@@ -120,4 +117,4 @@
 
 <script type="module" src="app.js"></script>
 </body>
-            </html>
+    </html>
