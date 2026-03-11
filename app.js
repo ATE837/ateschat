@@ -1,136 +1,68 @@
-let currentUser=null
-let currentRoom="global"
+import { auth, db, provider } from './firebase.js';
+import { signInWithPopup, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+import { collection, addDoc, query, orderBy, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-function register(){
+const authCont = document.getElementById('auth-container');
+const mainLayout = document.getElementById('main-layout');
+const loginBtn = document.getElementById('google-login-btn');
+const logoutBtn = document.getElementById('logout-btn');
+const chatForm = document.getElementById('chat-form');
+const msgInput = document.getElementById('message-input');
+const msgContainer = document.getElementById('messages-container');
 
-let username=document.getElementById("username").value
-let password=document.getElementById("password").value
-let photo=document.getElementById("photo").value
+onAuthStateChanged(auth, (user) => {
+    if (user) {
+        authCont.classList.add('hidden');
+        mainLayout.classList.remove('hidden');
+        document.getElementById('user-name').innerText = user.displayName;
+        document.getElementById('user-avatar').src = user.photoURL;
+        loadMessages();
+    } else {
+        authCont.classList.remove('hidden');
+        mainLayout.classList.add('hidden');
+    }
+});
 
-db.ref("users/"+username).set({
+loginBtn.onclick = () => signInWithPopup(auth, provider);
+logoutBtn.onclick = () => signOut(auth);
 
-password:password,
-photo:photo
+chatForm.onsubmit = async (e) => {
+    e.preventDefault();
+    if (msgInput.value.trim() === "") return;
+    try {
+        await addDoc(collection(db, "messages"), {
+            text: msgInput.value,
+            uid: auth.currentUser.uid,
+            name: auth.currentUser.displayName,
+            photo: auth.currentUser.photoURL,
+            createdAt: serverTimestamp()
+        });
+        msgInput.value = "";
+    } catch (error) { console.error("Mesaj gönderilemedi:", error); }
+};
 
-})
-
-alert("Kayıt başarılı")
-
-}
-
-function login(){
-
-let username=document.getElementById("username").value
-let password=document.getElementById("password").value
-
-db.ref("users/"+username).once("value",snap=>{
-
-let data=snap.val()
-
-if(!data){
-alert("Kullanıcı bulunamadı")
-return
-}
-
-if(data.password!=password){
-alert("Şifre yanlış")
-return
-}
-
-currentUser=username
-
-document.getElementById("login").style.display="none"
-document.getElementById("app").style.display="block"
-
-loadUsers()
-loadMessages()
-
-})
-
-}
-
-function openRoom(room){
-
-currentRoom=room
-
-document.getElementById("messages").innerHTML=""
-
-document.getElementById("roomName").innerText=room
-
-loadMessages()
-
-}
-
-function send(){
-
-let text=document.getElementById("messageInput").value
-
-db.ref("rooms/"+currentRoom).push({
-
-name:currentUser,
-text:text
-
-})
-
-document.getElementById("messageInput").value=""
-
-}
-
-function loadMessages(){
-
-db.ref("rooms/"+currentRoom).on("child_added",snap=>{
-
-let m=snap.val()
-
-db.ref("users/"+m.name).once("value",user=>{
-
-let data=user.val()
-
-let div=document.createElement("div")
-div.className="msg"
-
-let img=document.createElement("img")
-img.src=data.photo || "https://i.imgur.com/4M34hi2.png"
-
-let text=document.createElement("div")
-text.innerText=m.name+" : "+m.text
-
-div.appendChild(img)
-div.appendChild(text)
-
-document.getElementById("messages").appendChild(div)
-
-document.title="Yeni mesaj 🔔"
-
-})
-
-})
-
-}
-
-function loadUsers(){
-
-db.ref("users").on("value",snap=>{
-
-let users=snap.val()
-
-document.getElementById("users").innerHTML=""
-
-for(let u in users){
-
-let div=document.createElement("div")
-div.innerText=u
-
-document.getElementById("users").appendChild(div)
-
-}
-
-})
-
-}
-
-function logout(){
-
-location.reload()
-
+function loadMessages() {
+    const q = query(collection(db, "messages"), orderBy("createdAt", "asc"));
+    onSnapshot(q, (snapshot) => {
+        msgContainer.innerHTML = "";
+        snapshot.forEach((doc) => {
+            const data = doc.data();
+            const msgDiv = document.createElement('div');
+            msgDiv.className = "message";
+            msgDiv.innerHTML = `
+                <div style="display:flex; gap:12px; margin-bottom:15px; padding: 5px; border-radius: 5px;">
+                    <img src="${data.photo}" style="width:42px; height:42px; border-radius:50%">
+                    <div>
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            <span style="font-weight:600; color:#fff; cursor:pointer;">${data.name}</span>
+                            <span style="font-size:11px; color:#949BA4;">${data.createdAt ? new Date(data.createdAt.seconds * 1000).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : 'Şimdi'}</span>
+                        </div>
+                        <div style="color:#dbdee1; font-size:15px; margin-top:2px;">${data.text}</div>
+                    </div>
+                </div>
+            `;
+            msgContainer.appendChild(msgDiv);
+        });
+        msgContainer.scrollTop = msgContainer.scrollHeight;
+    });
 }
