@@ -2,33 +2,36 @@ let room = "global"
 
 function send(){
 
-let user = auth.currentUser.email
-let msg = document.getElementById("messageInput").value
+let input = document.getElementById("messageInput")
+let text = input.value
 
-if(msg === "") return
+if(text == "") return
 
-db.ref("messages/"+room).push({
+let user = firebase.auth().currentUser.email
+
+firebase.database().ref("messages/"+room).push({
 
 user:user,
-text:msg,
+text:text,
 time:Date.now()
 
 })
 
-document.getElementById("messageInput").value=""
+input.value=""
 
 }
 
 
 
-db.ref("messages/global").on("child_added",function(snapshot){
+firebase.database().ref("messages/global").on("child_added",function(snapshot){
 
 let data = snapshot.val()
 
-let box = document.createElement("div")
+let div = document.createElement("div")
+div.className="message"
 
-box.innerText = data.user + " : " + data.text
+div.innerHTML = "<b>"+data.user+"</b>: "+data.text
 
-document.getElementById("messages").appendChild(box)
+document.getElementById("messages").appendChild(div)
 
 })
