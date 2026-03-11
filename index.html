@@ -1,115 +1,14 @@
 <!DOCTYPE html>
 <html>
+
 <head>
 
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 
-<title>AteşChat V23 PRO 🔥</title>
+<title>AteşChat V24 ULTRA 🔥</title>
 
-<style>
-
-body{
-margin:0;
-font-family:Arial;
-background:#0f0f0f;
-color:white;
-}
-
-#login{
-display:flex;
-flex-direction:column;
-align-items:center;
-margin-top:120px;
-gap:15px;
-}
-
-h1{
-font-size:40px;
-}
-
-input{
-padding:16px;
-border-radius:10px;
-border:none;
-width:80%;
-font-size:18px;
-}
-
-button{
-padding:16px;
-border:none;
-border-radius:10px;
-background:#ff6a00;
-color:white;
-font-weight:bold;
-width:80%;
-font-size:18px;
-}
-
-#error{
-color:red;
-}
-
-#chat{
-display:none;
-height:100vh;
-}
-
-#top{
-background:#1a1a1a;
-padding:15px;
-display:flex;
-justify-content:space-between;
-font-size:18px;
-}
-
-#container{
-display:flex;
-height:75vh;
-}
-
-#messages{
-flex:3;
-overflow:auto;
-padding:15px;
-}
-
-#users{
-flex:1;
-background:#151515;
-padding:10px;
-overflow:auto;
-}
-
-.msg{
-margin:10px 0;
-padding:14px;
-background:#1e1e1e;
-border-radius:10px;
-font-size:18px;
-}
-
-.user{
-padding:8px;
-border-bottom:1px solid #333;
-}
-
-#sendArea{
-position:fixed;
-bottom:0;
-width:100%;
-display:flex;
-background:#111;
-padding:10px;
-}
-
-#messageInput{
-flex:1;
-font-size:18px;
-}
-
-</style>
+<link rel="stylesheet" href="style.css">
 
 </head>
 
@@ -119,8 +18,9 @@ font-size:18px;
 
 <h1>AteşChat 🔥</h1>
 
-<input id="email" placeholder="Gmail">
+<input id="username" placeholder="Kullanıcı adı">
 <input id="password" type="password" placeholder="Şifre">
+<input id="photo" placeholder="Profil foto linki (opsiyonel)">
 
 <button onclick="register()">Kayıt Ol</button>
 <button onclick="login()">Giriş Yap</button>
@@ -130,31 +30,37 @@ font-size:18px;
 </div>
 
 
-<div id="chat">
+<div id="app">
 
-<div id="top">
+<div id="sidebar">
 
-<div id="user"></div>
+<h2>Odalar</h2>
 
-<button onclick="logout()">Çıkış</button>
+<div onclick="openRoom('global')">🌍 Global</div>
+<div onclick="openRoom('oda1')">🎮 Oda 1</div>
+<div onclick="openRoom('oda2')">💬 Oda 2</div>
 
-</div>
-
-
-<div id="container">
-
-<div id="messages"></div>
+<h2>Kullanıcılar</h2>
 
 <div id="users"></div>
 
 </div>
 
 
+<div id="chat">
+
+<div id="top">
+
+<div id="roomName">Global Chat</div>
+<button onclick="logout()">Çıkış</button>
+
+</div>
+
+<div id="messages"></div>
+
 <div id="sendArea">
 
 <input id="messageInput" placeholder="Mesaj yaz...">
-
-<button onclick="emoji()">😀</button>
 
 <button onclick="send()">Gönder</button>
 
@@ -162,163 +68,14 @@ font-size:18px;
 
 </div>
 
+</div>
 
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
-<script>
-
-const firebaseConfig = {
-apiKey: "AIzaSyCwwqd4FfhvLRQu8DUUfbdorIu3iJpkHMM",
-authDomain: "ateschat-cd9f4.firebaseapp.com",
-databaseURL: "https://ateschat-cd9f4-default-rtdb.firebaseio.com",
-projectId: "ateschat-cd9f4",
-storageBucket: "ateschat-cd9f4.firebasestorage.app",
-messagingSenderId: "174732212740",
-appId: "1:174732212740:web:dcd4b60ed7cc380ca95351",
-measurementId: "G-1CBZNR0W3E"
-};
-
-firebase.initializeApp(firebaseConfig);
-
-const auth=firebase.auth();
-const db=firebase.database();
-
-function showError(msg){
-document.getElementById("error").innerText=msg
-}
-
-function register(){
-
-let email=document.getElementById("email").value
-let password=document.getElementById("password").value
-
-auth.createUserWithEmailAndPassword(email,password)
-
-.then(()=>{
-
-alert("Kayıt başarılı!")
-
-})
-
-.catch(e=>{
-
-showError(e.message)
-
-})
-
-}
-
-function login(){
-
-let email=document.getElementById("email").value
-let password=document.getElementById("password").value
-
-auth.signInWithEmailAndPassword(email,password)
-
-.catch(e=>{
-
-showError(e.message)
-
-})
-
-}
-
-auth.onAuthStateChanged(user=>{
-
-if(user){
-
-document.getElementById("login").style.display="none"
-document.getElementById("chat").style.display="block"
-
-document.getElementById("user").innerText=user.email
-
-db.ref("online/"+user.uid).set(user.email)
-
-loadMessages()
-loadUsers()
-
-}
-
-})
-
-function send(){
-
-let text=document.getElementById("messageInput").value
-
-if(text=="") return
-
-let user=auth.currentUser
-
-db.ref("messages").push({
-name:user.email,
-text:text
-})
-
-document.getElementById("messageInput").value=""
-
-}
-
-function loadMessages(){
-
-db.ref("messages").on("child_added",snap=>{
-
-let m=snap.val()
-
-let div=document.createElement("div")
-div.className="msg"
-div.innerText=m.name+" : "+m.text
-
-document.getElementById("messages").appendChild(div)
-
-document.getElementById("messages").scrollTop=999999
-
-})
-
-}
-
-function loadUsers(){
-
-db.ref("online").on("value",snap=>{
-
-let users=snap.val()
-
-document.getElementById("users").innerHTML=""
-
-for(let id in users){
-
-let div=document.createElement("div")
-div.className="user"
-div.innerText=users[id]
-
-document.getElementById("users").appendChild(div)
-
-}
-
-})
-
-}
-
-function emoji(){
-
-document.getElementById("messageInput").value+="😀"
-
-}
-
-function logout(){
-
-let user=auth.currentUser
-
-db.ref("online/"+user.uid).remove()
-
-auth.signOut()
-
-location.reload()
-
-}
-
-</script>
+<script src="firebase.js"></script>
+<script src="app.js"></script>
 
 </body>
-  </html>
+
+</html>
