@@ -1,13 +1,40 @@
-// app.js içindeki mesaj gönderme fonksiyonunu bununla değiştir
-async function sendMessage(text) {
-  const user = auth.currentUser;
-  if (user) {
-    await addDoc(collection(db, "messages"), {
-      text: text,
-      name: user.displayName || "Anonim Ateş", // İsim yoksa bunu yazar
-      photo: user.photoURL || "https://via.placeholder.com/40", // Resim yoksa bunu koyar
-      uid: user.uid,
-      createdAt: serverTimestamp()
-    });
-  }
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+const firebaseConfig = {
+    apiKey: "SENIN_API_KEY",
+    authDomain: "ate837.firebaseapp.com",
+    projectId: "ate837",
+    storageBucket: "ate837.appspot.com",
+    messagingSenderId: "SENIN_ID",
+    appId: "SENIN_APP_ID"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+const provider = new GoogleAuthProvider();
+
+// Giriş Butonu Fonksiyonu
+const loginBtn = document.getElementById('google-login-btn');
+if (loginBtn) {
+    loginBtn.onclick = () => {
+        signInWithPopup(auth, provider)
+            .then((result) => {
+                console.log("Giriş başarılı!");
+            }).catch((error) => {
+                console.error("Hata:", error.message);
+                alert("Giriş yapılamadı: " + error.message);
+            });
+    };
 }
+
+// Ekran Değiştirme (Giriş yapınca ana sayfayı aç)
+onAuthStateChanged(auth, (user) => {
+    if (user) {
+        document.getElementById('auth-container').classList.add('hidden');
+        document.getElementById('main-layout').classList.remove('hidden');
+        loadMessages();
+    }
+});
