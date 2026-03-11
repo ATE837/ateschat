@@ -1,19 +1,15 @@
-// SAYFA AÇILINCA
-
-window.onload = function(){
-
-let user = localStorage.getItem("user")
+auth.onAuthStateChanged(function(user){
 
 if(user){
 
-document.getElementById("login").style.display = "none"
-document.getElementById("app").style.display = "block"
+document.getElementById("login").style.display="none"
+document.getElementById("app").style.display="block"
 
 }else{
 
-document.getElementById("login").style.display = "flex"
-document.getElementById("app").style.display = "none"
+document.getElementById("login").style.display="flex"
+document.getElementById("app").style.display="none"
 
 }
 
-}
+})
