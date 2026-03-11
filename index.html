@@ -14,22 +14,16 @@
             <h1 style="font-size: 56px; margin-bottom: 8px;">🔥</h1>
             <h1 class="auth-title">Ateş Chat</h1>
             <p class="auth-subtitle">Arkadaşlarınla buluşmanın en sıcak yolu.</p>
-
-            <!-- SEKME -->
             <div class="auth-tabs">
                 <button class="tab-btn active" id="tab-login">Giriş Yap</button>
                 <button class="tab-btn" id="tab-register">Kayıt Ol</button>
             </div>
-
-            <!-- GİRİŞ FORMU -->
             <div id="form-login">
                 <input type="email" id="login-email" class="auth-input" placeholder="E-posta">
                 <input type="password" id="login-password" class="auth-input" placeholder="Şifre">
                 <button id="login-btn" class="auth-btn">Giriş Yap</button>
                 <p id="login-error" class="auth-error"></p>
             </div>
-
-            <!-- KAYIT FORMU -->
             <div id="form-register" class="hidden">
                 <input type="text" id="reg-name" class="auth-input" placeholder="Kullanıcı Adı">
                 <input type="email" id="reg-email" class="auth-input" placeholder="E-posta">
@@ -40,32 +34,15 @@
         </div>
     </div>
 
-    <!-- ANA EKRAN -->
-    <div id="main-layout" class="hidden">
-
-        <!-- ÜST BAR -->
-        <div id="top-bar">
-            <span id="top-bar-title">🔥 Ateş Chat</span>
-            <div id="user-info">
-                <div id="user-avatar-text"></div>
-                <span id="user-name"></span>
-                <button id="logout-btn">Çıkış</button>
-            </div>
+    <!-- SUNUCU EKRANI (giriş sonrası ilk ekran) -->
+    <div id="server-screen" class="hidden">
+        <div class="server-screen-inner">
+            <h2 class="server-screen-title">🔥 Ateş Chat'e Hoş Geldin!</h2>
+            <p class="server-screen-sub">Bir sunucuya katıl ya da yeni bir sunucu oluştur.</p>
+            <button id="create-server-btn" class="auth-btn" style="margin-bottom:12px;">+ Sunucu Oluştur</button>
+            <button id="join-server-btn" class="auth-btn" style="background:#2b2d31; border: 1px solid #5865f2;">Sunucuya Katıl</button>
+            <p id="server-screen-error" class="auth-error"></p>
         </div>
-
-        <!-- MESAJLAR -->
-        <div id="messages-container"></div>
-
-        <!-- MESAJ GİRİŞ ALANI -->
-        <div class="input-area">
-            <form id="chat-form">
-                <input type="text" id="message-input" placeholder="Mesaj gönder..." autocomplete="off">
-                <button type="submit" id="send-btn">Gönder</button>
-            </form>
-        </div>
-
     </div>
 
-    <script type="module" src="app.js"></script>
-</body>
-</html>
+    <!-- SUNUCU OLUŞTUR MODAL -->
