@@ -1,14 +1,108 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<title>AteşChat</title>
+
+<style>
+
+body{
+margin:0;
+font-family:Arial;
+background:#36393f;
+color:white;
+}
+
+#login{
+display:flex;
+flex-direction:column;
+align-items:center;
+justify-content:center;
+height:100vh;
+gap:10px;
+}
+
+#app{
+display:none;
+height:100vh;
+flex-direction:column;
+}
+
+#messages{
+flex:1;
+overflow:auto;
+padding:10px;
+}
+
+#input{
+display:flex;
+background:#40444b;
+padding:10px;
+}
+
+#text{
+flex:1;
+padding:10px;
+border:none;
+background:#303339;
+color:white;
+}
+
+button{
+background:#5865f2;
+border:none;
+padding:10px;
+color:white;
+border-radius:6px;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div id="login">
+
+<h2>AteşChat</h2>
+
+<input id="email" placeholder="Email">
+<input id="password" type="password" placeholder="Şifre">
+
+<button onclick="register()">Kayıt Ol</button>
+<button onclick="login()">Giriş Yap</button>
+
+</div>
+
+<div id="app">
+
+<div id="messages"></div>
+
+<div id="input">
+
+<input id="text" placeholder="Mesaj yaz">
+<button onclick="sendMessage()">Gönder</button>
+
+</div>
+
+</div>
+
 <script type="module">
 
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getDatabase, ref, push, onChildAdded } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+import { initializeApp }
+from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+
+import { getDatabase, ref, push, onChildAdded }
+from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
 import {
 getAuth,
 createUserWithEmailAndPassword,
 signInWithEmailAndPassword,
-GoogleAuthProvider,
-signInWithPopup,
 onAuthStateChanged
 }
 from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
@@ -24,7 +118,9 @@ appId:"1:174732212740:web:dcd4b60ed7cc380ca95351"
 };
 
 const app=initializeApp(firebaseConfig);
+
 const db=getDatabase(app);
+
 const auth=getAuth(app);
 
 let user=null;
@@ -32,17 +128,13 @@ let user=null;
 onAuthStateChanged(auth,(u)=>{
 
 if(u){
+
 user=u;
 
 document.getElementById("login").style.display="none";
 document.getElementById("app").style.display="flex";
 
 loadMessages();
-
-}else{
-
-document.getElementById("login").style.display="flex";
-document.getElementById("app").style.display="none";
 
 }
 
@@ -63,14 +155,6 @@ let email=document.getElementById("email").value;
 let password=document.getElementById("password").value;
 
 signInWithEmailAndPassword(auth,email,password);
-
-}
-
-window.googleLogin=function(){
-
-const provider=new GoogleAuthProvider();
-
-signInWithPopup(auth,provider);
 
 }
 
@@ -105,4 +189,8 @@ document.getElementById("text").value="";
 
 }
 
-  </script>
+</script>
+
+</body>
+
+</html>
