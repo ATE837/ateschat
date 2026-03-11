@@ -3,27 +3,38 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ateş Chat | Discord</title>
+    <title>Ateş Chat | Sohbetin Merkezi</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
     <div id="auth-container" class="auth-box">
-        <h1>🔥 Ateş Chat</h1>
-        <p>Sohbete katılmak için giriş yapın</p>
-        <button id="google-login-btn" class="login-btn">
-            <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="20" style="margin-right:10px;">
-            Google ile Giriş Yap
-        </button>
+        <div style="text-align: center;">
+            <h1 style="font-size: 48px; margin-bottom: 10px;">🔥</h1>
+            <h1 style="color: white; margin-bottom: 5px;">Ateş Chat</h1>
+            <p style="color: #b5bac1; margin-bottom: 20px;">Arkadaşlarınla buluşmanın en sıcak yolu.</p>
+            
+            <button id="google-login-btn" class="login-btn">
+                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="20" style="margin-right:10px;">
+                Google ile Giriş Yap
+            </button>
+        </div>
     </div>
 
     <div id="main-layout" class="hidden">
-        <div id="messages-container" class="messages-area"></div>
-        <form id="chat-form" class="input-area">
-            <input type="text" id="message-input" placeholder="Mesaj gönder..." autocomplete="off">
-        </form>
+        
+        <div id="messages-container">
+            </div>
+
+        <div class="input-area">
+            <form id="chat-form">
+                <input type="text" id="message-input" placeholder="Ateş Chat'e mesaj gönder..." autocomplete="off">
+            </form>
+        </div>
+
     </div>
 
     <script type="module" src="app.js"></script>
+
 </body>
 </html>
