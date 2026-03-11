@@ -25,6 +25,22 @@ align-items:center;
 height:100vh;
 }
 
+#login input{
+padding:10px;
+border-radius:6px;
+border:none;
+margin-top:10px;
+}
+
+#login button{
+margin-top:10px;
+padding:10px 20px;
+border:none;
+border-radius:6px;
+background:#5865f2;
+color:white;
+}
+
 #chat{
 display:none;
 flex-direction:column;
@@ -35,6 +51,8 @@ height:100vh;
 flex:1;
 overflow-y:auto;
 padding:20px;
+display:flex;
+flex-direction:column;
 }
 
 .message{
@@ -56,16 +74,16 @@ background:#2b2d31;
 flex:1;
 padding:10px;
 border:none;
-border-radius:5px;
+border-radius:6px;
 }
 
 .inputArea button{
 margin-left:10px;
 padding:10px;
 border:none;
+border-radius:6px;
 background:#5865f2;
 color:white;
-border-radius:5px;
 }
 
 </style>
@@ -124,7 +142,6 @@ username=document.getElementById("usernameInput").value;
 if(username==="") return;
 
 document.getElementById("login").style.display="none";
-
 document.getElementById("chat").style.display="flex";
 
 }
@@ -155,6 +172,9 @@ div.className="message";
 div.innerHTML="<span class='username'>"+msg.user+":</span> "+msg.text;
 
 document.getElementById("messages").appendChild(div);
+
+document.getElementById("messages").scrollTop =
+document.getElementById("messages").scrollHeight;
 
 });
 
