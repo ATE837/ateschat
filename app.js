@@ -10,7 +10,6 @@ const chatForm = document.getElementById('chat-form');
 const msgInput = document.getElementById('message-input');
 const msgContainer = document.getElementById('messages-container');
 
-// Giriş Durumunu İzle
 onAuthStateChanged(auth, (user) => {
     if (user) {
         authCont.classList.add('hidden');
@@ -24,47 +23,33 @@ onAuthStateChanged(auth, (user) => {
     }
 });
 
-// Google ile Giriş
 loginBtn.onclick = () => signInWithPopup(auth, provider);
-// Çıkış Yap
 logoutBtn.onclick = () => signOut(auth);
 
-// Mesaj Gönder
 chatForm.onsubmit = async (e) => {
     e.preventDefault();
-    if (msgInput.value.trim() === "") return;
+    if (!msgInput.value.trim()) return;
     try {
         await addDoc(collection(db, "messages"), {
             text: msgInput.value,
-            uid: auth.currentUser.uid,
             name: auth.currentUser.displayName,
             photo: auth.currentUser.photoURL,
             createdAt: serverTimestamp()
         });
         msgInput.value = "";
-    } catch (error) { console.error("Hata:", error); }
+    } catch (s) { console.error(s); }
 };
 
-// Mesajları Getir
 function loadMessages() {
     const q = query(collection(db, "messages"), orderBy("createdAt", "asc"));
     onSnapshot(q, (snapshot) => {
         msgContainer.innerHTML = "";
         snapshot.forEach((doc) => {
             const data = doc.data();
-            const msgDiv = document.createElement('div');
-            msgDiv.className = "message-item";
-            msgDiv.innerHTML = `
-                <img src="${data.photo}" style="width:40px; height:40px; border-radius:50%">
-                <div>
-                    <div style="display:flex; gap:10px; align-items:center;">
-                        <strong style="color:#fff;">${data.name}</strong>
-                        <small style="color:#949BA4; font-size:10px;">${data.createdAt ? new Date(data.createdAt.seconds * 1000).toLocaleTimeString() : ''}</small>
-                    </div>
-                    <div style="color:#DBDEE1;">${data.text}</div>
-                </div>
-            `;
-            msgContainer.appendChild(msgDiv);
+            const div = document.createElement('div');
+            div.className = "message-item";
+            div.innerHTML = `<img src="${data.photo}"><div><strong>${data.name}</strong><div>${data.text}</div></div>`;
+            msgContainer.appendChild(div);
         });
         msgContainer.scrollTop = msgContainer.scrollHeight;
     });
