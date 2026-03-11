@@ -45,7 +45,7 @@ display:none;
 height:100vh;
 }
 
-/* SERVER BAR */
+/* SERVERS */
 
 .servers{
 width:70px;
@@ -89,6 +89,14 @@ border-radius:5px;
 background:#404249;
 }
 
+.addChannel{
+margin-top:10px;
+background:#404249;
+padding:5px;
+border-radius:5px;
+cursor:pointer;
+}
+
 /* CHAT */
 
 .chat{
@@ -111,11 +119,34 @@ padding:10px;
 }
 
 .msg{
+display:flex;
+margin:8px 0;
+}
+
+.avatar{
+width:35px;
+height:35px;
+background:#5865F2;
+border-radius:50%;
+display:flex;
+align-items:center;
+justify-content:center;
+margin-right:10px;
+}
+
+.msgContent{
 background:#404249;
-margin:5px;
 padding:8px;
 border-radius:5px;
 }
+
+.time{
+font-size:11px;
+color:#aaa;
+margin-left:5px;
+}
+
+/* SEND */
 
 .send{
 background:#313338;
@@ -139,7 +170,6 @@ padding:5px;
 background:#404249;
 margin:5px 0;
 border-radius:5px;
-cursor:pointer;
 }
 
 .admin{
@@ -159,8 +189,6 @@ margin-top:20px;
 
 <body>
 
-<!-- LOGIN -->
-
 <div id="login">
 
 <h1>🔥 AteşChat</h1>
@@ -172,15 +200,13 @@ margin-top:20px;
 
 <div class="demo">
 
-Demo Admin Giriş<br>
+Admin Giriş<br>
 Kullanıcı: <b>Ateş Bey</b><br>
 Şifre: <b>Ateş123</b>
 
 </div>
 
 </div>
-
-<!-- APP -->
 
 <div id="app">
 
@@ -198,9 +224,13 @@ Kullanıcı: <b>Ateş Bey</b><br>
 
 <h3>Kanallar</h3>
 
-<div class="channel" onclick="openRoom('Genel')"># genel</div>
-<div class="channel" onclick="openRoom('Oyun')"># oyun</div>
-<div class="channel" onclick="openRoom('Müzik')"># müzik</div>
+<div id="channelList">
+
+<div class="channel" onclick="openRoom('genel')"># genel</div>
+
+</div>
+
+<div class="addChannel" onclick="createChannel()">+ kanal</div>
 
 </div>
 
@@ -208,7 +238,7 @@ Kullanıcı: <b>Ateş Bey</b><br>
 
 <div class="top">
 
-<span id="roomName">Genel</span>
+<span id="roomName">genel</span>
 
 </div>
 
@@ -216,7 +246,7 @@ Kullanıcı: <b>Ateş Bey</b><br>
 
 <div class="send">
 
-<input id="msg" placeholder="Mesaj yaz...">
+<input id="msg" placeholder="Mesaj yaz..." onkeypress="enterSend(event)">
 <button onclick="send()">Gönder</button>
 
 </div>
@@ -240,7 +270,7 @@ let users={
 }
 
 let currentUser=""
-let currentRoom="Genel"
+let currentRoom="genel"
 
 function login(){
 
@@ -298,27 +328,72 @@ if(msg=="") return
 
 let chat=document.getElementById("chatBox")
 
-chat.innerHTML += "<div class='msg'><b>"+currentUser+":</b> "+msg+"</div>"
+let time = new Date().toLocaleTimeString().slice(0,5)
+
+chat.innerHTML += `
+<div class="msg">
+<div class="avatar">${currentUser[0]}</div>
+<div>
+<div class="msgContent">
+<b>${currentUser}</b>
+<span class="time">${time}</span><br>
+${msg}
+</div>
+</div>
+</div>
+`
 
 document.getElementById("msg").value=""
 
 }
 
+function enterSend(e){
+
+if(e.key==="Enter"){
+
+send()
+
+}
+
+}
+
 function createServer(){
 
-let name = prompt("Sunucu adı yaz")
+let name=prompt("Sunucu adı")
 
 if(name){
 
-let servers = document.getElementById("servers")
+let servers=document.getElementById("servers")
 
-let div = document.createElement("div")
+let div=document.createElement("div")
 
 div.className="server"
 
 div.innerText=name[0].toUpperCase()
 
-servers.insertBefore(div, servers.lastElementChild)
+servers.insertBefore(div,servers.lastElementChild)
+
+}
+
+}
+
+function createChannel(){
+
+let name=prompt("Kanal adı")
+
+if(name){
+
+let list=document.getElementById("channelList")
+
+let div=document.createElement("div")
+
+div.className="channel"
+
+div.innerText="# "+name
+
+div.onclick=function(){openRoom(name)}
+
+list.appendChild(div)
 
 }
 
