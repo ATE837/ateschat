@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <title>AteşChat V7</title>
 
 <style>
@@ -10,39 +11,41 @@
 body{
 margin:0;
 font-family:Arial;
-background:#111;
+background:#0f0f0f;
 color:white;
 }
 
-#login,#register{
+#login{
 display:flex;
 flex-direction:column;
-justify-content:center;
 align-items:center;
+justify-content:center;
 height:100vh;
 gap:10px;
 }
 
 input{
 padding:12px;
-border-radius:8px;
+border-radius:10px;
 border:none;
-width:220px;
+width:240px;
+font-size:16px;
 }
 
 button{
 padding:12px;
 border:none;
-border-radius:8px;
+border-radius:10px;
 background:#ff3c3c;
 color:white;
-width:220px;
+width:240px;
+font-size:16px;
 }
 
 #chat{
 display:none;
-height:100vh;
 flex-direction:column;
+height:100vh;
 }
 
 #topbar{
@@ -59,16 +62,22 @@ padding:10px;
 }
 
 .msg{
-background:#2a2a2a;
+background:#222;
 padding:10px;
-border-radius:10px;
-margin:5px;
+border-radius:12px;
+margin:6px;
 max-width:70%;
 }
 
 .me{
 background:#ff3c3c;
 margin-left:auto;
+}
+
+.time{
+font-size:11px;
+opacity:0.6;
+margin-top:3px;
 }
 
 #sendbox{
@@ -83,26 +92,21 @@ margin-right:5px;
 }
 
 </style>
+
 </head>
 
 <body>
 
 <div id="login">
-<h2>AteşChat V7</h2>
-<input id="loginEmail" placeholder="Gmail">
-<input id="loginPass" type="password" placeholder="Şifre">
-<button onclick="login()">Giriş Yap</button>
-<button onclick="showRegister()">Kayıt Ol</button>
-</div>
 
-<div id="register" style="display:none">
-<h2>Kayıt Ol</h2>
-<input id="regEmail" placeholder="Gmail">
-<input id="regUser" placeholder="Kullanıcı adı">
-<input id="regPass" type="password" placeholder="Şifre">
-<input id="regPass2" type="password" placeholder="Şifre tekrar">
-<button onclick="register()">Kaydet</button>
-<button onclick="showLogin()">Geri</button>
+<h2>🔥 AteşChat V7</h2>
+
+<input id="email" placeholder="Gmail veya admin">
+
+<input id="password" type="password" placeholder="Şifre">
+
+<button onclick="login()">Giriş Yap</button>
+
 </div>
 
 <div id="chat">
@@ -114,122 +118,178 @@ margin-right:5px;
 <div id="messages"></div>
 
 <div id="sendbox">
+
 <input id="msgInput" placeholder="Mesaj yaz...">
+
 <button onclick="send()">Gönder</button>
+
 </div>
 
 </div>
 
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
 <script>
 
 const firebaseConfig = {
-apiKey:"APIKEY",
-authDomain:"PROJECT.firebaseapp.com",
-databaseURL:"https://PROJECT-default-rtdb.firebaseio.com/",
-projectId:"PROJECT",
-storageBucket:"PROJECT.appspot.com",
-messagingSenderId:"123",
-appId:"APPID"
+
+apiKey: "AIzaSyCwwqd4FfhvLRQu8DUUfbdorIu3iJpkHMM",
+
+authDomain: "ateschat-cd9f4.firebaseapp.com",
+
+databaseURL: "https://ateschat-cd9f4-default-rtdb.firebaseio.com",
+
+projectId: "ateschat-cd9f4",
+
+storageBucket: "ateschat-cd9f4.firebasestorage.app",
+
+messagingSenderId: "174732212740",
+
+appId: "1:174732212740:web:dcd4b60ed7cc380ca95351"
+
 };
 
 firebase.initializeApp(firebaseConfig);
 
 let db = firebase.database();
 
-let user="";
+let user = "";
 
-function showRegister(){
-document.getElementById("login").style.display="none"
-document.getElementById("register").style.display="flex"
-}
+let isAdmin = false;
 
-function showLogin(){
-document.getElementById("login").style.display="flex"
-document.getElementById("register").style.display="none"
-}
 
-function register(){
-
-let email=document.getElementById("regEmail").value
-let username=document.getElementById("regUser").value
-let pass=document.getElementById("regPass").value
-let pass2=document.getElementById("regPass2").value
-
-if(pass!=pass2){
-alert("Şifreler aynı değil")
-return
-}
-
-localStorage.setItem("user",username)
-
-alert("Kayıt tamam")
-showLogin()
-
-}
 
 function login(){
 
-let username=localStorage.getItem("user")
+let email = document.getElementById("email").value;
 
-if(!username){
-alert("Önce kayıt ol")
-return
+let pass = document.getElementById("password").value;
+
+
+
+if(email=="Ateş Bey" && pass=="AtesBey123"){
+
+user="🔥 Ateş Bey (Admin)";
+
+isAdmin=true;
+
+startChat();
+
+return;
+
 }
 
-user=username
 
-document.getElementById("login").style.display="none"
-document.getElementById("chat").style.display="flex"
 
-loadMessages()
+if(email.includes("@gmail.com")){
+
+user=email.split("@")[0];
+
+startChat();
+
+}else{
+
+alert("Geçerli Gmail gir");
 
 }
+
+}
+
+
+
+function startChat(){
+
+document.getElementById("login").style.display="none";
+
+document.getElementById("chat").style.display="flex";
+
+loadMessages();
+
+}
+
+
 
 function send(){
 
-let text=document.getElementById("msgInput").value
+let text=document.getElementById("msgInput").value;
 
-if(text=="") return
+if(text=="") return;
+
+
 
 db.ref("messages").push({
-user:user,
-text:text,
-time:Date.now()
-})
 
-document.getElementById("msgInput").value=""
+user:user,
+
+text:text,
+
+time:Date.now()
+
+});
+
+
+
+document.getElementById("msgInput").value="";
 
 }
+
+
 
 function loadMessages(){
 
-db.ref("messages").on("child_added",snap=>{
+db.ref("messages").on("child_added",function(snap){
 
-let data=snap.val()
+let data=snap.val();
 
-let div=document.createElement("div")
 
-div.className="msg"
+
+let div=document.createElement("div");
+
+div.className="msg";
+
+
 
 if(data.user==user){
-div.classList.add("me")
-}
 
-let date=new Date(data.time)
-let time=date.getHours()+":"+date.getMinutes()
-
-div.innerHTML="<b>"+data.user+"</b><br>"+data.text+"<br><small>"+time+"</small>"
-
-document.getElementById("messages").appendChild(div)
-
-document.getElementById("messages").scrollTop=999999
-
-})
+div.classList.add("me");
 
 }
+
+
+
+let date=new Date(data.time);
+
+let time=date.getHours()+":"+("0"+date.getMinutes()).slice(-2);
+
+
+
+div.innerHTML="<b>"+data.user+"</b><br>"+data.text+"<div class='time'>"+time+"</div>";
+
+
+
+document.getElementById("messages").appendChild(div);
+
+
+
+document.getElementById("messages").scrollTop=999999;
+
+});
+
+}
+
+
+
+document.getElementById("msgInput").addEventListener("keypress",function(e){
+
+if(e.key==="Enter"){
+
+send();
+
+}
+
+});
 
 </script>
 
