@@ -2,76 +2,29 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>AteşChat V9</title>
-
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+<title>AteşChat</title>
 
 <style>
 
 body{
 margin:0;
 font-family:Arial;
-background:#1e1f22;
+background:#36393f;
 color:white;
-}
-
-#login{
 display:flex;
-flex-direction:column;
-justify-content:center;
-align-items:center;
 height:100vh;
-}
-
-input{
-padding:10px;
-margin:5px;
-border-radius:5px;
-border:none;
-}
-
-button{
-padding:10px;
-margin:5px;
-border:none;
-border-radius:5px;
-background:#5865F2;
-color:white;
-cursor:pointer;
-}
-
-#app{
-display:none;
-height:100vh;
-display:flex;
 }
 
 #servers{
 width:80px;
-background:#2b2d31;
+background:#202225;
 padding:10px;
-overflow:auto;
-}
-
-.server{
-background:#404249;
-padding:10px;
-margin:5px;
-cursor:pointer;
-text-align:center;
-border-radius:10px;
 }
 
 #rooms{
 width:200px;
-background:#313338;
+background:#2f3136;
 padding:10px;
-}
-
-.room{
-padding:8px;
-cursor:pointer;
 }
 
 #chat{
@@ -86,61 +39,61 @@ overflow:auto;
 padding:10px;
 }
 
-#sendBox{
+#inputArea{
 display:flex;
+background:#40444b;
+padding:10px;
 }
 
-#sendBox input{
+#input{
 flex:1;
+padding:10px;
+border:none;
+outline:none;
+background:#303339;
+color:white;
+}
+
+button{
+background:#5865f2;
+color:white;
+border:none;
+padding:10px;
+margin-left:5px;
+cursor:pointer;
 }
 
 </style>
-
 </head>
 
 <body>
 
-<div id="login">
-
-<h2>AteşChat V9</h2>
-
-<input id="username" placeholder="Kullanıcı adı">
-
-<button onclick="login()">Giriş</button>
-
+<div id="servers">
+<button onclick="createServer()">+</button>
 </div>
 
-
-<div id="app">
-
-<div id="servers"></div>
-
 <div id="rooms">
-
-<button onclick="createServer()">+ Sunucu</button>
-
+<h3>Odalar</h3>
 <div id="roomList"></div>
-
+<button onclick="createRoom()">+ Oda</button>
 </div>
 
 <div id="chat">
 
 <div id="messages"></div>
 
-<div id="sendBox">
-
-<input id="msgInput" placeholder="Mesaj yaz">
-
+<div id="inputArea">
+<input id="input" placeholder="Mesaj yaz...">
 <button onclick="sendMessage()">Gönder</button>
-
 </div>
 
 </div>
 
-</div>
 
+<script type="module">
 
-<script>
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getDatabase, ref, push, onChildAdded } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
 const firebaseConfig = {
 apiKey: "AIzaSyCwwqd4FfhvLRQu8DUUfbdorIu3iJpkHMM",
@@ -149,163 +102,53 @@ databaseURL: "https://ateschat-cd9f4-default-rtdb.firebaseio.com",
 projectId: "ateschat-cd9f4",
 storageBucket: "ateschat-cd9f4.firebasestorage.app",
 messagingSenderId: "174732212740",
-appId: "1:174732212740:web:dcd4b60ed7cc380ca95351"
+appId: "1:174732212740:web:dcd4b60ed7cc380ca95351",
+measurementId: "G-1CBZNR0W3E"
 };
 
-firebase.initializeApp(firebaseConfig);
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
 
-const db = firebase.database();
+const messagesRef = ref(db,"messages");
 
-let user="";
-let currentServer="";
-let currentRoom="general";
+window.sendMessage = function(){
 
+let input = document.getElementById("input");
+let text = input.value;
 
-function login(){
+if(text=="") return;
 
-user=document.getElementById("username").value;
+push(messagesRef,{
+user:"Ateş",
+text:text,
+time:Date.now()
+});
 
-if(!user)return;
-
-document.getElementById("login").style.display="none";
-document.getElementById("app").style.display="flex";
-
-loadServers();
+input.value="";
 
 }
 
+onChildAdded(messagesRef,(data)=>{
 
-
-function createServer(){
-
-let name=prompt("Sunucu adı");
-
-if(!name)return;
-
-let id="srv_"+Date.now();
-
-let invite=Math.random().toString(36).substring(2,7);
-
-db.ref("servers/"+id).set({
-
-name:name,
-owner:user,
-invite:invite
-
-});
-
-db.ref("servers/"+id+"/rooms/general").set({
-
-name:"genel"
-
-});
-
-alert("Sunucu oluşturuldu\nDavet kodu: "+invite);
-
-}
-
-
-
-function loadServers(){
-
-db.ref("servers").on("value",snap=>{
-
-let html="";
-
-snap.forEach(s=>{
-
-let data=s.val();
-
-html+=`
-<div class="server" onclick="openServer('${s.key}')">
-${data.name[0]}
-</div>
-`;
-
-});
-
-document.getElementById("servers").innerHTML=html;
-
-});
-
-}
-
-
-
-function openServer(id){
-
-currentServer=id;
-
-loadRooms();
-
-}
-
-
-
-function loadRooms(){
-
-db.ref("servers/"+currentServer+"/rooms").on("value",snap=>{
-
-let html="";
-
-snap.forEach(r=>{
-
-let data=r.val();
-
-html+=`
-<div class="room" onclick="openRoom('${r.key}')">
-# ${data.name}
-</div>
-`;
-
-});
-
-document.getElementById("roomList").innerHTML=html;
-
-});
-
-}
-
-
-
-function openRoom(room){
-
-currentRoom=room;
-
-document.getElementById("messages").innerHTML="";
-
-db.ref("servers/"+currentServer+"/rooms/"+room+"/messages")
-.on("child_added",snap=>{
-
-let m=snap.val();
+let msg=data.val();
 
 let div=document.createElement("div");
 
-div.innerHTML="<b>"+m.user+"</b>: "+m.text;
+div.innerHTML="<b>"+msg.user+":</b> "+msg.text;
 
 document.getElementById("messages").appendChild(div);
 
 });
 
+window.createServer=function(){
+
+alert("Sunucu sistemi yakında eklenecek");
+
 }
 
+window.createRoom=function(){
 
-
-function sendMessage(){
-
-let text=document.getElementById("msgInput").value;
-
-if(!text)return;
-
-db.ref("servers/"+currentServer+"/rooms/"+currentRoom+"/messages").push({
-
-user:user,
-text:text,
-time:Date.now()
-
-});
-
-document.getElementById("msgInput").value="";
+alert("Oda sistemi yakında eklenecek");
 
 }
 
