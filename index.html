@@ -15,8 +15,6 @@ background:#1e1f22;
 color:white;
 }
 
-/* LOGIN */
-
 #login{
 text-align:center;
 margin-top:120px;
@@ -38,14 +36,10 @@ border-radius:5px;
 cursor:pointer;
 }
 
-/* APP */
-
 #app{
 display:none;
 height:100vh;
 }
-
-/* SERVERS */
 
 .servers{
 width:70px;
@@ -65,12 +59,6 @@ cursor:pointer;
 font-weight:bold;
 }
 
-.server:hover{
-background:#5865F2;
-}
-
-/* CHANNELS */
-
 .channels{
 width:200px;
 background:#313338;
@@ -83,21 +71,13 @@ padding:10px;
 padding:8px;
 cursor:pointer;
 border-radius:5px;
+display:flex;
+justify-content:space-between;
 }
 
 .channel:hover{
 background:#404249;
 }
-
-.addChannel{
-margin-top:10px;
-background:#404249;
-padding:5px;
-border-radius:5px;
-cursor:pointer;
-}
-
-/* CHAT */
 
 .chat{
 margin-left:270px;
@@ -146,14 +126,10 @@ color:#aaa;
 margin-left:5px;
 }
 
-/* SEND */
-
 .send{
 background:#313338;
 padding:10px;
 }
-
-/* USERS */
 
 .users{
 width:200px;
@@ -177,10 +153,11 @@ color:#ff5555;
 font-weight:bold;
 }
 
-.demo{
-font-size:13px;
-color:#aaa;
-margin-top:20px;
+.badge{
+background:red;
+border-radius:10px;
+padding:2px 6px;
+font-size:11px;
 }
 
 </style>
@@ -198,25 +175,20 @@ margin-top:20px;
 
 <button onclick="login()">Giriş</button>
 
-<div class="demo">
-
-Admin Giriş<br>
-Kullanıcı: <b>Ateş Bey</b><br>
+<p>
+Admin: <b>Ateş Bey</b><br>
 Şifre: <b>Ateş123</b>
-
-</div>
+</p>
 
 </div>
 
 <div id="app">
 
-<div class="servers" id="servers">
+<div class="servers">
 
 <div class="server">💬</div>
 <div class="server">🎮</div>
 <div class="server">🎵</div>
-
-<div class="server" onclick="createServer()">+</div>
 
 </div>
 
@@ -226,11 +198,12 @@ Kullanıcı: <b>Ateş Bey</b><br>
 
 <div id="channelList">
 
-<div class="channel" onclick="openRoom('genel')"># genel</div>
-
+<div class="channel" onclick="openRoom('genel')">
+<span># genel</span>
+<span id="badge_genel"></span>
 </div>
 
-<div class="addChannel" onclick="createChannel()">+ kanal</div>
+</div>
 
 </div>
 
@@ -271,6 +244,9 @@ let users={
 
 let currentUser=""
 let currentRoom="genel"
+let unread={
+genel:0
+}
 
 function login(){
 
@@ -316,7 +292,9 @@ currentRoom=name
 
 document.getElementById("roomName").innerText=name
 
-document.getElementById("chatBox").innerHTML=""
+document.getElementById("badge_"+name).innerText=""
+
+unread[name]=0
 
 }
 
@@ -328,7 +306,7 @@ if(msg=="") return
 
 let chat=document.getElementById("chatBox")
 
-let time = new Date().toLocaleTimeString().slice(0,5)
+let time=new Date().toLocaleTimeString().slice(0,5)
 
 chat.innerHTML += `
 <div class="msg">
@@ -352,48 +330,6 @@ function enterSend(e){
 if(e.key==="Enter"){
 
 send()
-
-}
-
-}
-
-function createServer(){
-
-let name=prompt("Sunucu adı")
-
-if(name){
-
-let servers=document.getElementById("servers")
-
-let div=document.createElement("div")
-
-div.className="server"
-
-div.innerText=name[0].toUpperCase()
-
-servers.insertBefore(div,servers.lastElementChild)
-
-}
-
-}
-
-function createChannel(){
-
-let name=prompt("Kanal adı")
-
-if(name){
-
-let list=document.getElementById("channelList")
-
-let div=document.createElement("div")
-
-div.className="channel"
-
-div.innerText="# "+name
-
-div.onclick=function(){openRoom(name)}
-
-list.appendChild(div)
 
 }
 
