@@ -3,68 +3,56 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AteşChat 🔥</title>
+<title>AteşChat V2 🔥</title>
 
 <style>
 
 body{
-font-family:Arial;
-background:#0f0f0f;
-color:white;
 margin:0;
-}
-
-header{
-background:#111;
-padding:15px;
-text-align:center;
-font-size:22px;
-font-weight:bold;
-border-bottom:1px solid #333;
-}
-
-#login{
-display:flex;
-flex-direction:column;
-align-items:center;
-margin-top:80px;
-gap:10px;
-}
-
-input{
-padding:10px;
-border:none;
-border-radius:6px;
-width:220px;
-}
-
-button{
-padding:10px 15px;
-border:none;
-border-radius:6px;
-background:#ff6a00;
+font-family:Arial;
+background:#0e0e0e;
 color:white;
+display:flex;
+height:100vh;
+}
+
+#sidebar{
+width:200px;
+background:#151515;
+padding:15px;
+border-right:1px solid #333;
+}
+
+#sidebar h2{
+text-align:center;
+}
+
+.room{
+padding:8px;
+background:#222;
+margin-bottom:6px;
+border-radius:6px;
 cursor:pointer;
 }
 
-button:hover{
-background:#ff8533;
+.room:hover{
+background:#ff6a00;
 }
 
-#chat{
-display:none;
-height:100vh;
+#main{
+flex:1;
+display:flex;
 flex-direction:column;
 }
 
-#chatBox{
+#chat{
 flex:1;
 overflow-y:auto;
 padding:15px;
 }
 
 .msg{
-background:#1c1c1c;
+background:#1b1b1b;
 padding:10px;
 margin-bottom:10px;
 border-radius:8px;
@@ -75,27 +63,60 @@ color:#ff6a00;
 font-weight:bold;
 }
 
-#sendArea{
+.time{
+font-size:11px;
+color:#888;
+}
+
+#send{
 display:flex;
-gap:10px;
 padding:10px;
 background:#111;
 }
 
-#messageInput{
+#send input{
 flex:1;
+padding:10px;
+border:none;
+border-radius:6px;
 }
 
-#onlineUsers{
+#send button{
+margin-left:8px;
+padding:10px 15px;
+background:#ff6a00;
+border:none;
+color:white;
+border-radius:6px;
+cursor:pointer;
+}
+
+#login{
 position:absolute;
-right:0;
-top:60px;
-width:160px;
-background:#141414;
-height:80%;
-overflow:auto;
+top:0;
+left:0;
+width:100%;
+height:100%;
+background:#0e0e0e;
+display:flex;
+align-items:center;
+justify-content:center;
+flex-direction:column;
+gap:10px;
+}
+
+#login input{
 padding:10px;
+border:none;
+border-radius:6px;
+width:220px;
+}
+
+#users{
+width:180px;
+background:#141414;
 border-left:1px solid #333;
+padding:10px;
 }
 
 </style>
@@ -103,34 +124,43 @@ border-left:1px solid #333;
 
 <body>
 
-<header>
-AteşChat 🔥
-</header>
+<div id="sidebar">
+
+<h2>AteşChat 🔥</h2>
+
+<div class="room" onclick="room='genel'">Genel</div>
+<div class="room" onclick="room='oyun'">Oyun</div>
+<div class="room" onclick="room='sohbet'">Sohbet</div>
+
+</div>
+
+<div id="main">
+
+<div id="chat"></div>
+
+<div id="send">
+<input id="msg" placeholder="Mesaj yaz...">
+<button onclick="send()">Gönder</button>
+</div>
+
+</div>
+
+<div id="users">
+<b>Online</b>
+<div id="userList"></div>
+</div>
 
 <div id="login">
 
+<h2>AteşChat Giriş</h2>
+
+<input id="username" placeholder="Kullanıcı Adı">
 <input id="email" placeholder="Email">
-<input id="password" type="password" placeholder="Şifre">
+<input id="pass" type="password" placeholder="Şifre">
 
 <div>
-<button onclick="register()">Kayıt Ol</button>
-<button onclick="login()">Giriş Yap</button>
-</div>
-
-</div>
-
-<div id="chat">
-
-<div id="onlineUsers">
-<b>Online</b>
-<div id="users"></div>
-</div>
-
-<div id="chatBox"></div>
-
-<div id="sendArea">
-<input id="messageInput" placeholder="Mesaj yaz">
-<button onclick="sendMessage()">Gönder</button>
+<button onclick="register()">Kayıt</button>
+<button onclick="login()">Giriş</button>
 </div>
 
 </div>
@@ -155,37 +185,48 @@ onChildAdded
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
 const firebaseConfig = {
-apiKey: "APIKEY",
-authDomain: "PROJECT.firebaseapp.com",
-databaseURL: "https://PROJECT-default-rtdb.firebaseio.com",
-projectId: "PROJECT",
-storageBucket: "PROJECT.appspot.com",
-messagingSenderId: "ID",
-appId: "APPID"
+
+apiKey:"APIKEY",
+authDomain:"PROJECT.firebaseapp.com",
+databaseURL:"https://PROJECT-default-rtdb.firebaseio.com",
+projectId:"PROJECT",
+storageBucket:"PROJECT.appspot.com",
+messagingSenderId:"ID",
+appId:"APPID"
+
 };
 
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getDatabase(app);
+const app=initializeApp(firebaseConfig);
+const auth=getAuth(app);
+const db=getDatabase(app);
+
+let room="genel";
 
 function register(){
 
-const email=document.getElementById("email").value;
-const pass=document.getElementById("password").value;
+createUserWithEmailAndPassword(
+auth,
+email.value,
+pass.value
+).then(()=>{
 
-createUserWithEmailAndPassword(auth,email,pass)
-.then(()=>alert("Kayıt başarılı"))
-.catch(e=>alert(e.message));
+set(ref(db,"users/"+auth.currentUser.uid),{
+name:username.value
+});
+
+alert("Kayıt başarılı");
+
+}).catch(e=>alert(e.message));
 
 }
 
 function login(){
 
-const email=document.getElementById("email").value;
-const pass=document.getElementById("password").value;
-
-signInWithEmailAndPassword(auth,email,pass)
-.catch(e=>alert(e.message));
+signInWithEmailAndPassword(
+auth,
+email.value,
+pass.value
+).catch(e=>alert(e.message));
 
 }
 
@@ -193,38 +234,51 @@ onAuthStateChanged(auth,(user)=>{
 
 if(user){
 
-document.getElementById("login").style.display="none";
-document.getElementById("chat").style.display="flex";
+login.style.display="none";
+
+loadMessages();
 
 }
 
 });
 
-function sendMessage(){
+function send(){
 
-const msg=document.getElementById("messageInput").value;
+const text=msg.value;
 
-push(ref(db,"messages"),{
-user:auth.currentUser.email,
-text:msg
+push(ref(db,"rooms/"+room),{
+
+user:username.value,
+text:text,
+time:new Date().toLocaleTimeString()
+
 });
 
-document.getElementById("messageInput").value="";
+msg.value="";
 
 }
 
-onChildAdded(ref(db,"messages"),(data)=>{
+function loadMessages(){
+
+onChildAdded(ref(db,"rooms/"+room),(data)=>{
 
 const m=data.val();
 
 const div=document.createElement("div");
 div.className="msg";
 
-div.innerHTML="<span class='user'>"+m.user+"</span><br>"+m.text;
+div.innerHTML=
+"<span class='user'>"+m.user+
+"</span> <span class='time'>"+m.time+
+"</span><br>"+m.text;
 
-document.getElementById("chatBox").appendChild(div);
+chat.appendChild(div);
+
+chat.scrollTop=chat.scrollHeight;
 
 });
+
+}
 
 </script>
 
