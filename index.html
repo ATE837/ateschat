@@ -1,8 +1,9 @@
 <!DOCTYPE html>
-<html>
+<html lang="tr">
 <head>
 <meta charset="UTF-8">
-<title>AteşChat</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AteşChat 🔥</title>
 
 <style>
 
@@ -11,172 +12,219 @@ font-family:Arial;
 background:#0f0f0f;
 color:white;
 margin:0;
-text-align:center;
 }
 
-h1{
-margin-top:40px;
+header{
+background:#111;
+padding:15px;
+text-align:center;
+font-size:22px;
+font-weight:bold;
+border-bottom:1px solid #333;
+}
+
+#login{
+display:flex;
+flex-direction:column;
+align-items:center;
+margin-top:80px;
+gap:10px;
 }
 
 input{
-padding:12px;
-margin:6px;
-width:250px;
-border-radius:8px;
+padding:10px;
 border:none;
+border-radius:6px;
+width:220px;
 }
 
 button{
-padding:12px;
-margin:6px;
+padding:10px 15px;
 border:none;
-background:#ff5500;
+border-radius:6px;
+background:#ff6a00;
 color:white;
-border-radius:8px;
 cursor:pointer;
+}
+
+button:hover{
+background:#ff8533;
 }
 
 #chat{
 display:none;
+height:100vh;
+flex-direction:column;
 }
 
-#messages{
-height:60vh;
-overflow:auto;
-margin:20px;
-background:#1a1a1a;
-padding:10px;
-border-radius:10px;
+#chatBox{
+flex:1;
+overflow-y:auto;
+padding:15px;
 }
 
 .msg{
-background:#262626;
+background:#1c1c1c;
 padding:10px;
-margin:6px;
+margin-bottom:10px;
 border-radius:8px;
-text-align:left;
+}
+
+.user{
+color:#ff6a00;
+font-weight:bold;
+}
+
+#sendArea{
+display:flex;
+gap:10px;
+padding:10px;
+background:#111;
+}
+
+#messageInput{
+flex:1;
+}
+
+#onlineUsers{
+position:absolute;
+right:0;
+top:60px;
+width:160px;
+background:#141414;
+height:80%;
+overflow:auto;
+padding:10px;
+border-left:1px solid #333;
 }
 
 </style>
-
 </head>
 
 <body>
 
-<h1>AteşChat 🔥</h1>
+<header>
+AteşChat 🔥
+</header>
 
 <div id="login">
 
-<input id="email" placeholder="Email"><br>
-<input id="password" type="password" placeholder="Şifre"><br>
+<input id="email" placeholder="Email">
+<input id="password" type="password" placeholder="Şifre">
 
+<div>
 <button onclick="register()">Kayıt Ol</button>
 <button onclick="login()">Giriş Yap</button>
-
 </div>
 
+</div>
 
 <div id="chat">
 
-<div id="messages"></div>
+<div id="onlineUsers">
+<b>Online</b>
+<div id="users"></div>
+</div>
 
-<input id="msg" placeholder="Mesaj yaz">
-<button onclick="send()">Gönder</button>
+<div id="chatBox"></div>
+
+<div id="sendArea">
+<input id="messageInput" placeholder="Mesaj yaz">
+<button onclick="sendMessage()">Gönder</button>
+</div>
 
 </div>
 
+<script type="module">
 
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 
-<script>
+import {
+getAuth,
+createUserWithEmailAndPassword,
+signInWithEmailAndPassword,
+onAuthStateChanged
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+import {
+getDatabase,
+ref,
+push,
+set,
+onChildAdded
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
 const firebaseConfig = {
-apiKey: "AIzaSyCwwqd4FfhvLRQu8DUUfbdorIu3iJpkHMM",
-authDomain: "ateschat-cd9f4.firebaseapp.com",
-databaseURL: "https://ateschat-cd9f4-default-rtdb.firebaseio.com",
-projectId: "ateschat-cd9f4",
-storageBucket: "ateschat-cd9f4.appspot.com",
-messagingSenderId: "174732212740",
-appId: "1:174732212740:web:dcd4b60ed7cc380ca95351"
+apiKey: "APIKEY",
+authDomain: "PROJECT.firebaseapp.com",
+databaseURL: "https://PROJECT-default-rtdb.firebaseio.com",
+projectId: "PROJECT",
+storageBucket: "PROJECT.appspot.com",
+messagingSenderId: "ID",
+appId: "APPID"
 };
 
-firebase.initializeApp(firebaseConfig);
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getDatabase(app);
 
 function register(){
 
-let email=document.getElementById("email").value
-let password=document.getElementById("password").value
+const email=document.getElementById("email").value;
+const pass=document.getElementById("password").value;
 
-firebase.auth().createUserWithEmailAndPassword(email,password)
-
-.then(()=>{
-
-alert("Kayıt başarılı")
-
-})
-
-.catch(e=>alert(e.message))
+createUserWithEmailAndPassword(auth,email,pass)
+.then(()=>alert("Kayıt başarılı"))
+.catch(e=>alert(e.message));
 
 }
-
 
 function login(){
 
-let email=document.getElementById("email").value
-let password=document.getElementById("password").value
+const email=document.getElementById("email").value;
+const pass=document.getElementById("password").value;
 
-firebase.auth().signInWithEmailAndPassword(email,password)
-
-.then(()=>{
-
-document.getElementById("login").style.display="none"
-document.getElementById("chat").style.display="block"
-
-loadMessages()
-
-})
-
-.catch(e=>alert(e.message))
+signInWithEmailAndPassword(auth,email,pass)
+.catch(e=>alert(e.message));
 
 }
 
+onAuthStateChanged(auth,(user)=>{
 
-function send(){
+if(user){
 
-let text=document.getElementById("msg").value
-
-firebase.database().ref("messages").push({
-
-user:firebase.auth().currentUser.email,
-text:text,
-time:Date.now()
-
-})
-
-document.getElementById("msg").value=""
+document.getElementById("login").style.display="none";
+document.getElementById("chat").style.display="flex";
 
 }
 
+});
 
-function loadMessages(){
+function sendMessage(){
 
-firebase.database().ref("messages").on("child_added",function(data){
+const msg=document.getElementById("messageInput").value;
 
-let msg=data.val()
+push(ref(db,"messages"),{
+user:auth.currentUser.email,
+text:msg
+});
 
-let div=document.createElement("div")
-
-div.className="msg"
-
-div.innerHTML="<b>"+msg.user+"</b><br>"+msg.text
-
-document.getElementById("messages").appendChild(div)
-
-})
+document.getElementById("messageInput").value="";
 
 }
+
+onChildAdded(ref(db,"messages"),(data)=>{
+
+const m=data.val();
+
+const div=document.createElement("div");
+div.className="msg";
+
+div.innerHTML="<span class='user'>"+m.user+"</span><br>"+m.text;
+
+document.getElementById("chatBox").appendChild(div);
+
+});
 
 </script>
 
