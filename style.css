@@ -186,3 +186,63 @@ body { background: var(--dark); color: var(--text); font-family: 'Segoe UI', san
     #members-panel { display: none; }
     #server-list { width: 56px; }
 }
+
+/* ÜST BAR EK STİLLER */
+#header-buttons {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+#user-info-bar {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.user-avatar-small {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: var(--blue);
+    color: white;
+    font-weight: 700;
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+#my-name {
+    color: white;
+    font-size: 13px;
+    font-weight: 600;
+    max-width: 80px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.logout-btn {
+    background: transparent;
+    color: var(--muted);
+    border: 1px solid var(--muted);
+    padding: 5px 10px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+}
+
+.logout-btn:hover {
+    background: var(--red);
+    color: white;
+    border-color: var(--red);
+}
+
+@media (max-width: 600px) {
+    #my-name { display: none; }
+}
