@@ -18,19 +18,21 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 const provider = new GoogleAuthProvider();
 
+// HTML Elemanları
 const loginBtn = document.getElementById('google-login-btn');
 const authContainer = document.getElementById('auth-container');
 const mainLayout = document.getElementById('main-layout');
 const chatForm = document.getElementById('chat-form');
 const msgInput = document.getElementById('message-input');
 const msgContainer = document.getElementById('messages-container');
+const logoutBtn = document.getElementById('logout-btn');
+const userAvatar = document.getElementById('user-avatar');
+const userName = document.getElementById('user-name');
 
+// 1. Google ile Giriş
 if (loginBtn) {
     loginBtn.addEventListener('click', () => {
         signInWithPopup(auth, provider)
-            .then((result) => {
-                console.log("Giriş Başarılı:", result.user.displayName);
-            })
             .catch((error) => {
                 console.error("Giriş Hatası:", error.message);
                 alert("Giriş yapılamadı! Hata: " + error.message);
@@ -38,10 +40,22 @@ if (loginBtn) {
     });
 }
 
+// 2. Çıkış
+if (logoutBtn) {
+    logoutBtn.addEventListener('click', () => {
+        signOut(auth);
+    });
+}
+
+// 3. Oturum Durumu
 onAuthStateChanged(auth, (user) => {
     if (user) {
         authContainer.classList.add('hidden');
         mainLayout.classList.remove('hidden');
+
+        if (userAvatar) userAvatar.src = user.photoURL || "https://via.placeholder.com/32";
+        if (userName) userName.textContent = user.displayName || "Kullanıcı";
+
         loadMessages();
     } else {
         authContainer.classList.remove('hidden');
@@ -49,6 +63,7 @@ onAuthStateChanged(auth, (user) => {
     }
 });
 
+// 4. Mesaj Gönderme
 chatForm.onsubmit = async (e) => {
     e.preventDefault();
     const messageText = msgInput.value.trim();
@@ -69,19 +84,25 @@ chatForm.onsubmit = async (e) => {
     }
 };
 
+// 5. Mesajları Gerçek Zamanlı Yükle
 function loadMessages() {
     const q = query(collection(db, "messages"), orderBy("createdAt", "asc"));
     onSnapshot(q, (snapshot) => {
         msgContainer.innerHTML = "";
         snapshot.forEach((doc) => {
             const data = doc.data();
+            const time = data.createdAt?.toDate().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }) || "";
+
             const div = document.createElement('div');
             div.className = "message-item";
             div.innerHTML = `
-                <img src="${data.photo}" style="width:40px; height:40px; border-radius:50%; margin-right:10px;">
-                <div>
-                    <strong style="color: #fff; display: block;">${data.name}</strong>
-                    <span style="color: #dbdee1;">${data.text}</span>
+                <img src="${data.photo}" alt="avatar">
+                <div class="msg-content">
+                    <div style="display:flex; align-items:baseline; gap:6px;">
+                        <span class="msg-name">${data.name}</span>
+                        <span class="msg-time">${time}</span>
+                    </div>
+                    <span class="msg-text">${data.text}</span>
                 </div>
             `;
             msgContainer.appendChild(div);
