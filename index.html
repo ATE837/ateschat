@@ -5,7 +5,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>AteşChat V22 ULTRA 🔥</title>
+<title>AteşChat V23 PRO 🔥</title>
 
 <style>
 
@@ -60,10 +60,22 @@ justify-content:space-between;
 font-size:18px;
 }
 
+#container{
+display:flex;
+height:80vh;
+}
+
 #messages{
-height:70vh;
+flex:3;
 overflow:auto;
 padding:15px;
+}
+
+#users{
+flex:1;
+background:#151515;
+padding:10px;
+overflow:auto;
 }
 
 .msg{
@@ -72,6 +84,11 @@ padding:14px;
 background:#1e1e1e;
 border-radius:10px;
 font-size:18px;
+}
+
+.user{
+padding:8px;
+border-bottom:1px solid #333;
 }
 
 #sendArea{
@@ -117,7 +134,15 @@ font-size:18px;
 
 </div>
 
+
+<div id="container">
+
 <div id="messages"></div>
+
+<div id="users"></div>
+
+</div>
+
 
 <div id="sendArea">
 
@@ -153,8 +178,8 @@ measurementId: "G-1CBZNR0W3E"
 
 firebase.initializeApp(firebaseConfig);
 
-const auth = firebase.auth();
-const db = firebase.database();
+const auth=firebase.auth();
+const db=firebase.database();
 
 
 
@@ -189,7 +214,10 @@ document.getElementById("chat").style.display="block"
 
 document.getElementById("user").innerText=user.email
 
+db.ref("online/"+user.uid).set(user.email)
+
 loadMessages()
+loadUsers()
 
 }
 
@@ -201,7 +229,7 @@ function send(){
 
 let text=document.getElementById("messageInput").value
 
-if(text=="") return
+if(text=="")return
 
 let user=auth.currentUser
 
@@ -231,7 +259,31 @@ div.innerText=m.name+" : "+m.text
 
 document.getElementById("messages").appendChild(div)
 
-window.scrollTo(0,document.body.scrollHeight)
+document.getElementById("messages").scrollTop=999999
+
+})
+
+}
+
+
+
+function loadUsers(){
+
+db.ref("online").on("value",snap=>{
+
+let users=snap.val()
+
+document.getElementById("users").innerHTML=""
+
+for(let id in users){
+
+let div=document.createElement("div")
+div.className="user"
+div.innerText=users[id]
+
+document.getElementById("users").appendChild(div)
+
+}
 
 })
 
@@ -249,6 +301,10 @@ document.getElementById("messageInput").value+="😀"
 
 function logout(){
 
+let user=auth.currentUser
+
+db.ref("online/"+user.uid).remove()
+
 auth.signOut()
 
 location.reload()
@@ -258,5 +314,4 @@ location.reload()
 </script>
 
 </body>
-
 </html>
