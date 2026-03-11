@@ -3,50 +3,46 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ateş Chat | Global</title>
+    <title>Ateş Chat</title>
     <link rel="stylesheet" href="style.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body>
-    <div id="app">
-        <div id="auth-container" class="hidden">
-            <div class="auth-card">
-                <h2>Ateş Chat'e Hoş Geldin!</h2>
-                <p>Global topluluğa katılmak için giriş yap.</p>
-                <button id="google-login-btn"><i class="fab fa-google"></i> Google ile Devam Et</button>
+
+    <div id="auth-container" class="auth-box">
+        <div class="auth-content">
+            <h1>Ateş Chat'e Hoş Geldin!</h1>
+            <p>Global topluluğa katılmak için giriş yap.</p>
+            <button id="google-login-btn" class="login-btn">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_Logo.svg" alt="Google" width="20">
+                Google ile Devam Et
+            </button>
+        </div>
+    </div>
+
+    <div id="main-layout" class="hidden">
+        <div class="sidebar">
+            <div class="server-list">
+                <div class="server-icon active">🔥</div>
+            </div>
+            <div class="channel-list">
+                <h3>Ateş Chat Global</h3>
+                <div class="channel active"># genel-sohbet</div>
+                <div class="channel"># duyurular</div>
+                
+                <div class="user-info">
+                    <img id="user-avatar" src="" alt="" style="width:32px; height:32px; border-radius:50%;">
+                    <span id="user-name">Yükleniyor...</span>
+                    <button id="logout-btn" style="font-size: 10px; padding: 2px 5px;">Çıkış</button>
+                </div>
             </div>
         </div>
 
-        <div id="main-layout" class="">
-            <nav class="server-sidebar">
-                <div class="server-icon active"><i class="fas fa-fire"></i></div>
-                <div class="separator"></div>
-                <div class="server-icon"><i class="fas fa-plus"></i></div>
-            </nav>
-
-            <aside class="channel-sidebar">
-                <div class="channel-header">Ateş Chat Global</div>
-                <div class="channel-list">
-                    <div class="channel-item active"><i class="fas fa-hashtag"></i> genel-sohbet</div>
-                    <div class="channel-item"><i class="fas fa-hashtag"></i> duyurular</div>
-                </div>
-                <div class="user-footer" id="user-info">
-                    <img src="https://via.placeholder.com/32" id="user-avatar" alt="Avatar">
-                    <span id="user-name">Yükleniyor...</span>
-                    <i class="fas fa-sign-out-alt" id="logout-btn"></i>
-                </div>
-            </aside>
-
-            <main class="chat-area">
-                <header class="chat-header">
-                    <i class="fas fa-hashtag"></i> genel-sohbet
-                </header>
-                <div id="messages-container">
-                    </div>
-                <form id="chat-form">
-                    <input type="text" id="message-input" placeholder="Mesaj gönder #genel-sohbet" autocomplete="off">
-                </form>
-            </main>
+        <div class="chat-area">
+            <div class="chat-header"># genel-sohbet</div>
+            <div id="messages-container" class="messages-container"></div>
+            <form id="chat-form" class="message-input-container">
+                <input type="text" id="message-input" placeholder="Mesaj gönder..." autocomplete="off">
+            </form>
         </div>
     </div>
 
