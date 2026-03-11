@@ -1,27 +1,53 @@
-function login(){
+function register(){
 
-let username = document.getElementById("username").value
+let email = document.getElementById("email").value
 let password = document.getElementById("password").value
 
-firebase.database().ref("users/"+username).once("value",function(snapshot){
+auth.createUserWithEmailAndPassword(email,password)
 
-if(!snapshot.exists()){
-alert("Kullanıcı bulunamadı")
-return
+.then(()=>{
+
+alert("Kayıt başarılı")
+
+})
+
+.catch((error)=>{
+
+alert(error.message)
+
+})
+
 }
 
-let data = snapshot.val()
 
-if(data.password !== password){
-alert("Şifre yanlış")
-return
-}
 
-localStorage.setItem("user",username)
+function login(){
+
+let email = document.getElementById("email").value
+let password = document.getElementById("password").value
+
+auth.signInWithEmailAndPassword(email,password)
+
+.then(()=>{
 
 document.getElementById("login").style.display="none"
 document.getElementById("app").style.display="block"
 
 })
+
+.catch((error)=>{
+
+alert(error.message)
+
+})
+
+}
+
+
+
+function logout(){
+
+auth.signOut()
+location.reload()
 
 }
