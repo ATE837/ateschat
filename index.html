@@ -1,378 +1,311 @@
 <!DOCTYPE html>
-<html lang="tr">
+<html>
 <head>
-
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1.0">
-
 <title>AteşChat V9</title>
+
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
 <style>
 
 body{
 margin:0;
 font-family:Arial;
-background:#0f0f0f;
+background:#1e1f22;
 color:white;
 }
 
-.page{
-display:none;
-height:100vh;
-}
-
-.center{
+#login{
 display:flex;
 flex-direction:column;
-align-items:center;
 justify-content:center;
-gap:12px;
-}
-
-button{
-padding:12px;
-border:none;
-border-radius:10px;
-background:#ff3c3c;
-color:white;
-width:260px;
-font-size:16px;
+align-items:center;
+height:100vh;
 }
 
 input{
-padding:12px;
+padding:10px;
+margin:5px;
+border-radius:5px;
 border:none;
+}
+
+button{
+padding:10px;
+margin:5px;
+border:none;
+border-radius:5px;
+background:#5865F2;
+color:white;
+cursor:pointer;
+}
+
+#app{
+display:none;
+height:100vh;
+display:flex;
+}
+
+#servers{
+width:80px;
+background:#2b2d31;
+padding:10px;
+overflow:auto;
+}
+
+.server{
+background:#404249;
+padding:10px;
+margin:5px;
+cursor:pointer;
+text-align:center;
 border-radius:10px;
-width:260px;
-font-size:16px;
+}
+
+#rooms{
+width:200px;
+background:#313338;
+padding:10px;
+}
+
+.room{
+padding:8px;
+cursor:pointer;
 }
 
 #chat{
+flex:1;
 display:flex;
 flex-direction:column;
-height:100vh;
 }
 
 #messages{
 flex:1;
-overflow-y:auto;
-padding:15px;
-}
-
-.msg{
-background:#222;
+overflow:auto;
 padding:10px;
-border-radius:10px;
-margin-bottom:10px;
-max-width:80%;
 }
 
-.me{
-background:#ff3c3c;
-margin-left:auto;
-}
-
-#sendbox{
+#sendBox{
 display:flex;
-position:fixed;
-bottom:0;
-left:0;
-right:0;
-background:#1b1b1b;
-padding:10px;
 }
 
-#msgInput{
+#sendBox input{
 flex:1;
-border-radius:10px;
-border:none;
-padding:10px;
-}
-
-#sendbtn{
-width:80px;
-margin-left:5px;
 }
 
 </style>
+
 </head>
 
 <body>
 
-<!-- HOME -->
+<div id="login">
 
-<div id="home" class="page center" style="display:flex">
+<h2>AteşChat V9</h2>
 
-<h2>🔥 AteşChat V9</h2>
+<input id="username" placeholder="Kullanıcı adı">
 
-<button onclick="showLogin()">Giriş Yap</button>
-
-<button onclick="showRegister()">Kayıt Ol</button>
+<button onclick="login()">Giriş</button>
 
 </div>
 
-<!-- LOGIN -->
 
-<div id="login" class="page center">
+<div id="app">
 
-<h2>Giriş</h2>
+<div id="servers"></div>
 
-<input id="loginEmail" placeholder="Email">
+<div id="rooms">
 
-<input id="loginPass" type="password" placeholder="Şifre">
+<button onclick="createServer()">+ Sunucu</button>
 
-<button onclick="login()">Giriş Yap</button>
-
-<button onclick="backHome()">Geri</button>
+<div id="roomList"></div>
 
 </div>
 
-<!-- REGISTER -->
-
-<div id="register" class="page center">
-
-<h2>Kayıt Ol</h2>
-
-<input id="regUser" placeholder="Kullanıcı adı">
-
-<input id="regEmail" placeholder="Email">
-
-<input id="regPass" type="password" placeholder="Şifre">
-
-<button onclick="register()">Hesap oluştur</button>
-
-<button onclick="backHome()">Geri</button>
-
-</div>
-
-<!-- SERVER PANEL -->
-
-<div id="servers" class="page center">
-
-<h2>Sunucu Paneli</h2>
-
-<button onclick="createServer()">Sunucu Oluştur</button>
-
-<input id="joinCode" placeholder="Davet kodu">
-
-<button onclick="joinServer()">Sunucuya Katıl</button>
-
-</div>
-
-<!-- CHAT -->
-
-<div id="chat" class="page">
-
-<div style="padding:15px;background:#1b1b1b">
-
-🔥 AteşChat Sunucu
-
-</div>
+<div id="chat">
 
 <div id="messages"></div>
 
-<div id="sendbox">
+<div id="sendBox">
 
 <input id="msgInput" placeholder="Mesaj yaz">
 
-<button id="sendbtn" onclick="send()">Gönder</button>
+<button onclick="sendMessage()">Gönder</button>
 
 </div>
 
 </div>
 
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+</div>
+
 
 <script>
 
-const firebaseConfig={
-apiKey:"AIzaSyCwwqd4FfhvLRQu8DUUfbdorIu3iJpkHMM",
-authDomain:"ateschat-cd9f4.firebaseapp.com",
-databaseURL:"https://ateschat-cd9f4-default-rtdb.firebaseio.com",
-projectId:"ateschat-cd9f4"
-}
+const firebaseConfig = {
+apiKey: "AIzaSyCwwqd4FfhvLRQu8DUUfbdorIu3iJpkHMM",
+authDomain: "ateschat-cd9f4.firebaseapp.com",
+databaseURL: "https://ateschat-cd9f4-default-rtdb.firebaseio.com",
+projectId: "ateschat-cd9f4",
+storageBucket: "ateschat-cd9f4.firebasestorage.app",
+messagingSenderId: "174732212740",
+appId: "1:174732212740:web:dcd4b60ed7cc380ca95351"
+};
 
-firebase.initializeApp(firebaseConfig)
+firebase.initializeApp(firebaseConfig);
 
-let db=firebase.database()
+const db = firebase.database();
 
-let user=""
-let currentServer=""
+let user="";
+let currentServer="";
+let currentRoom="general";
 
-/* SAYFA */
-
-function hideAll(){
-
-document.querySelectorAll(".page").forEach(p=>{
-p.style.display="none"
-})
-
-}
-
-function showLogin(){
-
-hideAll()
-document.getElementById("login").style.display="flex"
-
-}
-
-function showRegister(){
-
-hideAll()
-document.getElementById("register").style.display="flex"
-
-}
-
-function backHome(){
-
-hideAll()
-document.getElementById("home").style.display="flex"
-
-}
-
-/* REGISTER */
-
-function register(){
-
-let u=document.getElementById("regUser").value
-let e=document.getElementById("regEmail").value
-let p=document.getElementById("regPass").value
-
-db.ref("users").push({
-user:u,
-email:e,
-pass:p
-})
-
-alert("Kayıt başarılı")
-
-backHome()
-
-}
-
-/* LOGIN */
 
 function login(){
 
-let e=document.getElementById("loginEmail").value
-let p=document.getElementById("loginPass").value
+user=document.getElementById("username").value;
 
-db.ref("users").once("value",snap=>{
+if(!user)return;
 
-snap.forEach(d=>{
+document.getElementById("login").style.display="none";
+document.getElementById("app").style.display="flex";
 
-let data=d.val()
-
-if(data.email==e && data.pass==p){
-
-user=data.user
-
-hideAll()
-document.getElementById("servers").style.display="flex"
+loadServers();
 
 }
 
-})
 
-})
-
-}
-
-/* SUNUCU OLUŞTUR */
 
 function createServer(){
 
-let code=Math.random().toString(36).substring(2,8)
+let name=prompt("Sunucu adı");
 
-db.ref("servers/"+code).set({
+if(!name)return;
 
+let id="srv_"+Date.now();
+
+let invite=Math.random().toString(36).substring(2,7);
+
+db.ref("servers/"+id).set({
+
+name:name,
 owner:user,
-created:Date.now()
+invite:invite
 
-})
+});
 
-alert("Davet kodu: "+code)
+db.ref("servers/"+id+"/rooms/general").set({
 
-currentServer=code
+name:"genel"
 
-openChat()
+});
 
-}
-
-/* SUNUCUYA KATIL */
-
-function joinServer(){
-
-let code=document.getElementById("joinCode").value
-
-db.ref("servers/"+code).once("value",snap=>{
-
-if(snap.exists()){
-
-currentServer=code
-openChat()
-
-}else{
-
-alert("Kod yanlış")
+alert("Sunucu oluşturuldu\nDavet kodu: "+invite);
 
 }
 
-})
+
+
+function loadServers(){
+
+db.ref("servers").on("value",snap=>{
+
+let html="";
+
+snap.forEach(s=>{
+
+let data=s.val();
+
+html+=`
+<div class="server" onclick="openServer('${s.key}')">
+${data.name[0]}
+</div>
+`;
+
+});
+
+document.getElementById("servers").innerHTML=html;
+
+});
 
 }
 
-/* CHAT */
 
-function openChat(){
 
-hideAll()
-document.getElementById("chat").style.display="flex"
+function openServer(id){
 
-loadMessages()
+currentServer=id;
+
+loadRooms();
 
 }
 
-function send(){
 
-let text=document.getElementById("msgInput").value
 
-if(text=="")return
+function loadRooms(){
 
-db.ref("messages/"+currentServer).push({
+db.ref("servers/"+currentServer+"/rooms").on("value",snap=>{
+
+let html="";
+
+snap.forEach(r=>{
+
+let data=r.val();
+
+html+=`
+<div class="room" onclick="openRoom('${r.key}')">
+# ${data.name}
+</div>
+`;
+
+});
+
+document.getElementById("roomList").innerHTML=html;
+
+});
+
+}
+
+
+
+function openRoom(room){
+
+currentRoom=room;
+
+document.getElementById("messages").innerHTML="";
+
+db.ref("servers/"+currentServer+"/rooms/"+room+"/messages")
+.on("child_added",snap=>{
+
+let m=snap.val();
+
+let div=document.createElement("div");
+
+div.innerHTML="<b>"+m.user+"</b>: "+m.text;
+
+document.getElementById("messages").appendChild(div);
+
+});
+
+}
+
+
+
+function sendMessage(){
+
+let text=document.getElementById("msgInput").value;
+
+if(!text)return;
+
+db.ref("servers/"+currentServer+"/rooms/"+currentRoom+"/messages").push({
 
 user:user,
 text:text,
 time:Date.now()
 
-})
+});
 
-document.getElementById("msgInput").value=""
-
-}
-
-function loadMessages(){
-
-db.ref("messages/"+currentServer).on("child_added",snap=>{
-
-let d=snap.val()
-
-let div=document.createElement("div")
-
-div.className="msg"
-
-if(d.user==user){
-
-div.classList.add("me")
-
-}
-
-div.innerHTML="<b>"+d.user+"</b><br>"+d.text
-
-document.getElementById("messages").appendChild(div)
-
-})
+document.getElementById("msgInput").value="";
 
 }
 
