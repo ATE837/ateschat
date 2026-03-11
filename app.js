@@ -1,6 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-import { getFirestore, collection, addDoc, doc, getDoc, setDoc, updateDoc, arrayUnion, query, orderBy, onSnapshot, serverTimestamp, getDocs, where } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { getFirestore, collection, addDoc, doc, getDoc, setDoc, updateDoc, deleteDoc, arrayUnion, query, orderBy, onSnapshot, serverTimestamp, getDocs, where } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyCwwqd4FfhvLRQu8DUUfbdorIu3iJpkHMM",
@@ -17,8 +17,10 @@ const db = getFirestore(app);
 
 let currentUser = null;
 let currentServerId = null;
+let currentChannelId = null;
 let msgUnsub = null;
 let memberUnsub = null;
+let channelUnsub = null;
 let currentCallId = null;
 let pc = null;
 let localStream = null;
@@ -59,9 +61,7 @@ window.doRegister = async () => {
     try {
         const r = await createUserWithEmailAndPassword(auth, email, password);
         await updateProfile(r.user, { displayName: name });
-        await setDoc(doc(db, 'users', r.user.uid), {
-            displayName: name, email, photoURL: null, createdAt: serverTimestamp()
-        }, { merge: true });
+        await setDoc(doc(db, 'users', r.user.uid), { displayName: name, email, photoURL: null, createdAt: serverTimestamp() }, { merge: true });
         err.style.color = '#23a55a'; err.textContent = 'Kayıt başarılı!';
     } catch (e) {
         err.style.color = '#ed4245';
@@ -78,7 +78,7 @@ window.showServerScreen = () => {
 };
 
 // =====================
-// PROFİL FOTOĞRAFI (Base64 - Storage yok)
+// PROFİL FOTOĞRAFI
 // =====================
 window.openAvatarPicker = () => document.getElementById('avatar-file-input').click();
 
@@ -86,18 +86,12 @@ window.onAvatarSelected = async (input) => {
     const file = input.files[0];
     if (!file) return;
     if (file.size > 500 * 1024) { alert('Fotoğraf 500KB\'dan küçük olmalı.'); return; }
-
     const myAvatarEl = document.getElementById('my-avatar');
     myAvatarEl.textContent = '⏳';
-
     const reader = new FileReader();
     reader.onload = async (e) => {
         const base64 = e.target.result;
-
-        // Firestore'a kaydet
         await setDoc(doc(db, 'users', currentUser.uid), { photoURL: base64 }, { merge: true });
-
-        // Auth profilini güncelle (sadece displayName tutar, photoURL base64 çok uzun olur)
         setAvatarEl(myAvatarEl, base64, currentUser.displayName);
         alert('Profil fotoğrafı güncellendi! ✅');
     };
@@ -130,17 +124,10 @@ onAuthStateChanged(auth, async (user) => {
     if (user) {
         currentUser = user;
         document.getElementById('auth-container').style.display = 'none';
-
         const myAvatarEl = document.getElementById('my-avatar');
-        myAvatarEl.style.cursor = 'pointer';
-        myAvatarEl.title = 'Fotoğraf değiştir';
-        myAvatarEl.onclick = () => window.openAvatarPicker();
-
-        // Firestore'dan fotoğrafı yükle
         const uDoc = await getDoc(doc(db, 'users', user.uid));
         const photoURL = uDoc.exists() ? uDoc.data().photoURL : null;
         setAvatarEl(myAvatarEl, photoURL, user.displayName);
-
         document.getElementById('my-name').textContent = user.displayName || user.email;
         loadUserServers();
         listenForCalls();
@@ -182,33 +169,12 @@ function renderServers(serverList) {
     });
 }
 
-function openServer(server) {
+async function openServer(server) {
     currentServerId = server.id;
-    document.getElementById('server-title').textContent = '🔥 ' + server.name;
+    document.getElementById('channel-server-name').textContent = server.name;
     document.querySelectorAll('.server-icon').forEach(el => el.classList.toggle('active', el.title === server.name));
 
-    if (msgUnsub) msgUnsub();
-    const q = query(collection(db, 'servers', server.id, 'messages'), orderBy('createdAt', 'asc'));
-    msgUnsub = onSnapshot(q, snap => {
-        const container = document.getElementById('messages');
-        container.innerHTML = '';
-        snap.forEach(d => {
-            const data = d.data();
-            const time = data.createdAt?.toDate().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }) || '';
-            const div = document.createElement('div');
-            div.className = 'msg';
-            div.appendChild(makeAvatar(data.photoURL || null, data.name, 'msg-av'));
-            const body = document.createElement('div');
-            body.className = 'msg-body';
-            body.innerHTML = `
-                <div><span class="msg-name">${data.name || 'Kullanıcı'}</span><span class="msg-time">${time}</span></div>
-                <span class="msg-text">${data.text}</span>`;
-            div.appendChild(body);
-            container.appendChild(div);
-        });
-        container.scrollTop = container.scrollHeight;
-    });
-
+    // Üyeleri dinle
     if (memberUnsub) memberUnsub();
     memberUnsub = onSnapshot(doc(db, 'servers', server.id), async snap => {
         const members = snap.data()?.members || [];
@@ -216,10 +182,7 @@ function openServer(server) {
         list.innerHTML = '';
         for (const m of members) {
             let photoURL = null;
-            try {
-                const uDoc = await getDoc(doc(db, 'users', m.uid));
-                if (uDoc.exists()) photoURL = uDoc.data().photoURL;
-            } catch(e) {}
+            try { const uDoc = await getDoc(doc(db, 'users', m.uid)); if (uDoc.exists()) photoURL = uDoc.data().photoURL; } catch(e) {}
             const div = document.createElement('div');
             div.className = 'member';
             div.appendChild(makeAvatar(photoURL, m.name, 'member-av'));
@@ -230,27 +193,119 @@ function openServer(server) {
             list.appendChild(div);
         }
     });
+
+    // Kanalları yükle
+    loadChannels(server.id);
+}
+
+// =====================
+// KANALLAR
+// =====================
+async function loadChannels(serverId) {
+    if (channelUnsub) channelUnsub();
+
+    channelUnsub = onSnapshot(collection(db, 'servers', serverId, 'channels'), async snap => {
+        const channelList = document.getElementById('channels');
+        channelList.innerHTML = '';
+
+        let channels = [];
+        snap.forEach(d => channels.push({ id: d.id, ...d.data() }));
+        channels.sort((a, b) => (a.createdAt?.seconds || 0) - (b.createdAt?.seconds || 0));
+
+        // Hiç kanal yoksa otomatik #genel oluştur
+        if (channels.length === 0) {
+            await addDoc(collection(db, 'servers', serverId, 'channels'), {
+                name: 'genel', createdAt: serverTimestamp()
+            });
+            return;
+        }
+
+        channels.forEach(ch => {
+            const el = document.createElement('div');
+            el.className = 'channel-item' + (ch.id === currentChannelId ? ' active' : '');
+            el.innerHTML = `<span>#</span>${ch.name}`;
+            el.onclick = () => openChannel(serverId, ch.id, ch.name);
+            channelList.appendChild(el);
+        });
+
+        // İlk kanalı aç
+        if (!currentChannelId || !channels.find(c => c.id === currentChannelId)) {
+            openChannel(serverId, channels[0].id, channels[0].name);
+        }
+    });
+}
+
+function openChannel(serverId, channelId, channelName) {
+    currentChannelId = channelId;
+    document.getElementById('channel-title').textContent = '# ' + channelName;
+
+    document.querySelectorAll('.channel-item').forEach(el => {
+        el.classList.toggle('active', el.textContent.trim() === channelName);
+    });
+
+    if (msgUnsub) msgUnsub();
+    const q = query(collection(db, 'servers', serverId, 'channels', channelId, 'messages'), orderBy('createdAt', 'asc'));
+    msgUnsub = onSnapshot(q, snap => {
+        const container = document.getElementById('messages');
+        container.innerHTML = '';
+        snap.forEach(d => {
+            const data = d.data();
+            const msgId = d.id;
+            const time = data.createdAt?.toDate().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }) || '';
+            const div = document.createElement('div');
+            div.className = 'msg';
+            div.appendChild(makeAvatar(data.photoURL || null, data.name, 'msg-av'));
+            const body = document.createElement('div');
+            body.className = 'msg-body';
+            body.innerHTML = `
+                <div><span class="msg-name">${data.name || 'Kullanıcı'}</span><span class="msg-time">${time}</span></div>
+                <span class="msg-text">${data.text}</span>`;
+            div.appendChild(body);
+
+            // Kendi mesajını silebilirsin
+            if (data.uid === currentUser?.uid) {
+                const delBtn = document.createElement('button');
+                delBtn.className = 'msg-delete';
+                delBtn.textContent = '🗑';
+                delBtn.title = 'Sil';
+                delBtn.onclick = () => deleteMessage(serverId, channelId, msgId);
+                div.appendChild(delBtn);
+            }
+
+            container.appendChild(div);
+        });
+        container.scrollTop = container.scrollHeight;
+    });
+}
+
+window.addChannel = async () => {
+    const name = document.getElementById('new-channel-name').value.trim().toLowerCase().replace(/\s+/g, '-');
+    const err = document.getElementById('channel-error');
+    if (!name) { err.textContent = 'Kanal adı girin.'; return; }
+    await addDoc(collection(db, 'servers', currentServerId, 'channels'), {
+        name, createdAt: serverTimestamp()
+    });
+    hideModal('modal-add-channel');
+    document.getElementById('new-channel-name').value = '';
+};
+
+async function deleteMessage(serverId, channelId, msgId) {
+    if (!confirm('Mesajı silmek istiyor musun?')) return;
+    await deleteDoc(doc(db, 'servers', serverId, 'channels', channelId, 'messages', msgId));
 }
 
 window.sendMessage = async () => {
     const input = document.getElementById('msg-input');
     const text = input.value.trim();
-    if (!text || !currentServerId || !currentUser) return;
+    if (!text || !currentServerId || !currentChannelId || !currentUser) return;
     input.value = '';
 
-    // Güncel fotoğrafı al
     let photoURL = null;
-    try {
-        const uDoc = await getDoc(doc(db, 'users', currentUser.uid));
-        if (uDoc.exists()) photoURL = uDoc.data().photoURL;
-    } catch(e) {}
+    try { const uDoc = await getDoc(doc(db, 'users', currentUser.uid)); if (uDoc.exists()) photoURL = uDoc.data().photoURL; } catch(e) {}
 
-    await addDoc(collection(db, 'servers', currentServerId, 'messages'), {
-        text,
-        name: currentUser.displayName || currentUser.email,
-        photoURL: photoURL || null,
-        uid: currentUser.uid,
-        createdAt: serverTimestamp()
+    await addDoc(collection(db, 'servers', currentServerId, 'channels', currentChannelId, 'messages'), {
+        text, name: currentUser.displayName || currentUser.email,
+        photoURL: photoURL || null, uid: currentUser.uid, createdAt: serverTimestamp()
     });
 };
 
@@ -309,9 +364,8 @@ window.copyInvite = () => {
 // =====================
 window.startCall = async (type) => {
     if (!currentServerId) { alert('Önce bir sunucu seç!'); return; }
-    try {
-        localStream = await navigator.mediaDevices.getUserMedia({ video: type === 'video', audio: true });
-    } catch (e) { alert('Kamera/mikrofon erişimi reddedildi.'); return; }
+    try { localStream = await navigator.mediaDevices.getUserMedia({ video: type === 'video', audio: true }); }
+    catch (e) { alert('Kamera/mikrofon erişimi reddedildi.'); return; }
 
     pc = new RTCPeerConnection(iceServers);
     localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
@@ -324,7 +378,6 @@ window.startCall = async (type) => {
     pc.onicecandidate = async (e) => {
         if (e.candidate) await addDoc(collection(db, 'calls', currentCallId, 'offerCandidates'), e.candidate.toJSON());
     };
-
     const offer = await pc.createOffer();
     await pc.setLocalDescription(offer);
     await setDoc(callDoc, {
@@ -373,9 +426,8 @@ window.acceptCall = async () => {
     document.getElementById('incoming-call').style.display = 'none';
     const callDoc = doc(db, 'calls', currentCallId);
     const callData = (await getDoc(callDoc)).data();
-    try {
-        localStream = await navigator.mediaDevices.getUserMedia({ video: callData.callType === 'video', audio: true });
-    } catch (e) { alert('Kamera/mikrofon erişimi reddedildi.'); return; }
+    try { localStream = await navigator.mediaDevices.getUserMedia({ video: callData.callType === 'video', audio: true }); }
+    catch (e) { alert('Kamera/mikrofon erişimi reddedildi.'); return; }
 
     pc = new RTCPeerConnection(iceServers);
     localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
@@ -384,16 +436,13 @@ window.acceptCall = async () => {
     pc.onicecandidate = async (e) => {
         if (e.candidate) await addDoc(collection(db, 'calls', currentCallId, 'answerCandidates'), e.candidate.toJSON());
     };
-
     await pc.setRemoteDescription(new RTCSessionDescription(callData.offer));
     const answer = await pc.createAnswer();
     await pc.setLocalDescription(answer);
     await updateDoc(callDoc, { answer: { type: answer.type, sdp: answer.sdp }, status: 'accepted' });
-
     onSnapshot(collection(db, 'calls', currentCallId, 'offerCandidates'), (snap) => {
         snap.docChanges().forEach(c => { if (c.type === 'added') pc.addIceCandidate(new RTCIceCandidate(c.doc.data())); });
     });
-
     document.getElementById('call-screen').style.display = 'flex';
     document.getElementById('call-status').textContent = 'Bağlandı ✅';
     document.getElementById('remote-video').style.display = callData.callType === 'video' ? 'block' : 'none';
@@ -407,10 +456,7 @@ window.rejectCall = async () => {
 window.endCall = async () => {
     if (pc) { pc.close(); pc = null; }
     if (localStream) { localStream.getTracks().forEach(t => t.stop()); localStream = null; }
-    if (currentCallId) {
-        try { await updateDoc(doc(db, 'calls', currentCallId), { status: 'ended' }); } catch(e) {}
-        currentCallId = null;
-    }
+    if (currentCallId) { try { await updateDoc(doc(db, 'calls', currentCallId), { status: 'ended' }); } catch(e) {} currentCallId = null; }
     document.getElementById('call-screen').style.display = 'none';
     document.getElementById('remote-video').srcObject = null;
     document.getElementById('local-video').srcObject = null;
