@@ -2,6 +2,7 @@
 <html>
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>AteşChat</title>
 
 <style>
@@ -18,6 +19,14 @@ color:white;
 height:100vh;
 display:flex;
 flex-direction:column;
+}
+
+#topbar{
+background:#202225;
+padding:8px;
+display:flex;
+align-items:center;
+gap:10px;
 }
 
 #app{
@@ -38,19 +47,29 @@ padding-top:10px;
 .server{
 width:40px;
 height:40px;
-border-radius:50%;
 background:#5865f2;
+border-radius:50%;
 display:flex;
 align-items:center;
 justify-content:center;
 margin-bottom:10px;
-cursor:pointer;
+font-weight:bold;
 }
 
 #rooms{
-width:160px;
+width:150px;
 background:#2f3136;
 padding:10px;
+}
+
+#rooms button{
+width:100%;
+margin-bottom:10px;
+}
+
+#roomList div{
+padding:6px;
+cursor:pointer;
 }
 
 #chat{
@@ -71,10 +90,15 @@ margin-bottom:12px;
 }
 
 .msg img{
-width:38px;
-height:38px;
+width:36px;
+height:36px;
 border-radius:50%;
 margin-right:10px;
+object-fit:cover;
+}
+
+.name{
+font-weight:bold;
 }
 
 #inputArea{
@@ -87,10 +111,9 @@ background:#40444b;
 flex:1;
 padding:10px;
 border:none;
-outline:none;
+border-radius:5px;
 background:#303339;
 color:white;
-border-radius:5px;
 }
 
 button{
@@ -100,15 +123,6 @@ color:white;
 padding:10px;
 margin-left:5px;
 border-radius:5px;
-cursor:pointer;
-}
-
-#topbar{
-padding:8px;
-background:#202225;
-display:flex;
-align-items:center;
-gap:10px;
 }
 
 @media(max-width:700px){
@@ -136,7 +150,7 @@ height:30px;
 <div id="topbar">
 
 <input type="file" id="profileFile">
-<button onclick="uploadProfile()">Profil</button>
+<button onclick="uploadProfile()">Profil Yükle</button>
 
 </div>
 
@@ -211,7 +225,10 @@ window.uploadProfile=function(){
 
 let file=document.getElementById("profileFile").files[0];
 
-if(!file) return alert("Fotoğraf seç");
+if(!file){
+alert("Fotoğraf seç");
+return;
+}
 
 let storageRef=sRef(storage,"profiles/"+Date.now());
 
@@ -237,7 +254,7 @@ if(text=="") return;
 
 push(messagesRef,{
 
-user:"Ateş",
+user:"Kullanıcı",
 text:text,
 photo:profileURL,
 time:Date.now()
@@ -262,15 +279,17 @@ div.innerHTML=`
 
 <div>
 
-<b>${msg.user}</b><br>
+<div class="name">${msg.user}</div>
 
-${msg.text}
+<div>${msg.text}</div>
 
 </div>
 
 `;
 
 document.getElementById("messages").appendChild(div);
+
+document.getElementById("messages").scrollTop=999999;
 
 });
 
