@@ -1,12 +1,12 @@
-var firebaseConfig = {
+const firebaseConfig = {
 
-apiKey: "APIKEY",
-authDomain: "PROJECT.firebaseapp.com",
-databaseURL: "https://PROJECT-default-rtdb.firebaseio.com",
-projectId: "PROJECT",
-storageBucket: "PROJECT.appspot.com",
-messagingSenderId: "123",
-appId: "APPID"
+apiKey: "BURAYA",
+authDomain: "BURAYA",
+databaseURL: "BURAYA",
+projectId: "BURAYA",
+storageBucket: "BURAYA",
+messagingSenderId: "BURAYA",
+appId: "BURAYA"
 
 };
 
