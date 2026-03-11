@@ -1,67 +1,72 @@
-let currentUser=null
+// KAYIT OL
 
 function register(){
 
-let u=username.value
-let p=password.value
-let photoUrl=photo.value
+let username = document.getElementById("username").value
+let password = document.getElementById("password").value
 
-db.ref("users/"+u).once("value",snap=>{
-
-if(snap.exists()){
-alert("Bu kullanıcı adı kullanılıyor")
+if(username === "" || password === ""){
+alert("Kullanıcı adı ve şifre gir")
 return
 }
 
-db.ref("users/"+u).set({
+firebase.database().ref("users/"+username).once("value",function(snapshot){
 
-password:p,
-photo:photoUrl,
-role:"user"
+if(snapshot.exists()){
+alert("Bu kullanıcı adı zaten var")
+}else{
 
+firebase.database().ref("users/"+username).set({
+username:username,
+password:password,
+online:false
 })
 
 alert("Kayıt başarılı")
 
+}
+
 })
 
 }
 
 
+
+// GİRİŞ
+
 function login(){
 
-let u=username.value
-let p=password.value
+let username = document.getElementById("username").value
+let password = document.getElementById("password").value
 
-db.ref("users/"+u).once("value",snap=>{
+firebase.database().ref("users/"+username).once("value",function(snapshot){
 
-let data=snap.val()
-
-if(!data){
-alert("Kullanıcı yok")
+if(!snapshot.exists()){
+alert("Kullanıcı bulunamadı")
 return
 }
 
-if(data.password!=p){
+let data = snapshot.val()
+
+if(data.password !== password){
 alert("Şifre yanlış")
 return
 }
 
-currentUser=u
+localStorage.setItem("user",username)
 
-login.style.display="none"
-app.style.display="block"
-
-loadUsers()
-loadMessages()
+document.getElementById("login").style.display="none"
+document.getElementById("app").style.display="block"
 
 })
 
 }
 
 
+
 function logout(){
 
+localStorage.removeItem("user")
 location.reload()
 
 }
