@@ -22,7 +22,6 @@ let currentUser = null;
 let messagesUnsub = null;
 let membersUnsub = null;
 
-// --- YARDIMCI ---
 function randomCode() {
     return Math.random().toString(36).substring(2, 8).toUpperCase();
 }
@@ -48,11 +47,24 @@ document.getElementById('login-btn').addEventListener('click', async () => {
     const password = document.getElementById('login-password').value;
     const errorEl = document.getElementById('login-error');
     errorEl.textContent = '';
-    if (!email || !password) { errorEl.textContent = 'E-posta ve şifre giriniz.'; return; }
+
+    if (!email || !password) { 
+        errorEl.textContent = 'E-posta ve şifre giriniz.'; 
+        return; 
+    }
+
+    errorEl.textContent = 'Giriş yapılıyor...';
+    errorEl.style.color = '#23a55a';
+
     try {
         await signInWithEmailAndPassword(auth, email, password);
     } catch (e) {
-        errorEl.textContent = 'E-posta veya şifre hatalı.';
+        errorEl.style.color = '#ed4245';
+        if (e.code === 'auth/user-not-found' || e.code === 'auth/wrong-password' || e.code === 'auth/invalid-credential') {
+            errorEl.textContent = 'E-posta veya şifre hatalı.';
+        } else {
+            errorEl.textContent = 'Hata: ' + e.message;
+        }
     }
 });
 
@@ -63,16 +75,28 @@ document.getElementById('register-btn').addEventListener('click', async () => {
     const password = document.getElementById('reg-password').value;
     const errorEl = document.getElementById('reg-error');
     errorEl.textContent = '';
-    if (!name || !email || !password) { errorEl.textContent = 'Tüm alanları doldurunuz.'; return; }
-    if (password.length < 6) { errorEl.textContent = 'Şifre en az 6 karakter olmalı.'; return; }
+
+    if (!name || !email || !password) { 
+        errorEl.textContent = 'Tüm alanları doldurunuz.'; 
+        return; 
+    }
+    if (password.length < 6) { 
+        errorEl.textContent = 'Şifre en az 6 karakter olmalı.'; 
+        return; 
+    }
+
+    errorEl.textContent = 'Kayıt yapılıyor...';
+    errorEl.style.color = '#23a55a';
+
     try {
         const result = await createUserWithEmailAndPassword(auth, email, password);
         await updateProfile(result.user, { displayName: name });
     } catch (e) {
+        errorEl.style.color = '#ed4245';
         if (e.code === 'auth/email-already-in-use') {
             errorEl.textContent = 'Bu e-posta zaten kayıtlı.';
         } else {
-            errorEl.textContent = 'Kayıt olunamadı.';
+            errorEl.textContent = 'Hata: ' + e.message;
         }
     }
 });
@@ -90,7 +114,6 @@ onAuthStateChanged(auth, async (user) => {
         document.getElementById('user-avatar-text').textContent = letter;
         document.getElementById('user-name').textContent = user.displayName || user.email;
 
-        // Kullanıcının sunucularını yükle
         await loadUserServers();
     } else {
         currentUser = null;
@@ -116,7 +139,6 @@ async function loadUserServers() {
     }
 }
 
-// --- SUNUCU İKONLARINI GÖSTER ---
 function renderServerIcons(servers) {
     const list = document.getElementById('server-icons-list');
     list.innerHTML = '';
@@ -130,17 +152,14 @@ function renderServerIcons(servers) {
     });
 }
 
-// --- SUNUCU AÇ ---
 async function openServer(server) {
     currentServerId = server.id;
     document.getElementById('channel-server-name').textContent = '🔥 ' + server.name;
 
-    // Aktif ikonu güncelle
     document.querySelectorAll('.server-icon').forEach(el => {
         el.classList.toggle('active', el.title === server.name);
     });
 
-    // Mesajları dinle
     if (messagesUnsub) messagesUnsub();
     const q = query(collection(db, 'servers', server.id, 'messages'), orderBy('createdAt', 'asc'));
     messagesUnsub = onSnapshot(q, (snapshot) => {
@@ -164,7 +183,6 @@ async function openServer(server) {
         container.scrollTop = container.scrollHeight;
     });
 
-    // Üyeleri dinle
     if (membersUnsub) membersUnsub();
     membersUnsub = onSnapshot(doc(db, 'servers', server.id), (snap) => {
         const members = snap.data()?.members || [];
@@ -206,7 +224,6 @@ document.getElementById('create-server-btn').addEventListener('click', () => {
 document.getElementById('cancel-create').addEventListener('click', () => {
     document.getElementById('modal-create').classList.add('hidden');
 });
-
 document.getElementById('confirm-create-btn').addEventListener('click', async () => {
     const name = document.getElementById('new-server-name').value.trim();
     const errorEl = document.getElementById('create-error');
@@ -222,7 +239,6 @@ document.getElementById('confirm-create-btn').addEventListener('click', async ()
         members: [{ uid: currentUser.uid, name: currentUser.displayName || currentUser.email }]
     });
 
-    // Kullanıcıya ekle
     await setDoc(doc(db, 'users', currentUser.uid), {
         servers: arrayUnion({ id: serverId, name })
     }, { merge: true });
@@ -239,13 +255,11 @@ document.getElementById('join-server-btn').addEventListener('click', () => {
 document.getElementById('cancel-join').addEventListener('click', () => {
     document.getElementById('modal-join').classList.add('hidden');
 });
-
 document.getElementById('confirm-join-btn').addEventListener('click', async () => {
     const code = document.getElementById('join-code-input').value.trim().toUpperCase();
     const errorEl = document.getElementById('join-error');
     if (!code) { errorEl.textContent = 'Davet kodu giriniz.'; return; }
 
-    // Koda göre sunucu bul
     const { getDocs, where } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
     const q = query(collection(db, 'servers'), where('inviteCode', '==', code));
     const snap = await getDocs(q);
@@ -256,12 +270,10 @@ document.getElementById('confirm-join-btn').addEventListener('click', async () =
     const serverId = serverDoc.id;
     const serverName = serverDoc.data().name;
 
-    // Üyelere ekle
     await updateDoc(doc(db, 'servers', serverId), {
         members: arrayUnion({ uid: currentUser.uid, name: currentUser.displayName || currentUser.email })
     });
 
-    // Kullanıcıya ekle
     await setDoc(doc(db, 'users', currentUser.uid), {
         servers: arrayUnion({ id: serverId, name: serverName })
     }, { merge: true });
@@ -271,7 +283,7 @@ document.getElementById('confirm-join-btn').addEventListener('click', async () =
     await loadUserServers();
 });
 
-// --- DAVET KODU GÖSTER ---
+// --- DAVET KODU ---
 document.getElementById('invite-btn').addEventListener('click', async () => {
     if (!currentServerId) return;
     const snap = await getDoc(doc(db, 'servers', currentServerId));
@@ -279,11 +291,9 @@ document.getElementById('invite-btn').addEventListener('click', async () => {
     document.getElementById('invite-code-display').textContent = code;
     document.getElementById('modal-invite').classList.remove('hidden');
 });
-
 document.getElementById('cancel-invite').addEventListener('click', () => {
     document.getElementById('modal-invite').classList.add('hidden');
 });
-
 document.getElementById('copy-invite-btn').addEventListener('click', () => {
     const code = document.getElementById('invite-code-display').textContent;
     navigator.clipboard.writeText(code).then(() => {
@@ -292,7 +302,7 @@ document.getElementById('copy-invite-btn').addEventListener('click', () => {
     });
 });
 
-// --- + BUTONU (sidebar) ---
+// --- + BUTONU ---
 document.getElementById('add-server-icon').addEventListener('click', () => {
     document.getElementById('server-screen').classList.remove('hidden');
     document.getElementById('main-layout').classList.add('hidden');
