@@ -1,10 +1,11 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>AteşChat V7</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+
+<title>AteşChat V8</title>
 
 <style>
 
@@ -15,12 +16,17 @@ background:#0f0f0f;
 color:white;
 }
 
-#login{
+.page{
+display:none;
+height:100vh;
+}
+
+.center{
 display:flex;
 flex-direction:column;
-align-items:center;
 justify-content:center;
-height:100vh;
+align-items:center;
+height:100%;
 gap:10px;
 }
 
@@ -29,42 +35,40 @@ padding:12px;
 border-radius:10px;
 border:none;
 width:240px;
-font-size:16px;
 }
 
 button{
 padding:12px;
-border:none;
 border-radius:10px;
+border:none;
 background:#ff3c3c;
 color:white;
 width:240px;
-font-size:16px;
 }
 
 #chat{
-display:none;
+display:flex;
 flex-direction:column;
 height:100vh;
 }
 
 #topbar{
-background:#1f1f1f;
+background:#1c1c1c;
 padding:15px;
 text-align:center;
-font-size:20px;
+font-size:18px;
 }
 
 #messages{
 flex:1;
-overflow-y:auto;
+overflow:auto;
 padding:10px;
 }
 
 .msg{
 background:#222;
 padding:10px;
-border-radius:12px;
+border-radius:10px;
 margin:6px;
 max-width:70%;
 }
@@ -77,13 +81,16 @@ margin-left:auto;
 .time{
 font-size:11px;
 opacity:0.6;
-margin-top:3px;
 }
 
 #sendbox{
+position:fixed;
+bottom:0;
+left:0;
+right:0;
 display:flex;
+background:#1c1c1c;
 padding:10px;
-background:#1f1f1f;
 }
 
 #msgInput{
@@ -97,29 +104,57 @@ margin-right:5px;
 
 <body>
 
-<div id="login">
+<div id="home" class="page center" style="display:flex">
 
-<h2>🔥 AteşChat V7</h2>
+<h2>🔥 AteşChat V8</h2>
 
-<input id="email" placeholder="Gmail veya admin">
+<button onclick="showLogin()">Giriş Yap</button>
 
-<input id="password" type="password" placeholder="Şifre">
-
-<button onclick="login()">Giriş Yap</button>
+<button onclick="showRegister()">Kayıt Ol</button>
 
 </div>
 
-<div id="chat">
+<div id="login" class="page center">
+
+<h2>Giriş</h2>
+
+<input id="loginEmail" placeholder="Gmail">
+
+<input id="loginPass" type="password" placeholder="Şifre">
+
+<button onclick="login()">Giriş Yap</button>
+
+<button onclick="backHome()">Geri</button>
+
+</div>
+
+<div id="register" class="page center">
+
+<h2>Kayıt Ol</h2>
+
+<input id="regUser" placeholder="Kullanıcı adı">
+
+<input id="regEmail" placeholder="Gmail">
+
+<input id="regPass" type="password" placeholder="Şifre">
+
+<button onclick="register()">Hesap oluştur</button>
+
+<button onclick="backHome()">Geri</button>
+
+</div>
+
+<div id="chat" class="page">
 
 <div id="topbar">
-🔥 AteşChat V7
+🔥 AteşChat V8
 </div>
 
 <div id="messages"></div>
 
 <div id="sendbox">
 
-<input id="msgInput" placeholder="Mesaj yaz...">
+<input id="msgInput" placeholder="Mesaj yaz">
 
 <button onclick="send()">Gönder</button>
 
@@ -128,168 +163,177 @@ margin-right:5px;
 </div>
 
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
 <script>
 
-const firebaseConfig = {
+const firebaseConfig={
+apiKey:"AIzaSyCwwqd4FfhvLRQu8DUUfbdorIu3iJpkHMM",
+authDomain:"ateschat-cd9f4.firebaseapp.com",
+databaseURL:"https://ateschat-cd9f4-default-rtdb.firebaseio.com",
+projectId:"ateschat-cd9f4",
+storageBucket:"ateschat-cd9f4.firebasestorage.app",
+messagingSenderId:"174732212740",
+appId:"1:174732212740:web:dcd4b60ed7cc380ca95351"
+}
 
-apiKey: "AIzaSyCwwqd4FfhvLRQu8DUUfbdorIu3iJpkHMM",
+firebase.initializeApp(firebaseConfig)
 
-authDomain: "ateschat-cd9f4.firebaseapp.com",
+let db=firebase.database()
 
-databaseURL: "https://ateschat-cd9f4-default-rtdb.firebaseio.com",
+let user=""
 
-projectId: "ateschat-cd9f4",
+let isAdmin=false
 
-storageBucket: "ateschat-cd9f4.firebasestorage.app",
+function hideAll(){
+document.querySelectorAll(".page").forEach(p=>p.style.display="none")
+}
 
-messagingSenderId: "174732212740",
+function showLogin(){
+hideAll()
+document.getElementById("login").style.display="flex"
+}
 
-appId: "1:174732212740:web:dcd4b60ed7cc380ca95351"
+function showRegister(){
+hideAll()
+document.getElementById("register").style.display="flex"
+}
 
-};
+function backHome(){
+hideAll()
+document.getElementById("home").style.display="flex"
+}
 
-firebase.initializeApp(firebaseConfig);
+function register(){
 
-let db = firebase.database();
+let username=document.getElementById("regUser").value
+let email=document.getElementById("regEmail").value
+let pass=document.getElementById("regPass").value
 
-let user = "";
+if(username==""||email==""||pass==""){
+alert("Bilgileri doldur")
+return
+}
 
-let isAdmin = false;
+db.ref("users").push({
+username:username,
+email:email,
+pass:pass
+})
 
+alert("Kayıt tamam")
 
+backHome()
+
+}
 
 function login(){
 
-let email = document.getElementById("email").value;
+let email=document.getElementById("loginEmail").value
+let pass=document.getElementById("loginPass").value
 
-let pass = document.getElementById("password").value;
+if(email=="AtesBey" && pass=="123ates"){
 
-
-
-if(email=="Ateş Bey" && pass=="AtesBey123"){
-
-user="🔥 Ateş Bey (Admin)";
-
-isAdmin=true;
-
-startChat();
-
-return;
+user="🔥 Ateş Bey (Admin)"
+isAdmin=true
+startChat()
+return
 
 }
 
+db.ref("users").once("value",snap=>{
 
+let found=false
 
-if(email.includes("@gmail.com")){
+snap.forEach(u=>{
 
-user=email.split("@")[0];
+let data=u.val()
 
-startChat();
+if(data.email==email && data.pass==pass){
+
+user=data.username
+found=true
+
+}
+
+})
+
+if(found){
+
+startChat()
 
 }else{
 
-alert("Geçerli Gmail gir");
+alert("Giriş hatalı")
 
 }
 
+})
+
 }
-
-
 
 function startChat(){
 
-document.getElementById("login").style.display="none";
+hideAll()
 
-document.getElementById("chat").style.display="flex";
+document.getElementById("chat").style.display="flex"
 
-loadMessages();
+loadMessages()
 
 }
-
-
 
 function send(){
 
-let text=document.getElementById("msgInput").value;
+let text=document.getElementById("msgInput").value
 
-if(text=="") return;
-
-
+if(text=="")return
 
 db.ref("messages").push({
-
 user:user,
-
 text:text,
-
 time:Date.now()
+})
 
-});
-
-
-
-document.getElementById("msgInput").value="";
+document.getElementById("msgInput").value=""
 
 }
-
-
 
 function loadMessages(){
 
-db.ref("messages").on("child_added",function(snap){
+db.ref("messages").on("child_added",snap=>{
 
-let data=snap.val();
+let data=snap.val()
 
+let div=document.createElement("div")
 
-
-let div=document.createElement("div");
-
-div.className="msg";
-
-
+div.className="msg"
 
 if(data.user==user){
+div.classList.add("me")
+}
 
-div.classList.add("me");
+let time=""
+
+if(data.time){
+let d=new Date(data.time)
+time=d.getHours()+":"+("0"+d.getMinutes()).slice(-2)
+}
+
+div.innerHTML="<b>"+data.user+"</b><br>"+data.text+"<div class='time'>"+time+"</div>"
+
+document.getElementById("messages").appendChild(div)
+
+document.getElementById("messages").scrollTop=999999
+
+})
 
 }
 
-
-
-let date=new Date(data.time);
-
-let time=date.getHours()+":"+("0"+date.getMinutes()).slice(-2);
-
-
-
-div.innerHTML="<b>"+data.user+"</b><br>"+data.text+"<div class='time'>"+time+"</div>";
-
-
-
-document.getElementById("messages").appendChild(div);
-
-
-
-document.getElementById("messages").scrollTop=999999;
-
-});
-
-}
-
-
-
-document.getElementById("msgInput").addEventListener("keypress",function(e){
-
+document.getElementById("msgInput").addEventListener("keypress",e=>{
 if(e.key==="Enter"){
-
-send();
-
+send()
 }
-
-});
+})
 
 </script>
 
