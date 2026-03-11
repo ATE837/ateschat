@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>AtesChat</title>
+<meta charset="UTF-8">
+<style>
+body{
+background:black;
+color:white;
+font-family:Arial;
+text-align:center;
+}
+
+#chat{
+height:300px;
+overflow:auto;
+border:1px solid white;
+margin:20px;
+padding:10px;
+}
+
+input{
+padding:10px;
+}
+
+button{
+padding:10px;
+}
+</style>
+</head>
+
+<body>
+
+<h1>🔥 AtesChat</h1>
+
+<div id="chat"></div>
+
+<input id="msg" placeholder="Mesaj yaz...">
+<button onclick="send()">Gönder</button>
+
+<script>
+function send(){
+let msg=document.getElementById("msg").value
+let chat=document.getElementById("chat")
+
+chat.innerHTML += "<p>"+msg+"</p>"
+
+document.getElementById("msg").value=""
+}
+</script>
+
+</body>
+</html>
