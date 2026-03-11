@@ -26,12 +26,12 @@ gap:10px;
 
 input{
 padding:10px;
-border:none;
 border-radius:6px;
+border:none;
 }
 
 button{
-padding:10px 15px;
+padding:10px;
 background:#ff6a00;
 border:none;
 border-radius:6px;
@@ -42,31 +42,10 @@ cursor:pointer;
 #chatPage{
 display:none;
 height:100vh;
-display:flex;
-}
-
-#rooms{
-width:200px;
-background:#1b1b1b;
-padding:10px;
-}
-
-.room{
-padding:8px;
-background:#222;
-margin-bottom:5px;
-border-radius:6px;
-cursor:pointer;
-}
-
-#chat{
-flex:1;
-display:flex;
-flex-direction:column;
 }
 
 #messages{
-flex:1;
+height:70vh;
 overflow-y:auto;
 padding:15px;
 }
@@ -97,50 +76,32 @@ margin-right:10px;
 
 <div id="loginPage">
 
-<h1>🔥 AteşChat</h1>
-
-<input id="username" placeholder="Kullanıcı adı">
+<h1>AteşChat 🔥</h1>
 
 <input id="email" placeholder="Email">
-
 <input id="password" type="password" placeholder="Şifre">
+<input id="username" placeholder="Kullanıcı adı">
 
 <button onclick="register()">Kayıt Ol</button>
-
 <button onclick="login()">Giriş Yap</button>
 
 </div>
 
-
 <div id="chatPage">
 
-<div id="rooms">
-
-<h3>Odalar</h3>
-
-<div class="room" onclick="changeRoom('genel')"># genel</div>
-<div class="room" onclick="changeRoom('sohbet')"># sohbet</div>
-<div class="room" onclick="changeRoom('oyun')"># oyun</div>
-
-</div>
-
-
-<div id="chat">
+<h2 style="text-align:center">Genel Oda</h2>
 
 <div id="messages"></div>
 
 <div id="sendBar">
 
-<input id="messageInput" placeholder="Mesaj yaz...">
+<input id="messageInput" placeholder="Mesaj yaz">
 
 <button onclick="sendMessage()">Gönder</button>
 
 </div>
 
 </div>
-
-</div>
-
 
 <script type="module">
 
@@ -164,13 +125,13 @@ onChildAdded
 
 const firebaseConfig = {
 
-apiKey: "AIzaSyCwwqd4FfhvLRQu8DUUfbdorIu3iJpkHMM",
-authDomain: "ateschat-cd9f4.firebaseapp.com",
-databaseURL: "https://ateschat-cd9f4-default-rtdb.firebaseio.com",
-projectId: "ateschat-cd9f4",
-storageBucket: "ateschat-cd9f4.firebasestorage.app",
-messagingSenderId: "174732212740",
-appId: "1:174732212740:web:9a8a298eca9b3313a95351"
+apiKey: "API_KEY",
+authDomain: "AUTH_DOMAIN",
+databaseURL: "DATABASE_URL",
+projectId: "PROJECT_ID",
+storageBucket: "STORAGE_BUCKET",
+messagingSenderId: "SENDER_ID",
+appId: "APP_ID"
 
 }
 
@@ -179,8 +140,6 @@ const app = initializeApp(firebaseConfig)
 const auth = getAuth(app)
 
 const db = getDatabase(app)
-
-let room="genel"
 
 
 window.register=function(){
@@ -194,8 +153,6 @@ set(ref(db,"users/"+auth.currentUser.uid),{
 name:username.value
 
 })
-
-alert("Kayıt başarılı")
 
 })
 
@@ -219,7 +176,7 @@ if(user){
 
 loginPage.style.display="none"
 
-chatPage.style.display="flex"
+chatPage.style.display="block"
 
 loadMessages()
 
@@ -230,12 +187,10 @@ loadMessages()
 
 window.sendMessage=function(){
 
-push(ref(db,"rooms/"+room),{
+push(ref(db,"messages"),{
 
 user:username.value,
-
 text:messageInput.value,
-
 time:Date.now()
 
 })
@@ -247,9 +202,7 @@ messageInput.value=""
 
 function loadMessages(){
 
-messages.innerHTML=""
-
-onChildAdded(ref(db,"rooms/"+room),(data)=>{
+onChildAdded(ref(db,"messages"),(data)=>{
 
 let m=data.val()
 
@@ -262,15 +215,6 @@ div.innerHTML="<b>"+m.user+"</b><br>"+m.text
 messages.appendChild(div)
 
 })
-
-}
-
-
-window.changeRoom=function(r){
-
-room=r
-
-loadMessages()
 
 }
 
