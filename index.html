@@ -1,197 +1,19 @@
 <!DOCTYPE html>
-<html lang="tr">
+<html>
 
 <head>
 
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>AteşChat V52.1 🔥</title>
+<title>AteşChat</title>
 
 <link rel="stylesheet" href="style.css">
-
-<style>
-
-body{
-margin:0;
-font-family:Arial;
-background:#0f0f0f;
-color:white;
-height:100vh;
-display:flex;
-flex-direction:column;
-}
-
-#login{
-display:flex;
-flex-direction:column;
-align-items:center;
-justify-content:center;
-height:100vh;
-gap:12px;
-}
-
-#login input{
-padding:14px;
-width:260px;
-border:none;
-border-radius:8px;
-font-size:16px;
-}
-
-#login button{
-padding:14px;
-width:260px;
-background:#ff5c00;
-border:none;
-border-radius:8px;
-color:white;
-font-size:16px;
-cursor:pointer;
-}
-
-#app{
-display:none;
-height:100vh;
-}
-
-#container{
-display:flex;
-height:100%;
-}
-
-#rooms{
-width:220px;
-background:#151515;
-padding:10px;
-overflow:auto;
-}
-
-.room{
-padding:10px;
-background:#1e1e1e;
-margin-top:6px;
-border-radius:8px;
-cursor:pointer;
-}
-
-.room:hover{
-background:#2a2a2a;
-}
-
-#chat{
-flex:1;
-display:flex;
-flex-direction:column;
-background:#101010;
-}
-
-#chatHeader{
-background:#1a1a1a;
-padding:15px;
-font-size:18px;
-border-bottom:1px solid #222;
-}
-
-#messages{
-flex:1;
-overflow:auto;
-padding:15px;
-}
-
-.message{
-display:flex;
-gap:10px;
-margin-bottom:10px;
-}
-
-.avatar{
-width:36px;
-height:36px;
-border-radius:50%;
-background:#444;
-}
-
-.msgContent{
-background:#1e1e1e;
-padding:10px;
-border-radius:10px;
-max-width:70%;
-}
-
-#sendBox{
-display:flex;
-padding:10px;
-background:#181818;
-}
-
-#messageInput{
-flex:1;
-padding:12px;
-border:none;
-border-radius:8px;
-font-size:16px;
-}
-
-#emojiBtn{
-margin-left:6px;
-padding:12px;
-background:#333;
-border:none;
-border-radius:8px;
-color:white;
-}
-
-#sendBtn{
-margin-left:6px;
-padding:12px;
-background:#ff5c00;
-border:none;
-border-radius:8px;
-color:white;
-}
-
-#users{
-width:220px;
-background:#151515;
-padding:10px;
-overflow:auto;
-}
-
-.user{
-display:flex;
-align-items:center;
-gap:8px;
-padding:8px;
-margin-top:6px;
-background:#1e1e1e;
-border-radius:6px;
-}
-
-.status{
-width:8px;
-height:8px;
-background:#00ff6a;
-border-radius:50%;
-}
-
-@media (max-width:800px){
-
-#users{
-display:none;
-}
-
-#rooms{
-width:140px;
-}
-
-}
-
-</style>
 
 </head>
 
 <body>
+
 
 <!-- LOGIN -->
 
@@ -199,7 +21,7 @@ width:140px;
 
 <h2>AteşChat 🔥</h2>
 
-<input id="username" placeholder="Kullanıcı adı">
+<input id="email" type="email" placeholder="Gmail">
 
 <input id="password" type="password" placeholder="Şifre">
 
@@ -210,89 +32,43 @@ width:140px;
 </div>
 
 
-<!-- APP -->
-
-<div id="app">
-
-<div id="container">
-
-<!-- ROOMS -->
-
-<div id="rooms">
-
-<h3>Odalar</h3>
-
-<div class="room" onclick="openRoom('global')">🌍 global</div>
-
-<div class="room" onclick="openRoom('sohbet')">💬 sohbet</div>
-
-<div class="room" onclick="openRoom('gaming')">🎮 gaming</div>
-
-</div>
-
-
 <!-- CHAT -->
 
-<div id="chat">
-
-<div id="chatHeader">
-
-<span id="roomName">global</span>
-
-</div>
+<div id="app" style="display:none">
 
 <div id="messages"></div>
 
 <div id="sendBox">
 
-<input id="messageInput" placeholder="Mesaj yaz...">
+<input id="messageInput" placeholder="Mesaj yaz">
 
-<button id="emojiBtn">😀</button>
+<button onclick="send()">Gönder</button>
 
-<button id="sendBtn" onclick="send()">Gönder</button>
-
-</div>
-
-</div>
-
-
-<!-- USERS -->
-
-<div id="users">
-
-<h3>Kullanıcılar</h3>
-
-<div id="userList">
-
-<div class="user">
-
-<div class="status"></div>
-
-<div>Ali</div>
+<button onclick="logout()">Çıkış</button>
 
 </div>
 
 </div>
 
-</div>
 
-</div>
 
-</div>
-
+<!-- FIREBASE -->
 
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
+
+<!-- JS DOSYALARI -->
+
 <script src="firebase.js"></script>
+
 <script src="auth.js"></script>
+
 <script src="chat.js"></script>
-<script src="rooms.js"></script>
-<script src="users.js"></script>
-<script src="dm.js"></script>
-<script src="emoji.js"></script>
-<script src="admin.js"></script>
-<script src="notifications.js"></script>
+
 <script src="ui.js"></script>
 
 </body>
