@@ -5,13 +5,13 @@ let app = document.getElementById("app")
 
 if(user){
 
-login.style.display = "none"
-app.style.display = "block"
+login.style.display="none"
+app.style.display="flex"
 
 }else{
 
-login.style.display = "flex"
-app.style.display = "none"
+login.style.display="flex"
+app.style.display="none"
 
 }
 
