@@ -1,10 +1,11 @@
 <!DOCTYPE html>
 <html>
 <head>
+
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>AteşChat V21 🔥</title>
+<title>AteşChat V22 ULTRA 🔥</title>
 
 <style>
 
@@ -15,16 +16,16 @@ background:#0f0f0f;
 color:white;
 }
 
-h1{
-font-size:40px;
-}
-
 #login{
 display:flex;
 flex-direction:column;
 align-items:center;
 margin-top:120px;
 gap:15px;
+}
+
+h1{
+font-size:40px;
 }
 
 input{
@@ -88,6 +89,7 @@ font-size:18px;
 }
 
 </style>
+
 </head>
 
 <body>
@@ -96,9 +98,8 @@ font-size:18px;
 
 <h1>AteşChat 🔥</h1>
 
-<input id="email" placeholder="Email">
-<input id="password" placeholder="Şifre" type="password">
-<input id="username" placeholder="Kullanıcı adı">
+<input id="email" placeholder="Gmail">
+<input id="password" type="password" placeholder="Şifre">
 
 <button onclick="register()">Kayıt Ol</button>
 <button onclick="login()">Giriş Yap</button>
@@ -121,11 +122,15 @@ font-size:18px;
 <div id="sendArea">
 
 <input id="messageInput" placeholder="Mesaj yaz...">
+
+<button onclick="emoji()">😀</button>
+
 <button onclick="send()">Gönder</button>
 
 </div>
 
 </div>
+
 
 
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
@@ -136,38 +141,33 @@ font-size:18px;
 <script>
 
 const firebaseConfig = {
-  apiKey: "AIzaSyCwwqd4FfhvLRQu8DUUfbdorIu3iJpkHMM",
-  authDomain: "ateschat-cd9f4.firebaseapp.com",
-  databaseURL: "https://ateschat-cd9f4-default-rtdb.firebaseio.com",
-  projectId: "ateschat-cd9f4",
-  storageBucket: "ateschat-cd9f4.firebasestorage.app",
-  messagingSenderId: "174732212740",
-  appId: "1:174732212740:web:dcd4b60ed7cc380ca95351",
-  measurementId: "G-1CBZNR0W3E"
+apiKey: "AIzaSyCwwqd4FfhvLRQu8DUUfbdorIu3iJpkHMM",
+authDomain: "ateschat-cd9f4.firebaseapp.com",
+databaseURL: "https://ateschat-cd9f4-default-rtdb.firebaseio.com",
+projectId: "ateschat-cd9f4",
+storageBucket: "ateschat-cd9f4.firebasestorage.app",
+messagingSenderId: "174732212740",
+appId: "1:174732212740:web:dcd4b60ed7cc380ca95351",
+measurementId: "G-1CBZNR0W3E"
 };
 
-firebase.initializeApp(firebaseConfig)
+firebase.initializeApp(firebaseConfig);
 
-const auth = firebase.auth()
-const db = firebase.database()
+const auth = firebase.auth();
+const db = firebase.database();
+
+
 
 function register(){
 
 let email=document.getElementById("email").value
 let password=document.getElementById("password").value
-let username=document.getElementById("username").value
 
 auth.createUserWithEmailAndPassword(email,password)
 
-.then(user=>{
-
-db.ref("users/"+user.user.uid).set({
-username:username
-})
-
-})
-
 }
+
+
 
 function login(){
 
@@ -178,6 +178,8 @@ auth.signInWithEmailAndPassword(email,password)
 
 }
 
+
+
 auth.onAuthStateChanged(user=>{
 
 if(user){
@@ -185,21 +187,15 @@ if(user){
 document.getElementById("login").style.display="none"
 document.getElementById("chat").style.display="block"
 
-db.ref("users/"+user.uid).once("value",snap=>{
-
-let data=snap.val()
-
-if(data){
-document.getElementById("user").innerText=data.username
-}
-
-})
+document.getElementById("user").innerText=user.email
 
 loadMessages()
 
 }
 
 })
+
+
 
 function send(){
 
@@ -209,26 +205,18 @@ if(text=="") return
 
 let user=auth.currentUser
 
-db.ref("users/"+user.uid).once("value",snap=>{
-
-let name="Misafir"
-
-if(snap.val()){
-name=snap.val().username
-}
-
 db.ref("messages").push({
 
-name:name,
+name:user.email,
 text:text
-
-})
 
 })
 
 document.getElementById("messageInput").value=""
 
 }
+
+
 
 function loadMessages(){
 
@@ -249,9 +237,20 @@ window.scrollTo(0,document.body.scrollHeight)
 
 }
 
+
+
+function emoji(){
+
+document.getElementById("messageInput").value+="😀"
+
+}
+
+
+
 function logout(){
 
 auth.signOut()
+
 location.reload()
 
 }
@@ -259,4 +258,5 @@ location.reload()
 </script>
 
 </body>
+
 </html>
