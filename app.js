@@ -1,6 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-import { getFirestore, collection, addDoc, doc, getDoc, setDoc, updateDoc, deleteDoc, arrayUnion, query, orderBy, onSnapshot, serverTimestamp, getDocs, where } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { getFirestore, collection, addDoc, doc, getDoc, setDoc, updateDoc, arrayUnion, query, orderBy, onSnapshot, serverTimestamp, getDocs, where } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyCwwqd4FfhvLRQu8DUUfbdorIu3iJpkHMM",
@@ -19,15 +19,11 @@ let currentUser = null;
 let currentServerId = null;
 let msgUnsub = null;
 let memberUnsub = null;
-let callUnsub = null;
-
-// WebRTC
+let currentCallId = null;
 let pc = null;
 let localStream = null;
-let currentCallId = null;
-let isCallInitiator = false;
 
-const servers = { iceServers: [{ urls: ['stun:stun1.l.google.com:19302', 'stun:stun2.l.google.com:19302'] }] };
+const iceServers = { iceServers: [{ urls: ['stun:stun1.l.google.com:19302', 'stun:stun2.l.google.com:19302'] }] };
 
 // =====================
 // AUTH
@@ -43,8 +39,7 @@ window.doLogin = async () => {
     const email = document.getElementById('login-email').value.trim();
     const password = document.getElementById('login-password').value;
     const err = document.getElementById('login-error');
-    err.style.color = '#949ba4';
-    err.textContent = 'Giriş yapılıyor...';
+    err.style.color = '#949ba4'; err.textContent = 'Giriş yapılıyor...';
     try {
         await signInWithEmailAndPassword(auth, email, password);
     } catch (e) {
@@ -64,6 +59,9 @@ window.doRegister = async () => {
     try {
         const r = await createUserWithEmailAndPassword(auth, email, password);
         await updateProfile(r.user, { displayName: name });
+        await setDoc(doc(db, 'users', r.user.uid), {
+            displayName: name, email, photoURL: null, createdAt: serverTimestamp()
+        }, { merge: true });
         err.style.color = '#23a55a'; err.textContent = 'Kayıt başarılı!';
     } catch (e) {
         err.style.color = '#ed4245';
@@ -80,13 +78,69 @@ window.showServerScreen = () => {
 };
 
 // =====================
+// PROFİL FOTOĞRAFI (Base64 - Storage yok)
+// =====================
+window.openAvatarPicker = () => document.getElementById('avatar-file-input').click();
+
+window.onAvatarSelected = async (input) => {
+    const file = input.files[0];
+    if (!file) return;
+    if (file.size > 500 * 1024) { alert('Fotoğraf 500KB\'dan küçük olmalı.'); return; }
+
+    const myAvatarEl = document.getElementById('my-avatar');
+    myAvatarEl.textContent = '⏳';
+
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+        const base64 = e.target.result;
+
+        // Firestore'a kaydet
+        await setDoc(doc(db, 'users', currentUser.uid), { photoURL: base64 }, { merge: true });
+
+        // Auth profilini güncelle (sadece displayName tutar, photoURL base64 çok uzun olur)
+        setAvatarEl(myAvatarEl, base64, currentUser.displayName);
+        alert('Profil fotoğrafı güncellendi! ✅');
+    };
+    reader.readAsDataURL(file);
+};
+
+function setAvatarEl(el, photoURL, name) {
+    if (photoURL) {
+        el.style.backgroundImage = `url(${photoURL})`;
+        el.style.backgroundSize = 'cover';
+        el.style.backgroundPosition = 'center';
+        el.textContent = '';
+    } else {
+        el.style.backgroundImage = '';
+        el.textContent = (name || 'A')[0].toUpperCase();
+    }
+}
+
+function makeAvatar(photoURL, name, className) {
+    const div = document.createElement('div');
+    div.className = className;
+    setAvatarEl(div, photoURL, name);
+    return div;
+}
+
+// =====================
 // OTURUM
 // =====================
 onAuthStateChanged(auth, async (user) => {
     if (user) {
         currentUser = user;
         document.getElementById('auth-container').style.display = 'none';
-        document.getElementById('my-avatar').textContent = (user.displayName || user.email)[0].toUpperCase();
+
+        const myAvatarEl = document.getElementById('my-avatar');
+        myAvatarEl.style.cursor = 'pointer';
+        myAvatarEl.title = 'Fotoğraf değiştir';
+        myAvatarEl.onclick = () => window.openAvatarPicker();
+
+        // Firestore'dan fotoğrafı yükle
+        const uDoc = await getDoc(doc(db, 'users', user.uid));
+        const photoURL = uDoc.exists() ? uDoc.data().photoURL : null;
+        setAvatarEl(myAvatarEl, photoURL, user.displayName);
+
         document.getElementById('my-name').textContent = user.displayName || user.email;
         loadUserServers();
         listenForCalls();
@@ -143,28 +197,38 @@ function openServer(server) {
             const time = data.createdAt?.toDate().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }) || '';
             const div = document.createElement('div');
             div.className = 'msg';
-            div.innerHTML = `
-                <div class="msg-av">${(data.name||'A')[0].toUpperCase()}</div>
-                <div class="msg-body">
-                    <div><span class="msg-name">${data.name||''}</span><span class="msg-time">${time}</span></div>
-                    <span class="msg-text">${data.text}</span>
-                </div>`;
+            div.appendChild(makeAvatar(data.photoURL || null, data.name, 'msg-av'));
+            const body = document.createElement('div');
+            body.className = 'msg-body';
+            body.innerHTML = `
+                <div><span class="msg-name">${data.name || 'Kullanıcı'}</span><span class="msg-time">${time}</span></div>
+                <span class="msg-text">${data.text}</span>`;
+            div.appendChild(body);
             container.appendChild(div);
         });
         container.scrollTop = container.scrollHeight;
     });
 
     if (memberUnsub) memberUnsub();
-    memberUnsub = onSnapshot(doc(db, 'servers', server.id), snap => {
+    memberUnsub = onSnapshot(doc(db, 'servers', server.id), async snap => {
         const members = snap.data()?.members || [];
         const list = document.getElementById('members-list');
         list.innerHTML = '';
-        members.forEach(m => {
+        for (const m of members) {
+            let photoURL = null;
+            try {
+                const uDoc = await getDoc(doc(db, 'users', m.uid));
+                if (uDoc.exists()) photoURL = uDoc.data().photoURL;
+            } catch(e) {}
             const div = document.createElement('div');
             div.className = 'member';
-            div.innerHTML = `<div class="member-av">${m.name[0].toUpperCase()}</div><span class="member-name">${m.name}</span>`;
+            div.appendChild(makeAvatar(photoURL, m.name, 'member-av'));
+            const nameEl = document.createElement('span');
+            nameEl.className = 'member-name';
+            nameEl.textContent = m.name;
+            div.appendChild(nameEl);
             list.appendChild(div);
-        });
+        }
     });
 }
 
@@ -173,9 +237,20 @@ window.sendMessage = async () => {
     const text = input.value.trim();
     if (!text || !currentServerId || !currentUser) return;
     input.value = '';
+
+    // Güncel fotoğrafı al
+    let photoURL = null;
+    try {
+        const uDoc = await getDoc(doc(db, 'users', currentUser.uid));
+        if (uDoc.exists()) photoURL = uDoc.data().photoURL;
+    } catch(e) {}
+
     await addDoc(collection(db, 'servers', currentServerId, 'messages'), {
-        text, name: currentUser.displayName || currentUser.email,
-        uid: currentUser.uid, createdAt: serverTimestamp()
+        text,
+        name: currentUser.displayName || currentUser.email,
+        photoURL: photoURL || null,
+        uid: currentUser.uid,
+        createdAt: serverTimestamp()
     });
 };
 
@@ -230,168 +305,103 @@ window.copyInvite = () => {
 };
 
 // =====================
-// ARAMA (WebRTC)
+// ARAMA
 // =====================
 window.startCall = async (type) => {
     if (!currentServerId) { alert('Önce bir sunucu seç!'); return; }
-
     try {
-        localStream = await navigator.mediaDevices.getUserMedia({
-            video: type === 'video',
-            audio: true
-        });
-    } catch (e) {
-        alert('Kamera/mikrofon erişimi reddedildi: ' + e.message);
-        return;
-    }
+        localStream = await navigator.mediaDevices.getUserMedia({ video: type === 'video', audio: true });
+    } catch (e) { alert('Kamera/mikrofon erişimi reddedildi.'); return; }
 
-    isCallInitiator = true;
-    pc = new RTCPeerConnection(servers);
-
+    pc = new RTCPeerConnection(iceServers);
     localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
-
     document.getElementById('local-video').srcObject = localStream;
     if (type !== 'video') document.getElementById('local-video').style.display = 'none';
+    pc.ontrack = (e) => { document.getElementById('remote-video').srcObject = e.streams[0]; };
 
-    pc.ontrack = (e) => {
-        document.getElementById('remote-video').srcObject = e.streams[0];
-    };
-
-    // Firestore'da arama belgesi oluştur
     const callDoc = doc(collection(db, 'calls'));
     currentCallId = callDoc.id;
-
     pc.onicecandidate = async (e) => {
-        if (e.candidate) {
-            await addDoc(collection(db, 'calls', currentCallId, 'offerCandidates'), e.candidate.toJSON());
-        }
+        if (e.candidate) await addDoc(collection(db, 'calls', currentCallId, 'offerCandidates'), e.candidate.toJSON());
     };
 
     const offer = await pc.createOffer();
     await pc.setLocalDescription(offer);
-
     await setDoc(callDoc, {
-        offer: { type: offer.type, sdp: offer.sdp },
-        callType: type,
+        offer: { type: offer.type, sdp: offer.sdp }, callType: type,
         callerName: currentUser.displayName || currentUser.email,
-        callerUid: currentUser.uid,
-        serverId: currentServerId,
-        status: 'ringing',
-        createdAt: serverTimestamp()
+        callerUid: currentUser.uid, serverId: currentServerId,
+        status: 'ringing', createdAt: serverTimestamp()
     });
 
-    // Arama ekranını göster
-    showCallScreen(type, 'Bağlanıyor...');
+    document.getElementById('call-screen').style.display = 'flex';
+    document.getElementById('call-status').textContent = 'Bağlanıyor...';
+    document.getElementById('remote-video').style.display = type === 'video' ? 'block' : 'none';
 
-    // Cevap bekle
     onSnapshot(callDoc, async (snap) => {
         const data = snap.data();
         if (!data) return;
-
         if (data.answer && !pc.currentRemoteDescription) {
             await pc.setRemoteDescription(new RTCSessionDescription(data.answer));
-            document.getElementById('call-status').textContent = 'Bağlandı';
+            document.getElementById('call-status').textContent = 'Bağlandı ✅';
         }
-
-        if (data.status === 'rejected' || data.status === 'ended') {
-            endCall();
-        }
+        if (data.status === 'rejected' || data.status === 'ended') endCall();
     });
-
-    // Karşı tarafın ICE adaylarını dinle
     onSnapshot(collection(db, 'calls', currentCallId, 'answerCandidates'), (snap) => {
-        snap.docChanges().forEach(change => {
-            if (change.type === 'added') {
-                pc.addIceCandidate(new RTCIceCandidate(change.doc.data()));
-            }
-        });
+        snap.docChanges().forEach(c => { if (c.type === 'added') pc.addIceCandidate(new RTCIceCandidate(c.doc.data())); });
     });
 };
 
 function listenForCalls() {
-    if (callUnsub) callUnsub();
-    callUnsub = onSnapshot(
-        query(collection(db, 'calls'), where('serverId', '==', null)),
-        () => {}
-    );
-
-    // Tüm çağrıları dinle
     onSnapshot(collection(db, 'calls'), (snap) => {
         snap.docChanges().forEach(async (change) => {
             if (change.type === 'added') {
                 const data = change.doc.data();
                 if (data.status === 'ringing' && data.callerUid !== currentUser?.uid && data.serverId === currentServerId) {
-                    showIncomingCall(change.doc.id, data);
+                    currentCallId = change.doc.id;
+                    document.getElementById('caller-avatar').textContent = (data.callerName || 'A')[0].toUpperCase();
+                    document.getElementById('caller-name').textContent = data.callerName || 'Biri';
+                    document.getElementById('caller-type').textContent = data.callType === 'video' ? '📹 Görüntülü Arama' : '📞 Sesli Arama';
+                    document.getElementById('incoming-call').style.display = 'flex';
                 }
             }
         });
     });
 }
 
-function showIncomingCall(callId, data) {
-    currentCallId = callId;
-    document.getElementById('caller-avatar').textContent = (data.callerName || 'A')[0].toUpperCase();
-    document.getElementById('caller-name').textContent = data.callerName || 'Biri';
-    document.getElementById('caller-type').textContent = data.callType === 'video' ? '📹 Görüntülü Arama' : '📞 Sesli Arama';
-    document.getElementById('incoming-call').style.display = 'flex';
-}
-
 window.acceptCall = async () => {
     document.getElementById('incoming-call').style.display = 'none';
     const callDoc = doc(db, 'calls', currentCallId);
     const callData = (await getDoc(callDoc)).data();
-
     try {
-        localStream = await navigator.mediaDevices.getUserMedia({
-            video: callData.callType === 'video',
-            audio: true
-        });
-    } catch (e) {
-        alert('Kamera/mikrofon erişimi reddedildi.');
-        return;
-    }
+        localStream = await navigator.mediaDevices.getUserMedia({ video: callData.callType === 'video', audio: true });
+    } catch (e) { alert('Kamera/mikrofon erişimi reddedildi.'); return; }
 
-    pc = new RTCPeerConnection(servers);
+    pc = new RTCPeerConnection(iceServers);
     localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
     document.getElementById('local-video').srcObject = localStream;
-
-    pc.ontrack = (e) => {
-        document.getElementById('remote-video').srcObject = e.streams[0];
-    };
-
+    pc.ontrack = (e) => { document.getElementById('remote-video').srcObject = e.streams[0]; };
     pc.onicecandidate = async (e) => {
-        if (e.candidate) {
-            await addDoc(collection(db, 'calls', currentCallId, 'answerCandidates'), e.candidate.toJSON());
-        }
+        if (e.candidate) await addDoc(collection(db, 'calls', currentCallId, 'answerCandidates'), e.candidate.toJSON());
     };
 
     await pc.setRemoteDescription(new RTCSessionDescription(callData.offer));
     const answer = await pc.createAnswer();
     await pc.setLocalDescription(answer);
+    await updateDoc(callDoc, { answer: { type: answer.type, sdp: answer.sdp }, status: 'accepted' });
 
-    await updateDoc(callDoc, {
-        answer: { type: answer.type, sdp: answer.sdp },
-        status: 'accepted'
-    });
-
-    // Teklif adaylarını dinle
     onSnapshot(collection(db, 'calls', currentCallId, 'offerCandidates'), (snap) => {
-        snap.docChanges().forEach(change => {
-            if (change.type === 'added') {
-                pc.addIceCandidate(new RTCIceCandidate(change.doc.data()));
-            }
-        });
+        snap.docChanges().forEach(c => { if (c.type === 'added') pc.addIceCandidate(new RTCIceCandidate(c.doc.data())); });
     });
 
-    showCallScreen(callData.callType, 'Bağlandı');
+    document.getElementById('call-screen').style.display = 'flex';
+    document.getElementById('call-status').textContent = 'Bağlandı ✅';
+    document.getElementById('remote-video').style.display = callData.callType === 'video' ? 'block' : 'none';
 };
 
 window.rejectCall = async () => {
     document.getElementById('incoming-call').style.display = 'none';
-    if (currentCallId) {
-        await updateDoc(doc(db, 'calls', currentCallId), { status: 'rejected' });
-        currentCallId = null;
-    }
+    if (currentCallId) { await updateDoc(doc(db, 'calls', currentCallId), { status: 'rejected' }); currentCallId = null; }
 };
 
 window.endCall = async () => {
@@ -407,28 +417,14 @@ window.endCall = async () => {
     document.getElementById('local-video').style.display = 'block';
 };
 
-function showCallScreen(type, status) {
-    document.getElementById('call-screen').style.display = 'flex';
-    document.getElementById('call-status').textContent = status;
-    document.getElementById('remote-video').style.display = type === 'video' ? 'block' : 'none';
-}
-
 window.toggleMute = () => {
     if (!localStream) return;
     const audio = localStream.getAudioTracks()[0];
-    if (audio) {
-        audio.enabled = !audio.enabled;
-        document.getElementById('mute-btn').textContent = audio.enabled ? '🎤' : '🔇';
-        document.getElementById('mute-btn').classList.toggle('disabled', !audio.enabled);
-    }
+    if (audio) { audio.enabled = !audio.enabled; document.getElementById('mute-btn').textContent = audio.enabled ? '🎤' : '🔇'; }
 };
 
 window.toggleCam = () => {
     if (!localStream) return;
     const video = localStream.getVideoTracks()[0];
-    if (video) {
-        video.enabled = !video.enabled;
-        document.getElementById('cam-btn').textContent = video.enabled ? '📹' : '🚫';
-        document.getElementById('cam-btn').classList.toggle('disabled', !video.enabled);
-    }
+    if (video) { video.enabled = !video.enabled; document.getElementById('cam-btn').textContent = video.enabled ? '📹' : '🚫'; }
 };
