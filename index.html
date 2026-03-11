@@ -2,8 +2,8 @@
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Ateş Chat</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ateş Chat | Discord Pro</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -11,40 +11,56 @@
     <div id="auth-container" class="auth-box">
         <div class="auth-content">
             <h1>🔥 Ateş Chat</h1>
-            <p>Global topluluğa katılmak için giriş yap.</p>
+            <p>Arkadaşlarınla buluşmanın en sıcak yolu.</p>
             <button id="google-login-btn" class="login-btn">
                 <img src="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_Logo.svg" alt="G" width="20">
-                Google ile Devam Et
+                Google ile Giriş Yap
             </button>
         </div>
     </div>
 
     <div id="main-layout" class="hidden">
-        <div class="sidebar">
-            <div class="server-list">
-                <div class="server-icon active">🔥</div>
-            </div>
-            <div class="channel-list">
-                <h3>Ateş Chat Global</h3>
-                <div class="channel active"># genel-sohbet</div>
-                
-                <div class="user-panel">
-                    <img id="user-avatar" src="" alt="">
-                    <div class="user-details">
-                        <span id="user-name">Yükleniyor...</span>
-                    </div>
-                    <button id="logout-btn">Çıkış</button>
+        <nav class="server-sidebar">
+            <div class="server-icon active">🔥</div>
+            <div style="width: 32px; height: 2px; background: #35363c; margin: 4px 0;"></div>
+            <div class="server-icon" onclick="alert('Yakında!')">+</div>
+        </nav>
+
+        <aside class="channel-sidebar">
+            <div class="channel-header">Ateş Chat Global</div>
+            <div class="channels">
+                <div class="channel-item active">
+                    <span style="color: #80848e; font-size: 20px;">#</span> genel-sohbet
+                </div>
+                <div class="channel-item" onclick="alert('Yakında!')">
+                    <span style="color: #80848e; font-size: 20px;">#</span> oyun-odası
                 </div>
             </div>
-        </div>
 
-        <div class="chat-area">
-            <div class="chat-header"># genel-sohbet</div>
-            <div id="messages-container" class="messages-container"></div>
-            <form id="chat-form" class="message-input-container">
-                <input type="text" id="message-input" placeholder="Mesaj gönder..." autocomplete="off">
-            </form>
-        </div>
+            <div class="user-settings">
+                <img id="user-avatar" src="" alt="P">
+                <div style="flex: 1; overflow: hidden;">
+                    <div id="user-name" style="font-weight: bold; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Yükleniyor...</div>
+                    <div style="font-size: 12px; color: #b5bac1;">#0001</div>
+                </div>
+                <button id="logout-btn" style="background: none; border: none; color: #b5bac1; cursor: pointer; font-size: 18px;">⚙️</button>
+            </div>
+        </aside>
+
+        <main class="chat-content">
+            <div class="chat-header">
+                <span style="color: #80848e; font-size: 24px; margin-right: 8px;">#</span> genel-sohbet
+            </div>
+            
+            <div id="messages-container" class="chat-messages">
+                </div>
+
+            <div class="chat-input-area">
+                <form id="chat-form" class="input-wrapper">
+                    <input type="text" id="message-input" placeholder="#genel-sohbet kanalına mesaj gönder" autocomplete="off">
+                </form>
+            </div>
+        </main>
     </div>
 
     <script type="module" src="app.js"></script>
