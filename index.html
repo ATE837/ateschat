@@ -1,51 +1,55 @@
 <!DOCTYPE html>
-<html>
+<html lang="tr">
 <head>
-<meta charset="UTF-8">
-<title>AteşChat PRO</title>
-<link rel="stylesheet" href="style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ateş Chat | Global</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
-
 <body>
+    <div id="app">
+        <div id="auth-container" class="hidden">
+            <div class="auth-card">
+                <h2>Ateş Chat'e Hoş Geldin!</h2>
+                <p>Global topluluğa katılmak için giriş yap.</p>
+                <button id="google-login-btn"><i class="fab fa-google"></i> Google ile Devam Et</button>
+            </div>
+        </div>
 
-<div id="loginPage">
-<h2>AteşChat PRO 🔥</h2>
+        <div id="main-layout" class="">
+            <nav class="server-sidebar">
+                <div class="server-icon active"><i class="fas fa-fire"></i></div>
+                <div class="separator"></div>
+                <div class="server-icon"><i class="fas fa-plus"></i></div>
+            </nav>
 
-<input id="email" placeholder="Email">
-<input id="password" type="password" placeholder="Şifre">
-<input id="username" placeholder="Kullanıcı adı">
+            <aside class="channel-sidebar">
+                <div class="channel-header">Ateş Chat Global</div>
+                <div class="channel-list">
+                    <div class="channel-item active"><i class="fas fa-hashtag"></i> genel-sohbet</div>
+                    <div class="channel-item"><i class="fas fa-hashtag"></i> duyurular</div>
+                </div>
+                <div class="user-footer" id="user-info">
+                    <img src="https://via.placeholder.com/32" id="user-avatar" alt="Avatar">
+                    <span id="user-name">Yükleniyor...</span>
+                    <i class="fas fa-sign-out-alt" id="logout-btn"></i>
+                </div>
+            </aside>
 
-<button onclick="register()">Kayıt Ol</button>
-<button onclick="login()">Giriş</button>
-</div>
+            <main class="chat-area">
+                <header class="chat-header">
+                    <i class="fas fa-hashtag"></i> genel-sohbet
+                </header>
+                <div id="messages-container">
+                    </div>
+                <form id="chat-form">
+                    <input type="text" id="message-input" placeholder="Mesaj gönder #genel-sohbet" autocomplete="off">
+                </form>
+            </main>
+        </div>
+    </div>
 
-
-<div id="chatPage" style="display:none">
-
-<header>
-<h3>Genel Sohbet</h3>
-<button onclick="logout()">Çıkış</button>
-</header>
-
-<div id="users"></div>
-
-<div id="messages"></div>
-
-<div id="inputArea">
-<input id="messageInput" placeholder="Mesaj yaz">
-<button onclick="sendMessage()">Gönder</button>
-</div>
-
-</div>
-
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
-
-<script src="firebase.js"></script>
-<script src="auth.js"></script>
-<script src="chat.js"></script>
-<script src="ui.js"></script>
-
+    <script type="module" src="app.js"></script>
 </body>
 </html>
