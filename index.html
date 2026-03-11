@@ -4,9 +4,9 @@
 <head>
 
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>AteşChat V26 GOD MODE 🔥</title>
+<title>AteşChat</title>
 
 <link rel="stylesheet" href="style.css">
 
@@ -14,37 +14,40 @@
 
 <body>
 
-<!-- LOGIN -->
+<!-- LOGIN PANEL -->
 
 <div id="login">
 
 <h1>AteşChat 🔥</h1>
 
-<input id="username" placeholder="Kullanıcı adı">
-<input id="password" type="password" placeholder="Şifre">
-<input id="photo" placeholder="Profil foto linki">
+<input id="username" type="text" placeholder="Kullanıcı adı">
 
-<button onclick="register()">Kayıt Ol</button>
-<button onclick="login()">Giriş Yap</button>
+<input id="password" type="password" placeholder="Şifre">
+
+<input id="photo" type="text" placeholder="Profil foto linki (opsiyonel)">
+
+<button id="registerBtn">Kayıt Ol</button>
+
+<button id="loginBtn">Giriş Yap</button>
 
 <div id="error"></div>
 
 </div>
 
 
-<!-- APP -->
+<!-- CHAT APP -->
 
-<div id="app">
+<div id="app" style="display:none;">
 
 <div id="sidebar">
 
-<h2>Odalar</h2>
+<h3>Odalar</h3>
 
 <div onclick="openRoom('global')">🌍 Global</div>
 <div onclick="openRoom('sohbet')">💬 Sohbet</div>
 <div onclick="openRoom('gaming')">🎮 Gaming</div>
 
-<h2>Kullanıcılar</h2>
+<h3>Kullanıcılar</h3>
 
 <div id="users"></div>
 
@@ -65,7 +68,7 @@
 
 <div id="sendArea">
 
-<input id="messageInput" placeholder="Mesaj yaz">
+<input id="messageInput" placeholder="Mesaj yaz...">
 
 <button onclick="openEmoji()">😀</button>
 
@@ -80,7 +83,7 @@
 
 <!-- EMOJI PANEL -->
 
-<div id="emojiPanel">
+<div id="emojiPanel" style="display:none;">
 
 <span onclick="addEmoji('😀')">😀</span>
 <span onclick="addEmoji('😂')">😂</span>
@@ -90,8 +93,13 @@
 </div>
 
 
+<!-- FIREBASE -->
+
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
+
+<!-- PROJECT FILES -->
 
 <script src="firebase.js"></script>
 <script src="auth.js"></script>
@@ -99,6 +107,19 @@
 <script src="dm.js"></script>
 <script src="admin.js"></script>
 <script src="emoji.js"></script>
+
+
+<script>
+
+document.getElementById("registerBtn").onclick = function(){
+register()
+}
+
+document.getElementById("loginBtn").onclick = function(){
+login()
+}
+
+</script>
 
 </body>
 
