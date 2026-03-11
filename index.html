@@ -3,9 +3,9 @@
 <head>
 
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
 
-<title>AteşChat V8</title>
+<title>AteşChat SV8.3</title>
 
 <style>
 
@@ -16,6 +16,8 @@ background:#0f0f0f;
 color:white;
 }
 
+/* SAYFALAR */
+
 .page{
 display:none;
 height:100vh;
@@ -24,27 +26,35 @@ height:100vh;
 .center{
 display:flex;
 flex-direction:column;
-justify-content:center;
 align-items:center;
-height:100%;
-gap:10px;
+justify-content:center;
+gap:12px;
+padding:20px;
 }
+
+/* INPUT */
 
 input{
 padding:12px;
-border-radius:10px;
 border:none;
-width:240px;
+border-radius:10px;
+width:250px;
+font-size:16px;
 }
+
+/* BUTTON */
 
 button{
 padding:12px;
-border-radius:10px;
 border:none;
+border-radius:10px;
+width:250px;
+font-size:16px;
 background:#ff3c3c;
 color:white;
-width:240px;
 }
+
+/* CHAT */
 
 #chat{
 display:flex;
@@ -63,6 +73,7 @@ font-size:18px;
 flex:1;
 overflow:auto;
 padding:10px;
+margin-bottom:70px;
 }
 
 .msg{
@@ -81,7 +92,10 @@ margin-left:auto;
 .time{
 font-size:11px;
 opacity:0.6;
+margin-top:4px;
 }
+
+/* MESAJ KUTUSU */
 
 #sendbox{
 position:fixed;
@@ -91,11 +105,19 @@ right:0;
 display:flex;
 background:#1c1c1c;
 padding:10px;
+gap:5px;
 }
 
 #msgInput{
 flex:1;
-margin-right:5px;
+}
+
+#footer{
+position:absolute;
+bottom:70px;
+width:100%;
+text-align:center;
+opacity:0.6;
 }
 
 </style>
@@ -104,15 +126,20 @@ margin-right:5px;
 
 <body>
 
+<!-- ANA SAYFA -->
+
 <div id="home" class="page center" style="display:flex">
 
-<h2>🔥 AteşChat V8</h2>
+<h2>🔥 AteşChat SV8.3</h2>
 
 <button onclick="showLogin()">Giriş Yap</button>
 
 <button onclick="showRegister()">Kayıt Ol</button>
 
 </div>
+
+
+<!-- LOGIN -->
 
 <div id="login" class="page center">
 
@@ -127,6 +154,9 @@ margin-right:5px;
 <button onclick="backHome()">Geri</button>
 
 </div>
+
+
+<!-- REGISTER -->
 
 <div id="register" class="page center">
 
@@ -144,13 +174,18 @@ margin-right:5px;
 
 </div>
 
+
+<!-- CHAT -->
+
 <div id="chat" class="page">
 
 <div id="topbar">
-🔥 AteşChat V8
+🔥 AteşChat
 </div>
 
 <div id="messages"></div>
+
+<div id="footer">AteşChat SV8.3</div>
 
 <div id="sendbox">
 
@@ -162,8 +197,12 @@ margin-right:5px;
 
 </div>
 
+
+<!-- FIREBASE -->
+
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
 
 <script>
 
@@ -182,27 +221,40 @@ firebase.initializeApp(firebaseConfig)
 let db=firebase.database()
 
 let user=""
-
 let isAdmin=false
 
+
 function hideAll(){
-document.querySelectorAll(".page").forEach(p=>p.style.display="none")
+
+document.querySelectorAll(".page").forEach(p=>{
+p.style.display="none"
+})
+
 }
 
 function showLogin(){
+
 hideAll()
 document.getElementById("login").style.display="flex"
+
 }
 
 function showRegister(){
+
 hideAll()
 document.getElementById("register").style.display="flex"
+
 }
 
 function backHome(){
+
 hideAll()
 document.getElementById("home").style.display="flex"
+
 }
+
+
+/* REGISTER */
 
 function register(){
 
@@ -227,10 +279,14 @@ backHome()
 
 }
 
+
+/* LOGIN */
+
 function login(){
 
 let email=document.getElementById("loginEmail").value
 let pass=document.getElementById("loginPass").value
+
 
 if(email=="AtesBey" && pass=="123ates"){
 
@@ -240,6 +296,7 @@ startChat()
 return
 
 }
+
 
 db.ref("users").once("value",snap=>{
 
@@ -272,6 +329,9 @@ alert("Giriş hatalı")
 
 }
 
+
+/* CHAT */
+
 function startChat(){
 
 hideAll()
@@ -282,6 +342,9 @@ loadMessages()
 
 }
 
+
+/* SEND */
+
 function send(){
 
 let text=document.getElementById("msgInput").value
@@ -289,14 +352,19 @@ let text=document.getElementById("msgInput").value
 if(text=="")return
 
 db.ref("messages").push({
+
 user:user,
 text:text,
 time:Date.now()
+
 })
 
 document.getElementById("msgInput").value=""
 
 }
+
+
+/* LOAD */
 
 function loadMessages(){
 
@@ -309,14 +377,19 @@ let div=document.createElement("div")
 div.className="msg"
 
 if(data.user==user){
+
 div.classList.add("me")
+
 }
 
 let time=""
 
 if(data.time){
+
 let d=new Date(data.time)
+
 time=d.getHours()+":"+("0"+d.getMinutes()).slice(-2)
+
 }
 
 div.innerHTML="<b>"+data.user+"</b><br>"+data.text+"<div class='time'>"+time+"</div>"
@@ -329,10 +402,17 @@ document.getElementById("messages").scrollTop=999999
 
 }
 
-document.getElementById("msgInput").addEventListener("keypress",e=>{
+
+/* ENTER */
+
+document.addEventListener("keypress",function(e){
+
 if(e.key==="Enter"){
+
 send()
+
 }
+
 })
 
 </script>
