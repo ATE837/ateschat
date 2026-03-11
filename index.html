@@ -65,6 +65,7 @@ background:#5865F2;
 
 .chatArea{
 margin-left:80px;
+margin-right:200px;
 height:100%;
 display:flex;
 flex-direction:column;
@@ -95,6 +96,28 @@ background:#313338;
 
 .sendBox input{
 width:70%;
+}
+
+.users{
+width:200px;
+background:#2b2d31;
+position:absolute;
+right:0;
+top:0;
+bottom:0;
+padding:10px;
+}
+
+.user{
+padding:5px;
+background:#404249;
+margin:5px 0;
+border-radius:5px;
+}
+
+.admin{
+color:#ff5555;
+font-weight:bold;
 }
 
 </style>
@@ -143,6 +166,14 @@ width:70%;
 
 </div>
 
+<div class="users">
+
+<h3>Online</h3>
+
+<div id="userList"></div>
+
+</div>
+
 </div>
 
 <script>
@@ -151,6 +182,7 @@ let users={
 "Ateş Bey":"Ateş123"
 }
 
+let currentUser=""
 let currentRoom="Genel"
 
 function login(){
@@ -160,12 +192,32 @@ let p=document.getElementById("pass").value
 
 if(users[u] && users[u]==p){
 
+currentUser=u
+
 document.getElementById("login").style.display="none"
 document.getElementById("app").style.display="block"
+
+addUser()
 
 }else{
 
 alert("Hatalı giriş")
+
+}
+
+}
+
+function addUser(){
+
+let list=document.getElementById("userList")
+
+if(currentUser=="Ateş Bey"){
+
+list.innerHTML += "<div class='user admin'>👑 "+currentUser+"</div>"
+
+}else{
+
+list.innerHTML += "<div class='user'>"+currentUser+"</div>"
 
 }
 
@@ -187,7 +239,7 @@ let msg=document.getElementById("msg").value
 
 let chat=document.getElementById("chat")
 
-chat.innerHTML += "<div class='msg'>"+msg+"</div>"
+chat.innerHTML += "<div class='msg'><b>"+currentUser+":</b> "+msg+"</div>"
 
 document.getElementById("msg").value=""
 
