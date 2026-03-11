@@ -1,89 +1,77 @@
 :root {
-    --background-primary: #313338;
-    --background-secondary: #2b2d31;
-    --background-tertiary: #1e1f22;
-    --channel-active: #3f4147;
-    --text-normal: #dbdee1;
-    --brand-color: #5865f2;
+  --discord-dark: #313338;
+  --discord-sidebar: #2b2d31;
+  --discord-input: #383a40;
+  --discord-text: #dbdee1;
 }
 
-* { box-sizing: border-box; }
-body, html {
-    margin: 0; padding: 0;
-    height: 100%; width: 100%;
-    background-color: var(--background-primary);
-    color: var(--text-normal);
-    font-family: 'gg sans', 'Noto Sans', sans-serif;
-    overflow: hidden;
+body {
+  background-color: var(--discord-dark);
+  color: var(--discord-text);
+  font-family: 'Segoe UI', sans-serif;
+  margin: 0;
 }
 
-#main-layout { display: flex; height: 100vh; }
-
-/* Sol Sunucu Listesi (En sol dar sütun) */
-.server-sidebar {
-    width: 72px;
-    background-color: var(--background-tertiary);
-    display: flex; flex-direction: column; align-items: center;
-    padding-top: 12px; gap: 8px;
+/* Giriş Ekranı */
+.auth-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  text-align: center;
 }
 
-.server-icon {
-    width: 48px; height: 48px;
-    background-color: var(--background-secondary);
-    border-radius: 50%; display: flex; align-items: center;
-    justify-content: center; font-size: 20px;
-    cursor: pointer; transition: 0.2s;
-}
-.server-icon:hover { border-radius: 15px; background-color: var(--brand-color); }
-
-/* Kanal Listesi (Orta yan sütun) */
-.channel-sidebar {
-    width: 240px;
-    background-color: var(--background-secondary);
-    display: flex; flex-direction: column;
+.login-btn {
+  background-color: #5865f2;
+  color: white;
+  border: none;
+  padding: 14px 28px;
+  border-radius: 5px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: 0.3s;
 }
 
-.channel-header {
-    height: 48px; padding: 0 16px;
-    display: flex; align-items: center;
-    font-weight: bold; border-bottom: 1px solid #232428;
-}
-
-.channels { flex: 1; padding: 8px; }
-.channel-item {
-    padding: 8px; border-radius: 4px;
-    cursor: pointer; display: flex; align-items: center; gap: 8px;
-}
-.channel-item.active { background-color: var(--channel-active); color: white; }
-.channel-item:hover:not(.active) { background-color: #35373c; }
-
-/* Kullanıcı Paneli (Sol alt) */
-.user-settings {
-    background-color: #232428;
-    padding: 8px; display: flex; align-items: center; gap: 8px;
-}
-.user-settings img { width: 32px; height: 32px; border-radius: 50%; }
+.login-btn:hover { background-color: #4752c4; }
 
 /* Mesaj Alanı */
-.chat-content { flex: 1; display: flex; flex-direction: column; }
-.chat-messages {
-    flex: 1; overflow-y: auto;
-    padding: 16px; display: flex; flex-direction: column; gap: 16px;
+#main-layout {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
 }
 
-.msg-row { display: flex; gap: 16px; }
-.msg-row img { width: 40px; height: 40px; border-radius: 50%; }
-.msg-user { font-weight: 500; color: white; margin-right: 8px; }
-.msg-time { font-size: 12px; color: #949ba4; }
-
-.chat-input-area { padding: 0 16px 24px 16px; }
-.input-wrapper {
-    background-color: #383a40; border-radius: 8px;
-    padding: 11px; display: flex;
+#messages-container {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
 }
+
+.message-item {
+  display: flex;
+  gap: 12px;
+  background: rgba(255,255,255,0.02);
+  padding: 10px;
+  border-radius: 8px;
+}
+
+.message-item img { width: 40px; height: 40px; border-radius: 50%; }
+
+.input-area {
+  padding: 20px;
+  background: var(--discord-dark);
+}
+
 #message-input {
-    background: transparent; border: none; color: white;
-    width: 100%; outline: none; font-size: 16px;
+  width: 100%;
+  padding: 15px;
+  border-radius: 8px;
+  border: none;
+  background: var(--discord-input);
+  color: white;
+  outline: none;
 }
-
-.hidden { display: none !important; }
