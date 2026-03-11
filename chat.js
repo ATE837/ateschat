@@ -5,7 +5,7 @@ function send(){
 let input = document.getElementById("messageInput")
 let text = input.value
 
-if(text == "") return
+if(text === "") return
 
 let user = firebase.auth().currentUser.email
 
@@ -22,13 +22,13 @@ input.value=""
 }
 
 
-
 firebase.database().ref("messages/global").on("child_added",function(snapshot){
 
 let data = snapshot.val()
 
 let div = document.createElement("div")
-div.className="message"
+div.style.padding="10px"
+div.style.borderBottom="1px solid #333"
 
 div.innerHTML = "<b>"+data.user+"</b>: "+data.text
 
