@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <html>
 <head>
-
 <title>AteşChat</title>
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -56,7 +55,6 @@ margin:10px;
 padding:15px;
 border-radius:10px;
 cursor:pointer;
-font-weight:bold;
 }
 
 .channels{
@@ -71,12 +69,6 @@ padding:10px;
 padding:8px;
 cursor:pointer;
 border-radius:5px;
-display:flex;
-justify-content:space-between;
-}
-
-.channel:hover{
-background:#404249;
 }
 
 .chat{
@@ -99,31 +91,10 @@ padding:10px;
 }
 
 .msg{
-display:flex;
 margin:8px 0;
-}
-
-.avatar{
-width:35px;
-height:35px;
-background:#5865F2;
-border-radius:50%;
-display:flex;
-align-items:center;
-justify-content:center;
-margin-right:10px;
-}
-
-.msgContent{
 background:#404249;
 padding:8px;
 border-radius:5px;
-}
-
-.time{
-font-size:11px;
-color:#aaa;
-margin-left:5px;
 }
 
 .send{
@@ -142,10 +113,11 @@ padding:10px;
 }
 
 .user{
-padding:5px;
+padding:6px;
 background:#404249;
 margin:5px 0;
 border-radius:5px;
+cursor:pointer;
 }
 
 .admin{
@@ -153,11 +125,16 @@ color:#ff5555;
 font-weight:bold;
 }
 
-.badge{
-background:red;
+#profilePopup{
+position:fixed;
+top:50%;
+left:50%;
+transform:translate(-50%,-50%);
+background:#2b2d31;
+padding:20px;
 border-radius:10px;
-padding:2px 6px;
-font-size:11px;
+display:none;
+width:250px;
 }
 
 </style>
@@ -185,35 +162,22 @@ Admin: <b>Ateş Bey</b><br>
 <div id="app">
 
 <div class="servers">
-
 <div class="server">💬</div>
 <div class="server">🎮</div>
 <div class="server">🎵</div>
-
 </div>
 
 <div class="channels">
 
 <h3>Kanallar</h3>
 
-<div id="channelList">
-
-<div class="channel" onclick="openRoom('genel')">
-<span># genel</span>
-<span id="badge_genel"></span>
-</div>
-
-</div>
+<div class="channel"># genel</div>
 
 </div>
 
 <div class="chat">
 
-<div class="top">
-
-<span id="roomName">genel</span>
-
-</div>
+<div class="top"># genel</div>
 
 <div class="messages" id="chatBox"></div>
 
@@ -236,31 +200,44 @@ Admin: <b>Ateş Bey</b><br>
 
 </div>
 
+<div id="profilePopup">
+
+<h3 id="profileName"></h3>
+
+<p id="profileRole"></p>
+<p id="profileBio"></p>
+
+<button onclick="startDM()">Mesaj Gönder</button>
+<button onclick="closeProfile()">Kapat</button>
+
+</div>
+
 <script>
 
 let users={
-"Ateş Bey":"Ateş123"
+"Ateş Bey":{
+password:"Ateş123",
+role:"Admin",
+bio:"AteşChat Kurucusu"
+}
 }
 
 let currentUser=""
-let currentRoom="genel"
-let unread={
-genel:0
-}
+let selectedUser=""
 
 function login(){
 
 let u=document.getElementById("user").value
 let p=document.getElementById("pass").value
 
-if(users[u] && users[u]==p){
+if(users[u] && users[u].password==p){
 
 currentUser=u
 
 document.getElementById("login").style.display="none"
 document.getElementById("app").style.display="block"
 
-addUser()
+loadUsers()
 
 }else{
 
@@ -270,31 +247,59 @@ alert("Hatalı giriş")
 
 }
 
-function addUser(){
+function loadUsers(){
 
 let list=document.getElementById("userList")
 
-if(currentUser=="Ateş Bey"){
+for(let u in users){
 
-list.innerHTML += "<div class='user admin'>👑 "+currentUser+"</div>"
+let div=document.createElement("div")
 
-}else{
+div.className="user"
 
-list.innerHTML += "<div class='user'>"+currentUser+"</div>"
+if(users[u].role=="Admin"){
+
+div.className+=" admin"
+
+}
+
+div.innerHTML=u
+
+div.onclick=function(){
+
+openProfile(u)
+
+}
+
+list.appendChild(div)
 
 }
 
 }
 
-function openRoom(name){
+function openProfile(name){
 
-currentRoom=name
+selectedUser=name
 
-document.getElementById("roomName").innerText=name
+document.getElementById("profileName").innerText=name
+document.getElementById("profileRole").innerText="Rol: "+users[name].role
+document.getElementById("profileBio").innerText="Bio: "+users[name].bio
 
-document.getElementById("badge_"+name).innerText=""
+document.getElementById("profilePopup").style.display="block"
 
-unread[name]=0
+}
+
+function closeProfile(){
+
+document.getElementById("profilePopup").style.display="none"
+
+}
+
+function startDM(){
+
+alert("DM başlatıldı: "+currentUser+" → "+selectedUser)
+
+closeProfile()
 
 }
 
@@ -306,20 +311,7 @@ if(msg=="") return
 
 let chat=document.getElementById("chatBox")
 
-let time=new Date().toLocaleTimeString().slice(0,5)
-
-chat.innerHTML += `
-<div class="msg">
-<div class="avatar">${currentUser[0]}</div>
-<div>
-<div class="msgContent">
-<b>${currentUser}</b>
-<span class="time">${time}</span><br>
-${msg}
-</div>
-</div>
-</div>
-`
+chat.innerHTML += "<div class='msg'><b>"+currentUser+"</b>: "+msg+"</div>"
 
 document.getElementById("msg").value=""
 
