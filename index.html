@@ -45,7 +45,7 @@ display:none;
 height:100vh;
 }
 
-/* LEFT SERVER BAR */
+/* SERVER BAR */
 
 .servers{
 width:70px;
@@ -62,6 +62,11 @@ margin:10px;
 padding:15px;
 border-radius:10px;
 cursor:pointer;
+font-weight:bold;
+}
+
+.server:hover{
+background:#5865F2;
 }
 
 /* CHANNELS */
@@ -84,7 +89,7 @@ border-radius:5px;
 background:#404249;
 }
 
-/* CHAT AREA */
+/* CHAT */
 
 .chat{
 margin-left:270px;
@@ -142,6 +147,12 @@ color:#ff5555;
 font-weight:bold;
 }
 
+.demo{
+font-size:13px;
+color:#aaa;
+margin-top:20px;
+}
+
 </style>
 
 </head>
@@ -159,17 +170,27 @@ font-weight:bold;
 
 <button onclick="login()">Giriş</button>
 
+<div class="demo">
+
+Demo Admin Giriş<br>
+Kullanıcı: <b>Ateş Bey</b><br>
+Şifre: <b>Ateş123</b>
+
+</div>
+
 </div>
 
 <!-- APP -->
 
 <div id="app">
 
-<div class="servers">
+<div class="servers" id="servers">
 
 <div class="server">💬</div>
 <div class="server">🎮</div>
 <div class="server">🎵</div>
+
+<div class="server" onclick="createServer()">+</div>
 
 </div>
 
@@ -273,11 +294,33 @@ function send(){
 
 let msg=document.getElementById("msg").value
 
+if(msg=="") return
+
 let chat=document.getElementById("chatBox")
 
 chat.innerHTML += "<div class='msg'><b>"+currentUser+":</b> "+msg+"</div>"
 
 document.getElementById("msg").value=""
+
+}
+
+function createServer(){
+
+let name = prompt("Sunucu adı yaz")
+
+if(name){
+
+let servers = document.getElementById("servers")
+
+let div = document.createElement("div")
+
+div.className="server"
+
+div.innerText=name[0].toUpperCase()
+
+servers.insertBefore(div, servers.lastElementChild)
+
+}
 
 }
 
