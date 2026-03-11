@@ -1,35 +1,38 @@
-function send(){
+function sendMessage(){
 
-let input=document.getElementById("messageInput")
-let text=input.value
+let msg=document.getElementById("messageInput").value
+let user=firebase.auth().currentUser
 
-if(text=="") return
+firebase.database().ref("users/"+user.uid).once("value").then(data=>{
 
-let user=firebase.auth().currentUser.email
+let username=data.val().username
 
-firebase.database().ref("messages/global").push({
+firebase.database().ref("messages").push({
 
-user:user,
-text:text,
-time:Date.now()
+user:username,
+text:msg
 
 })
 
-input.value=""
+})
+
+document.getElementById("messageInput").value=""
 
 }
 
+function loadMessages(){
 
-firebase.database().ref("messages/global").on("child_added",function(snapshot){
+firebase.database().ref("messages").on("child_added",data=>{
 
-let data=snapshot.val()
+let msg=data.val()
 
 let div=document.createElement("div")
-
 div.className="message"
 
-div.innerHTML="<b>"+data.user+"</b>: "+data.text
+div.innerHTML="<b>"+msg.user+"</b>: "+msg.text
 
 document.getElementById("messages").appendChild(div)
 
 })
+
+}
