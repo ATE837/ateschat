@@ -1,17 +1,38 @@
 <!DOCTYPE html>
 <html>
+
 <head>
-<title>AtesChat</title>
-<meta charset="UTF-8">
+
+<title>AteşChat</title>
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <style>
+
 body{
 background:black;
 color:white;
 font-family:Arial;
 text-align:center;
+margin:0;
+padding:0;
 }
 
-#chat{
+.container{
+margin-top:100px;
+}
+
+input{
+padding:10px;
+margin:5px;
+}
+
+button{
+padding:10px 20px;
+cursor:pointer;
+}
+
+#chatBox{
 height:300px;
 overflow:auto;
 border:1px solid white;
@@ -19,36 +40,127 @@ margin:20px;
 padding:10px;
 }
 
-input{
-padding:10px;
+.hidden{
+display:none;
 }
 
-button{
-padding:10px;
-}
 </style>
+
 </head>
 
 <body>
 
-<h1>🔥 AtesChat</h1>
+<h1>🔥 AteşChat</h1>
 
-<div id="chat"></div>
+<div id="login" class="container">
 
-<input id="msg" placeholder="Mesaj yaz...">
+<h2>Giriş Yap</h2>
+
+<input id="username" placeholder="Kullanıcı adı"><br>
+<input id="password" type="password" placeholder="Şifre"><br>
+
+<button onclick="login()">Giriş</button>
+<button onclick="showRegister()">Kayıt Ol</button>
+
+</div>
+
+<div id="register" class="container hidden">
+
+<h2>Kayıt Ol</h2>
+
+<input id="newUser" placeholder="Kullanıcı adı"><br>
+<input id="newPass" type="password" placeholder="Şifre"><br>
+
+<button onclick="register()">Kaydet</button>
+<button onclick="showLogin()">Geri</button>
+
+</div>
+
+<div id="lobby" class="hidden">
+
+<h2>Lobi</h2>
+
+<p id="welcome"></p>
+
+<div id="chatBox"></div>
+
+<input id="message" placeholder="Mesaj yaz...">
+
 <button onclick="send()">Gönder</button>
 
+</div>
+
 <script>
+
+let users = {
+"Ateş Bey":"Ateş123"
+}
+
+function showRegister(){
+document.getElementById("login").classList.add("hidden")
+document.getElementById("register").classList.remove("hidden")
+}
+
+function showLogin(){
+document.getElementById("register").classList.add("hidden")
+document.getElementById("login").classList.remove("hidden")
+}
+
+function register(){
+
+let u = document.getElementById("newUser").value
+let p = document.getElementById("newPass").value
+
+if(u && p){
+
+users[u]=p
+
+alert("Kayıt başarılı!")
+
+showLogin()
+
+}
+
+}
+
+function login(){
+
+let u = document.getElementById("username").value
+let p = document.getElementById("password").value
+
+if(users[u] && users[u]==p){
+
+document.getElementById("login").classList.add("hidden")
+document.getElementById("lobby").classList.remove("hidden")
+
+document.getElementById("welcome").innerHTML="Hoşgeldin "+u
+
+if(u=="Ateş Bey"){
+document.getElementById("welcome").innerHTML+=" (ADMIN)"
+}
+
+}else{
+
+alert("Hatalı giriş")
+
+}
+
+}
+
 function send(){
-let msg=document.getElementById("msg").value
-let chat=document.getElementById("chat")
+
+let msg = document.getElementById("message").value
+
+let chat = document.getElementById("chatBox")
 
 chat.innerHTML += "<p>"+msg+"</p>"
 
-document.getElementById("msg").value=""
+document.getElementById("message").value=""
+
 }
+
 </script>
 
 </body>
+
 </html>
-<!-- update -->
