@@ -5,7 +5,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 
-<title>AteşChat SV8.3</title>
+<title>AteşChat V9</title>
 
 <style>
 
@@ -27,7 +27,16 @@ flex-direction:column;
 align-items:center;
 justify-content:center;
 gap:12px;
-padding:20px;
+}
+
+button{
+padding:12px;
+border:none;
+border-radius:10px;
+background:#ff3c3c;
+color:white;
+width:260px;
+font-size:16px;
 }
 
 input{
@@ -38,43 +47,24 @@ width:260px;
 font-size:16px;
 }
 
-button{
-padding:12px;
-border:none;
-border-radius:10px;
-width:260px;
-font-size:16px;
-background:#ff3c3c;
-color:white;
-}
-
 #chat{
 display:flex;
 flex-direction:column;
 height:100vh;
 }
 
-#topbar{
-background:#1b1b1b;
-padding:15px;
-text-align:center;
-font-size:18px;
-}
-
 #messages{
 flex:1;
 overflow-y:auto;
 padding:15px;
-display:flex;
-flex-direction:column;
-gap:10px;
 }
 
 .msg{
 background:#222;
-padding:12px;
-border-radius:12px;
-max-width:75%;
+padding:10px;
+border-radius:10px;
+margin-bottom:10px;
+max-width:80%;
 }
 
 .me{
@@ -82,49 +72,38 @@ background:#ff3c3c;
 margin-left:auto;
 }
 
-.user{
-font-weight:bold;
-font-size:14px;
-}
-
-.time{
-font-size:11px;
-opacity:0.6;
-}
-
 #sendbox{
+display:flex;
 position:fixed;
 bottom:0;
 left:0;
 right:0;
-display:flex;
-gap:6px;
 background:#1b1b1b;
 padding:10px;
 }
 
 #msgInput{
 flex:1;
-padding:12px;
 border-radius:10px;
 border:none;
+padding:10px;
 }
 
 #sendbtn{
-width:90px;
+width:80px;
+margin-left:5px;
 }
 
 </style>
-
 </head>
 
 <body>
 
-<!-- ANA SAYFA -->
+<!-- HOME -->
 
 <div id="home" class="page center" style="display:flex">
 
-<h2>🔥 AteşChat</h2>
+<h2>🔥 AteşChat V9</h2>
 
 <button onclick="showLogin()">Giriş Yap</button>
 
@@ -138,7 +117,7 @@ width:90px;
 
 <h2>Giriş</h2>
 
-<input id="loginEmail" placeholder="Gmail">
+<input id="loginEmail" placeholder="Email">
 
 <input id="loginPass" type="password" placeholder="Şifre">
 
@@ -156,7 +135,7 @@ width:90px;
 
 <input id="regUser" placeholder="Kullanıcı adı">
 
-<input id="regEmail" placeholder="Gmail">
+<input id="regEmail" placeholder="Email">
 
 <input id="regPass" type="password" placeholder="Şifre">
 
@@ -166,11 +145,29 @@ width:90px;
 
 </div>
 
+<!-- SERVER PANEL -->
+
+<div id="servers" class="page center">
+
+<h2>Sunucu Paneli</h2>
+
+<button onclick="createServer()">Sunucu Oluştur</button>
+
+<input id="joinCode" placeholder="Davet kodu">
+
+<button onclick="joinServer()">Sunucuya Katıl</button>
+
+</div>
+
 <!-- CHAT -->
 
 <div id="chat" class="page">
 
-<div id="topbar">🔥 AteşChat</div>
+<div style="padding:15px;background:#1b1b1b">
+
+🔥 AteşChat Sunucu
+
+</div>
 
 <div id="messages"></div>
 
@@ -184,8 +181,6 @@ width:90px;
 
 </div>
 
-<!-- FIREBASE -->
-
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
@@ -195,10 +190,7 @@ const firebaseConfig={
 apiKey:"AIzaSyCwwqd4FfhvLRQu8DUUfbdorIu3iJpkHMM",
 authDomain:"ateschat-cd9f4.firebaseapp.com",
 databaseURL:"https://ateschat-cd9f4-default-rtdb.firebaseio.com",
-projectId:"ateschat-cd9f4",
-storageBucket:"ateschat-cd9f4.firebasestorage.app",
-messagingSenderId:"174732212740",
-appId:"1:174732212740:web:dcd4b60ed7cc380ca95351"
+projectId:"ateschat-cd9f4"
 }
 
 firebase.initializeApp(firebaseConfig)
@@ -206,9 +198,9 @@ firebase.initializeApp(firebaseConfig)
 let db=firebase.database()
 
 let user=""
-let isAdmin=false
+let currentServer=""
 
-/* SAYFA SİSTEMİ */
+/* SAYFA */
 
 function hideAll(){
 
@@ -243,21 +235,14 @@ document.getElementById("home").style.display="flex"
 
 function register(){
 
-let username=document.getElementById("regUser").value
-let email=document.getElementById("regEmail").value
-let pass=document.getElementById("regPass").value
-
-if(username==""||email==""||pass==""){
-
-alert("Bilgileri doldur")
-return
-
-}
+let u=document.getElementById("regUser").value
+let e=document.getElementById("regEmail").value
+let p=document.getElementById("regPass").value
 
 db.ref("users").push({
-username:username,
-email:email,
-pass:pass
+user:u,
+email:e,
+pass:p
 })
 
 alert("Kayıt başarılı")
@@ -270,42 +255,67 @@ backHome()
 
 function login(){
 
-let email=document.getElementById("loginEmail").value
-let pass=document.getElementById("loginPass").value
-
-if(email=="AtesBey" && pass=="123ates"){
-
-user="🔥 Ateş Bey (Admin)"
-isAdmin=true
-startChat()
-return
-
-}
+let e=document.getElementById("loginEmail").value
+let p=document.getElementById("loginPass").value
 
 db.ref("users").once("value",snap=>{
 
-let found=false
+snap.forEach(d=>{
 
-snap.forEach(u=>{
+let data=d.val()
 
-let data=u.val()
+if(data.email==e && data.pass==p){
 
-if(data.email==email && data.pass==pass){
+user=data.user
 
-user=data.username
-found=true
+hideAll()
+document.getElementById("servers").style.display="flex"
 
 }
 
 })
 
-if(found){
+})
 
-startChat()
+}
+
+/* SUNUCU OLUŞTUR */
+
+function createServer(){
+
+let code=Math.random().toString(36).substring(2,8)
+
+db.ref("servers/"+code).set({
+
+owner:user,
+created:Date.now()
+
+})
+
+alert("Davet kodu: "+code)
+
+currentServer=code
+
+openChat()
+
+}
+
+/* SUNUCUYA KATIL */
+
+function joinServer(){
+
+let code=document.getElementById("joinCode").value
+
+db.ref("servers/"+code).once("value",snap=>{
+
+if(snap.exists()){
+
+currentServer=code
+openChat()
 
 }else{
 
-alert("Giriş hatalı")
+alert("Kod yanlış")
 
 }
 
@@ -315,7 +325,7 @@ alert("Giriş hatalı")
 
 /* CHAT */
 
-function startChat(){
+function openChat(){
 
 hideAll()
 document.getElementById("chat").style.display="flex"
@@ -324,15 +334,13 @@ loadMessages()
 
 }
 
-/* MESAJ GÖNDER */
-
 function send(){
 
 let text=document.getElementById("msgInput").value
 
 if(text=="")return
 
-db.ref("messages").push({
+db.ref("messages/"+currentServer).push({
 
 user:user,
 text:text,
@@ -344,61 +352,29 @@ document.getElementById("msgInput").value=""
 
 }
 
-/* MESAJ YÜKLE */
-
 function loadMessages(){
 
-db.ref("messages").on("child_added",snap=>{
+db.ref("messages/"+currentServer).on("child_added",snap=>{
 
-let data=snap.val()
+let d=snap.val()
 
 let div=document.createElement("div")
 
 div.className="msg"
 
-if(data.user==user){
+if(d.user==user){
 
 div.classList.add("me")
 
 }
 
-let time=""
-
-if(data.time){
-
-let d=new Date(data.time)
-
-time=d.getHours()+":"+
-("0"+d.getMinutes()).slice(-2)
-
-}
-
-div.innerHTML=
-
-"<div class='user'>"+data.user+
-" <span class='time'>"+time+"</span></div>"+
-"<div>"+data.text+"</div>"
+div.innerHTML="<b>"+d.user+"</b><br>"+d.text
 
 document.getElementById("messages").appendChild(div)
 
-let m=document.getElementById("messages")
-m.scrollTop=m.scrollHeight
-
 })
 
 }
-
-/* ENTER GÖNDER */
-
-document.addEventListener("keypress",function(e){
-
-if(e.key==="Enter"){
-
-send()
-
-}
-
-})
 
 </script>
 
