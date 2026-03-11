@@ -14,6 +14,8 @@ background:#1e1f22;
 color:white;
 }
 
+/* LOGIN */
+
 #login{
 display:flex;
 flex-direction:column;
@@ -24,9 +26,10 @@ height:100vh;
 
 #login input{
 padding:10px;
-border-radius:6px;
 border:none;
+border-radius:6px;
 margin-top:10px;
+width:200px;
 }
 
 #login button{
@@ -36,7 +39,10 @@ border:none;
 border-radius:6px;
 background:#5865f2;
 color:white;
+cursor:pointer;
 }
+
+/* CHAT */
 
 #chat{
 display:none;
@@ -48,18 +54,18 @@ height:100vh;
 flex:1;
 overflow-y:auto;
 padding:20px;
-display:flex;
-flex-direction:column;
 }
 
 .message{
-margin-bottom:10px;
+margin-bottom:12px;
 }
 
 .username{
 color:#5865f2;
 font-weight:bold;
 }
+
+/* MESSAGE INPUT */
 
 .inputArea{
 display:flex;
@@ -81,6 +87,7 @@ border:none;
 border-radius:6px;
 background:#5865f2;
 color:white;
+cursor:pointer;
 }
 
 </style>
@@ -88,15 +95,19 @@ color:white;
 
 <body>
 
+<!-- LOGIN -->
+
 <div id="login">
 
 <h2>🔥 AteşChat</h2>
 
 <input id="usernameInput" placeholder="Kullanıcı adı">
 
-<button onclick="login()">Giriş</button>
+<button onclick="login()">Giriş Yap</button>
 
 </div>
+
+<!-- CHAT -->
 
 <div id="chat">
 
@@ -111,6 +122,8 @@ color:white;
 </div>
 
 </div>
+
+<!-- FIREBASE -->
 
 <script type="module">
 
@@ -132,16 +145,26 @@ const db = getDatabase(app);
 
 let username="";
 
+/* LOGIN */
+
 window.login=function(){
 
 username=document.getElementById("usernameInput").value;
 
-if(username==="") return;
+if(username===""){
+
+alert("Kullanıcı adı gir");
+
+return;
+
+}
 
 document.getElementById("login").style.display="none";
 document.getElementById("chat").style.display="flex";
 
 }
+
+/* SEND MESSAGE */
 
 window.sendMessage=function(){
 
@@ -150,13 +173,17 @@ const input=document.getElementById("messageInput");
 if(input.value==="") return;
 
 push(ref(db,"messages"),{
+
 user:username,
 text:input.value
+
 });
 
 input.value="";
 
 }
+
+/* LOAD MESSAGES */
 
 onChildAdded(ref(db,"messages"),(data)=>{
 
@@ -170,7 +197,7 @@ div.innerHTML="<span class='username'>"+msg.user+":</span> "+msg.text;
 
 document.getElementById("messages").appendChild(div);
 
-document.getElementById("messages").scrollTop =
+document.getElementById("messages").scrollTop=
 document.getElementById("messages").scrollHeight;
 
 });
