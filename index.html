@@ -6,7 +6,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>AteşChat V52 🔥</title>
+<title>AteşChat V52.1 🔥</title>
 
 <link rel="stylesheet" href="style.css">
 
@@ -28,11 +28,11 @@ flex-direction:column;
 align-items:center;
 justify-content:center;
 height:100vh;
-gap:10px;
+gap:12px;
 }
 
 #login input{
-padding:12px;
+padding:14px;
 width:260px;
 border:none;
 border-radius:8px;
@@ -40,13 +40,14 @@ font-size:16px;
 }
 
 #login button{
-padding:12px;
+padding:14px;
 width:260px;
 background:#ff5c00;
 border:none;
 border-radius:8px;
 color:white;
 font-size:16px;
+cursor:pointer;
 }
 
 #app{
@@ -74,6 +75,10 @@ border-radius:8px;
 cursor:pointer;
 }
 
+.room:hover{
+background:#2a2a2a;
+}
+
 #chat{
 flex:1;
 display:flex;
@@ -85,6 +90,7 @@ background:#101010;
 background:#1a1a1a;
 padding:15px;
 font-size:18px;
+border-bottom:1px solid #222;
 }
 
 #messages{
@@ -94,10 +100,23 @@ padding:15px;
 }
 
 .message{
+display:flex;
+gap:10px;
+margin-bottom:10px;
+}
+
+.avatar{
+width:36px;
+height:36px;
+border-radius:50%;
+background:#444;
+}
+
+.msgContent{
 background:#1e1e1e;
 padding:10px;
-border-radius:8px;
-margin-bottom:8px;
+border-radius:10px;
+max-width:70%;
 }
 
 #sendBox{
@@ -112,6 +131,15 @@ padding:12px;
 border:none;
 border-radius:8px;
 font-size:16px;
+}
+
+#emojiBtn{
+margin-left:6px;
+padding:12px;
+background:#333;
+border:none;
+border-radius:8px;
+color:white;
 }
 
 #sendBtn{
@@ -131,10 +159,20 @@ overflow:auto;
 }
 
 .user{
+display:flex;
+align-items:center;
+gap:8px;
 padding:8px;
 margin-top:6px;
 background:#1e1e1e;
 border-radius:6px;
+}
+
+.status{
+width:8px;
+height:8px;
+background:#00ff6a;
+border-radius:50%;
 }
 
 @media (max-width:800px){
@@ -171,6 +209,7 @@ width:140px;
 
 </div>
 
+
 <!-- APP -->
 
 <div id="app">
@@ -191,6 +230,7 @@ width:140px;
 
 </div>
 
+
 <!-- CHAT -->
 
 <div id="chat">
@@ -207,11 +247,14 @@ width:140px;
 
 <input id="messageInput" placeholder="Mesaj yaz...">
 
+<button id="emojiBtn">😀</button>
+
 <button id="sendBtn" onclick="send()">Gönder</button>
 
 </div>
 
 </div>
+
 
 <!-- USERS -->
 
@@ -219,7 +262,13 @@ width:140px;
 
 <h3>Kullanıcılar</h3>
 
-<div id="userList"></div>
+<div id="userList">
+
+<div class="user">
+
+<div class="status"></div>
+
+<div>Ali</div>
 
 </div>
 
@@ -227,12 +276,13 @@ width:140px;
 
 </div>
 
-<!-- FIREBASE -->
+</div>
+
+</div>
+
 
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
-
-<!-- JS -->
 
 <script src="firebase.js"></script>
 <script src="auth.js"></script>
