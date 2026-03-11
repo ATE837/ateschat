@@ -6,7 +6,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 
-<title>AteşChat V25 MEGA 🔥</title>
+<title>AteşChat V26 GOD MODE 🔥</title>
 
 <link rel="stylesheet" href="style.css">
 
@@ -14,13 +14,15 @@
 
 <body>
 
+<!-- LOGIN -->
+
 <div id="login">
 
 <h1>AteşChat 🔥</h1>
 
 <input id="username" placeholder="Kullanıcı adı">
 <input id="password" type="password" placeholder="Şifre">
-<input id="photo" placeholder="Profil foto linki (opsiyonel)">
+<input id="photo" placeholder="Profil foto linki">
 
 <button onclick="register()">Kayıt Ol</button>
 <button onclick="login()">Giriş Yap</button>
@@ -30,6 +32,8 @@
 </div>
 
 
+<!-- APP -->
+
 <div id="app">
 
 <div id="sidebar">
@@ -37,8 +41,8 @@
 <h2>Odalar</h2>
 
 <div onclick="openRoom('global')">🌍 Global</div>
-<div onclick="openRoom('gaming')">🎮 Gaming</div>
 <div onclick="openRoom('sohbet')">💬 Sohbet</div>
+<div onclick="openRoom('gaming')">🎮 Gaming</div>
 
 <h2>Kullanıcılar</h2>
 
@@ -51,7 +55,7 @@
 
 <div id="top">
 
-<div id="roomName">Global Chat</div>
+<div id="roomName">Global</div>
 
 <button onclick="logout()">Çıkış</button>
 
@@ -61,7 +65,9 @@
 
 <div id="sendArea">
 
-<input id="messageInput" placeholder="Mesaj yaz...">
+<input id="messageInput" placeholder="Mesaj yaz">
+
+<button onclick="openEmoji()">😀</button>
 
 <button onclick="send()">Gönder</button>
 
@@ -71,11 +77,28 @@
 
 </div>
 
+
+<!-- EMOJI PANEL -->
+
+<div id="emojiPanel">
+
+<span onclick="addEmoji('😀')">😀</span>
+<span onclick="addEmoji('😂')">😂</span>
+<span onclick="addEmoji('🔥')">🔥</span>
+<span onclick="addEmoji('❤️')">❤️</span>
+
+</div>
+
+
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
 <script src="firebase.js"></script>
-<script src="app.js"></script>
+<script src="auth.js"></script>
+<script src="chat.js"></script>
+<script src="dm.js"></script>
+<script src="admin.js"></script>
+<script src="emoji.js"></script>
 
 </body>
 
