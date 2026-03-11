@@ -1,15 +1,13 @@
 <!DOCTYPE html>
 <html>
 <head>
+
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
 <title>AteşChat</title>
 
 <style>
-
-*{
-box-sizing:border-box;
-}
 
 body{
 margin:0;
@@ -21,39 +19,16 @@ display:flex;
 flex-direction:column;
 }
 
-#topbar{
+#top{
 background:#202225;
-padding:8px;
+padding:10px;
 display:flex;
-align-items:center;
 gap:10px;
 }
 
 #app{
-display:flex;
 flex:1;
-height:100%;
-}
-
-#servers{
-width:60px;
-background:#202225;
 display:flex;
-flex-direction:column;
-align-items:center;
-padding-top:10px;
-}
-
-.server{
-width:40px;
-height:40px;
-background:#5865f2;
-border-radius:50%;
-display:flex;
-align-items:center;
-justify-content:center;
-margin-bottom:10px;
-font-weight:bold;
 }
 
 #rooms{
@@ -80,38 +55,32 @@ flex-direction:column;
 
 #messages{
 flex:1;
-overflow-y:auto;
-padding:15px;
+overflow:auto;
+padding:10px;
 }
 
 .msg{
 display:flex;
-margin-bottom:12px;
+margin-bottom:10px;
 }
 
 .msg img{
-width:36px;
-height:36px;
+width:34px;
+height:34px;
 border-radius:50%;
-margin-right:10px;
-object-fit:cover;
+margin-right:8px;
 }
 
-.name{
-font-weight:bold;
-}
-
-#inputArea{
+#input{
 display:flex;
-padding:10px;
 background:#40444b;
+padding:10px;
 }
 
 #text{
 flex:1;
 padding:10px;
 border:none;
-border-radius:5px;
 background:#303339;
 color:white;
 }
@@ -120,26 +89,8 @@ button{
 background:#5865f2;
 border:none;
 color:white;
-padding:10px;
-margin-left:5px;
+padding:8px;
 border-radius:5px;
-}
-
-@media(max-width:700px){
-
-#servers{
-width:50px;
-}
-
-#rooms{
-width:120px;
-}
-
-.msg img{
-width:30px;
-height:30px;
-}
-
 }
 
 </style>
@@ -147,20 +98,14 @@ height:30px;
 
 <body>
 
-<div id="topbar">
+<div id="top">
 
-<input type="file" id="profileFile">
+<input type="file" id="profileFile" accept="image/*">
 <button onclick="uploadProfile()">Profil Yükle</button>
 
 </div>
 
 <div id="app">
-
-<div id="servers">
-
-<div class="server">+</div>
-
-</div>
 
 <div id="rooms">
 
@@ -176,9 +121,9 @@ height:30px;
 
 <div id="messages"></div>
 
-<div id="inputArea">
+<div id="input">
 
-<input id="text" placeholder="Mesaj yaz...">
+<input id="text" placeholder="Mesaj yaz">
 
 <button onclick="sendMessage()">Gönder</button>
 
@@ -190,7 +135,8 @@ height:30px;
 
 <script type="module">
 
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { initializeApp }
+from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 
 import { getDatabase, ref, push, onChildAdded }
 from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
@@ -198,72 +144,31 @@ from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 import { getStorage, ref as sRef, uploadBytes, getDownloadURL }
 from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
 
-const firebaseConfig = {
-
-apiKey: "AIzaSyCwwqd4FfhvLRQu8DUUfbdorIu3iJpkHMM",
-authDomain: "ateschat-cd9f4.firebaseapp.com",
-databaseURL: "https://ateschat-cd9f4-default-rtdb.firebaseio.com",
-projectId: "ateschat-cd9f4",
-storageBucket: "ateschat-cd9f4.firebasestorage.app",
-messagingSenderId: "174732212740",
-appId: "1:174732212740:web:dcd4b60ed7cc380ca95351",
-measurementId: "G-1CBZNR0W3E"
-
+const firebaseConfig={
+apiKey:"AIzaSyCwwqd4FfhvLRQu8DUUfbdorIu3iJpkHMM",
+authDomain:"ateschat-cd9f4.firebaseapp.com",
+databaseURL:"https://ateschat-cd9f4-default-rtdb.firebaseio.com",
+projectId:"ateschat-cd9f4",
+storageBucket:"ateschat-cd9f4.firebasestorage.app",
+messagingSenderId:"174732212740",
+appId:"1:174732212740:web:dcd4b60ed7cc380ca95351"
 };
 
-const app = initializeApp(firebaseConfig);
+const app=initializeApp(firebaseConfig);
 
-const db = getDatabase(app);
+const db=getDatabase(app);
 
-const storage = getStorage(app);
+const storage=getStorage(app);
+
+let currentRoom="genel";
 
 let profileURL="";
 
-const messagesRef = ref(db,"messages");
+function loadMessages(){
 
-window.uploadProfile=function(){
+document.getElementById("messages").innerHTML="";
 
-let file=document.getElementById("profileFile").files[0];
-
-if(!file){
-alert("Fotoğraf seç");
-return;
-}
-
-let storageRef=sRef(storage,"profiles/"+Date.now());
-
-uploadBytes(storageRef,file).then(()=>{
-
-getDownloadURL(storageRef).then((url)=>{
-
-profileURL=url;
-
-alert("Profil yüklendi");
-
-});
-
-});
-
-}
-
-window.sendMessage=function(){
-
-let text=document.getElementById("text").value;
-
-if(text=="") return;
-
-push(messagesRef,{
-
-user:"Kullanıcı",
-text:text,
-photo:profileURL,
-time:Date.now()
-
-});
-
-document.getElementById("text").value="";
-
-}
+let messagesRef=ref(db,"rooms/"+currentRoom+"/messages");
 
 onChildAdded(messagesRef,(data)=>{
 
@@ -279,9 +184,9 @@ div.innerHTML=`
 
 <div>
 
-<div class="name">${msg.user}</div>
+<b>${msg.user}</b><br>
 
-<div>${msg.text}</div>
+${msg.text}
 
 </div>
 
@@ -289,9 +194,59 @@ div.innerHTML=`
 
 document.getElementById("messages").appendChild(div);
 
-document.getElementById("messages").scrollTop=999999;
+});
+
+}
+
+window.sendMessage=function(){
+
+let text=document.getElementById("text").value;
+
+if(text=="") return;
+
+let messagesRef=ref(db,"rooms/"+currentRoom+"/messages");
+
+push(messagesRef,{
+
+user:"Kullanıcı",
+text:text,
+photo:profileURL
 
 });
+
+document.getElementById("text").value="";
+
+}
+
+window.uploadProfile=function(){
+
+let file=document.getElementById("profileFile").files[0];
+
+if(!file){
+alert("Resim seç");
+return;
+}
+
+if(!file.type.startsWith("image")){
+alert("Sadece fotoğraf seç");
+return;
+}
+
+let storageRef=sRef(storage,"profiles/"+Date.now());
+
+uploadBytes(storageRef,file).then(()=>{
+
+getDownloadURL(storageRef).then(url=>{
+
+profileURL=url;
+
+alert("Profil yüklendi");
+
+});
+
+});
+
+}
 
 window.addRoom=function(){
 
@@ -303,9 +258,19 @@ let div=document.createElement("div");
 
 div.innerText="# "+name;
 
+div.onclick=()=>{
+
+currentRoom=name;
+
+loadMessages();
+
+};
+
 document.getElementById("roomList").appendChild(div);
 
 }
+
+loadMessages();
 
 </script>
 
