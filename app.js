@@ -10,6 +10,7 @@ const chatForm = document.getElementById('chat-form');
 const msgInput = document.getElementById('message-input');
 const msgContainer = document.getElementById('messages-container');
 
+// Giriş Durumunu İzle
 onAuthStateChanged(auth, (user) => {
     if (user) {
         authCont.classList.add('hidden');
@@ -23,9 +24,12 @@ onAuthStateChanged(auth, (user) => {
     }
 });
 
+// Google ile Giriş
 loginBtn.onclick = () => signInWithPopup(auth, provider);
+// Çıkış Yap
 logoutBtn.onclick = () => signOut(auth);
 
+// Mesaj Gönder
 chatForm.onsubmit = async (e) => {
     e.preventDefault();
     if (msgInput.value.trim() === "") return;
@@ -38,9 +42,10 @@ chatForm.onsubmit = async (e) => {
             createdAt: serverTimestamp()
         });
         msgInput.value = "";
-    } catch (error) { console.error("Mesaj gönderilemedi:", error); }
+    } catch (error) { console.error("Hata:", error); }
 };
 
+// Mesajları Getir
 function loadMessages() {
     const q = query(collection(db, "messages"), orderBy("createdAt", "asc"));
     onSnapshot(q, (snapshot) => {
@@ -48,17 +53,15 @@ function loadMessages() {
         snapshot.forEach((doc) => {
             const data = doc.data();
             const msgDiv = document.createElement('div');
-            msgDiv.className = "message";
+            msgDiv.className = "message-item";
             msgDiv.innerHTML = `
-                <div style="display:flex; gap:12px; margin-bottom:15px; padding: 5px; border-radius: 5px;">
-                    <img src="${data.photo}" style="width:42px; height:42px; border-radius:50%">
-                    <div>
-                        <div style="display:flex; align-items:center; gap:8px;">
-                            <span style="font-weight:600; color:#fff; cursor:pointer;">${data.name}</span>
-                            <span style="font-size:11px; color:#949BA4;">${data.createdAt ? new Date(data.createdAt.seconds * 1000).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : 'Şimdi'}</span>
-                        </div>
-                        <div style="color:#dbdee1; font-size:15px; margin-top:2px;">${data.text}</div>
+                <img src="${data.photo}" style="width:40px; height:40px; border-radius:50%">
+                <div>
+                    <div style="display:flex; gap:10px; align-items:center;">
+                        <strong style="color:#fff;">${data.name}</strong>
+                        <small style="color:#949BA4; font-size:10px;">${data.createdAt ? new Date(data.createdAt.seconds * 1000).toLocaleTimeString() : ''}</small>
                     </div>
+                    <div style="color:#DBDEE1;">${data.text}</div>
                 </div>
             `;
             msgContainer.appendChild(msgDiv);
