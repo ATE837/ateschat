@@ -1,17 +1,14 @@
-auth.onAuthStateChanged(function(user){
-
-let login = document.getElementById("login")
-let app = document.getElementById("app")
+firebase.auth().onAuthStateChanged(function(user){
 
 if(user){
 
-login.style.display="none"
-app.style.display="flex"
+document.getElementById("login").style.display="none"
+document.getElementById("app").style.display="flex"
 
 }else{
 
-login.style.display="flex"
-app.style.display="none"
+document.getElementById("login").style.display="flex"
+document.getElementById("app").style.display="none"
 
 }
 
