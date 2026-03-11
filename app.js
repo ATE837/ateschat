@@ -1,125 +1,119 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js"
+let currentUser=null
+let currentRoom="global"
 
-import {
-getAuth,
-createUserWithEmailAndPassword,
-signInWithEmailAndPassword,
-onAuthStateChanged
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js"
+function register(){
 
-import {
-getDatabase,
-ref,
-push,
-set,
-onChildAdded
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js"
+let username=document.getElementById("username").value
+let password=document.getElementById("password").value
+let photo=document.getElementById("photo").value
 
+db.ref("users/"+username).set({
 
-const firebaseConfig = {
-
-apiKey: "BURAYA_APIKEY",
-authDomain: "BURAYA_AUTHDOMAIN",
-databaseURL: "BURAYA_DATABASEURL",
-projectId: "BURAYA_PROJECTID",
-storageBucket: "BURAYA_STORAGE",
-messagingSenderId: "BURAYA_ID",
-appId: "BURAYA_APPID"
-
-}
-
-const app = initializeApp(firebaseConfig)
-
-const auth = getAuth(app)
-
-const db = getDatabase(app)
-
-let room="genel"
-
-
-window.register=function(){
-
-createUserWithEmailAndPassword(auth,email.value,password.value)
-
-.then(()=>{
-
-set(ref(db,"users/"+auth.currentUser.uid),{
-
-name:username.value
+password:password,
+photo:photo
 
 })
 
+alert("Kayıt başarılı")
+
+}
+
+function login(){
+
+let username=document.getElementById("username").value
+let password=document.getElementById("password").value
+
+db.ref("users/"+username).once("value",snap=>{
+
+let data=snap.val()
+
+if(!data){
+alert("Kullanıcı yok")
+return
+}
+
+if(data.password!=password){
+alert("Şifre yanlış")
+return
+}
+
+currentUser=username
+
+document.getElementById("login").style.display="none"
+document.getElementById("app").style.display="block"
+
+loadUsers()
+loadMessages()
+
 })
 
-.catch(e=>alert(e.message))
-
 }
 
+function openRoom(room){
 
-window.login=function(){
+currentRoom=room
 
-signInWithEmailAndPassword(auth,email.value,password.value)
-
-.catch(e=>alert(e.message))
-
-}
-
-
-onAuthStateChanged(auth,(user)=>{
-
-if(user){
-
-loginPage.style.display="none"
-
-chatPage.style.display="flex"
+document.getElementById("messages").innerHTML=""
 
 loadMessages()
 
 }
 
-})
+function send(){
 
+let text=document.getElementById("messageInput").value
 
-window.sendMessage=function(){
+db.ref("rooms/"+currentRoom).push({
 
-push(ref(db,"rooms/"+room),{
-
-user:username.value,
-text:messageInput.value,
-time:Date.now()
+name:currentUser,
+text:text
 
 })
 
-messageInput.value=""
+document.getElementById("messageInput").value=""
 
 }
-
 
 function loadMessages(){
 
-messages.innerHTML=""
+db.ref("rooms/"+currentRoom).on("child_added",snap=>{
 
-onChildAdded(ref(db,"rooms/"+room),(data)=>{
-
-let m=data.val()
+let m=snap.val()
 
 let div=document.createElement("div")
+div.className="msg"
 
-div.className="message"
+div.innerText=m.name+" : "+m.text
 
-div.innerHTML="<b>"+m.user+"</b><br>"+m.text
-
-messages.appendChild(div)
+document.getElementById("messages").appendChild(div)
 
 })
 
 }
 
+function loadUsers(){
 
-window.changeRoom=function(r){
+db.ref("users").on("value",snap=>{
 
-room=r
+let users=snap.val()
 
-loadMessages()
+document.getElementById("users").innerHTML=""
+
+for(let u in users){
+
+let div=document.createElement("div")
+div.innerText=u
+
+document.getElementById("users").appendChild(div)
+
+}
+
+})
+
+}
+
+function logout(){
+
+location.reload()
 
 }
