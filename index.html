@@ -6,9 +6,150 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>AteşChat V30 Stable 🔥</title>
+<title>AteşChat V52 🔥</title>
 
 <link rel="stylesheet" href="style.css">
+
+<style>
+
+body{
+margin:0;
+font-family:Arial;
+background:#0f0f0f;
+color:white;
+height:100vh;
+display:flex;
+flex-direction:column;
+}
+
+#login{
+display:flex;
+flex-direction:column;
+align-items:center;
+justify-content:center;
+height:100vh;
+gap:10px;
+}
+
+#login input{
+padding:12px;
+width:260px;
+border:none;
+border-radius:8px;
+font-size:16px;
+}
+
+#login button{
+padding:12px;
+width:260px;
+background:#ff5c00;
+border:none;
+border-radius:8px;
+color:white;
+font-size:16px;
+}
+
+#app{
+display:none;
+height:100vh;
+}
+
+#container{
+display:flex;
+height:100%;
+}
+
+#rooms{
+width:220px;
+background:#151515;
+padding:10px;
+overflow:auto;
+}
+
+.room{
+padding:10px;
+background:#1e1e1e;
+margin-top:6px;
+border-radius:8px;
+cursor:pointer;
+}
+
+#chat{
+flex:1;
+display:flex;
+flex-direction:column;
+background:#101010;
+}
+
+#chatHeader{
+background:#1a1a1a;
+padding:15px;
+font-size:18px;
+}
+
+#messages{
+flex:1;
+overflow:auto;
+padding:15px;
+}
+
+.message{
+background:#1e1e1e;
+padding:10px;
+border-radius:8px;
+margin-bottom:8px;
+}
+
+#sendBox{
+display:flex;
+padding:10px;
+background:#181818;
+}
+
+#messageInput{
+flex:1;
+padding:12px;
+border:none;
+border-radius:8px;
+font-size:16px;
+}
+
+#sendBtn{
+margin-left:6px;
+padding:12px;
+background:#ff5c00;
+border:none;
+border-radius:8px;
+color:white;
+}
+
+#users{
+width:220px;
+background:#151515;
+padding:10px;
+overflow:auto;
+}
+
+.user{
+padding:8px;
+margin-top:6px;
+background:#1e1e1e;
+border-radius:6px;
+}
+
+@media (max-width:800px){
+
+#users{
+display:none;
+}
+
+#rooms{
+width:140px;
+}
+
+}
+
+</style>
 
 </head>
 
@@ -24,56 +165,61 @@
 
 <input id="password" type="password" placeholder="Şifre">
 
-<button id="registerBtn">Kayıt Ol</button>
+<button onclick="register()">Kayıt Ol</button>
 
-<button id="loginBtn">Giriş Yap</button>
+<button onclick="login()">Giriş Yap</button>
 
 </div>
 
+<!-- APP -->
 
+<div id="app">
 
-<!-- CHAT APP -->
+<div id="container">
 
-<div id="app" style="display:none;">
+<!-- ROOMS -->
 
-<div id="sidebar">
+<div id="rooms">
 
 <h3>Odalar</h3>
 
-<div class="room" onclick="openRoom('global')">🌍 Global</div>
+<div class="room" onclick="openRoom('global')">🌍 global</div>
 
-<div class="room" onclick="openRoom('sohbet')">💬 Sohbet</div>
+<div class="room" onclick="openRoom('sohbet')">💬 sohbet</div>
 
-<div class="room" onclick="openRoom('gaming')">🎮 Gaming</div>
-
-
-<h3>Kullanıcılar</h3>
-
-<div id="users"></div>
+<div class="room" onclick="openRoom('gaming')">🎮 gaming</div>
 
 </div>
 
-
+<!-- CHAT -->
 
 <div id="chat">
 
-<div id="top">
+<div id="chatHeader">
 
-<span id="roomName">Global</span>
-
-<button onclick="logout()">Çıkış</button>
+<span id="roomName">global</span>
 
 </div>
 
-
 <div id="messages"></div>
-
 
 <div id="sendBox">
 
 <input id="messageInput" placeholder="Mesaj yaz...">
 
-<button onclick="send()">Gönder</button>
+<button id="sendBtn" onclick="send()">Gönder</button>
+
+</div>
+
+</div>
+
+<!-- USERS -->
+
+<div id="users">
+
+<h3>Kullanıcılar</h3>
+
+<div id="userList"></div>
 
 </div>
 
@@ -81,34 +227,23 @@
 
 </div>
 
-
-
-<!-- Firebase -->
+<!-- FIREBASE -->
 
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
-
-
-<!-- Scripts -->
+<!-- JS -->
 
 <script src="firebase.js"></script>
-
 <script src="auth.js"></script>
-
 <script src="chat.js"></script>
-
+<script src="rooms.js"></script>
+<script src="users.js"></script>
 <script src="dm.js"></script>
-
 <script src="emoji.js"></script>
-
 <script src="admin.js"></script>
-
+<script src="notifications.js"></script>
 <script src="ui.js"></script>
-
-<script src="app.js"></script>
-
 
 </body>
 
