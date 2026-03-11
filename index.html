@@ -1,10 +1,7 @@
-<!DOCTYPE html>
-<html>
+<!DOCTYPE html><html>
 <head>
 <meta charset="UTF-8">
-<title>AteşChat</title>
-
-<style>
+<title>AteşChat</title><style>
 body{
 margin:0;
 font-family:Arial;
@@ -13,116 +10,100 @@ color:white;
 }
 
 #login{
-height:100vh;
-display:flex;
-flex-direction:column;
-justify-content:center;
-align-items:center;
+text-align:center;
+margin-top:120px;
 }
 
 input{
 padding:10px;
 margin:5px;
-border-radius:5px;
+border-radius:6px;
 border:none;
-width:220px;
 }
 
 button{
-padding:10px;
-margin:5px;
+padding:10px 15px;
+background:#5865f2;
 border:none;
-border-radius:5px;
-background:#5865F2;
 color:white;
-width:150px;
+border-radius:6px;
+cursor:pointer;
 }
 
-#chat{
+#app{
 display:none;
 height:100vh;
 }
 
-#left{
-width:200px;
+#sidebar{
+width:230px;
 background:#202225;
 padding:10px;
-float:left;
-height:100%;
+overflow:auto;
 }
 
-#chatbox{
-margin-left:200px;
-height:90%;
+#rooms div{
+padding:6px;
+cursor:pointer;
+background:#2f3136;
+margin-bottom:5px;
+border-radius:5px;
+}
+
+#users div{
+padding:6px;
+background:#40444b;
+margin-bottom:5px;
+border-radius:5px;
+cursor:pointer;
+}
+
+#chat{
+flex:1;
+display:flex;
+flex-direction:column;
+}
+
+#messages{
+flex:1;
 overflow:auto;
 padding:10px;
 }
 
-#msg{
-position:fixed;
-bottom:0;
-left:200px;
-width:calc(100% - 200px);
-display:flex;
+.msg{
+background:#40444b;
+padding:8px;
+margin:5px;
+border-radius:6px;
 }
 
-#msg input{
+#sendBox{
+display:flex;
+background:#202225;
+padding:10px;
+}
+
+#sendBox input{
 flex:1;
 }
 
-.message{
-margin:5px 0;
+.container{
+display:flex;
+height:100%;
 }
-
-.user{
-color:#43b581;
-font-weight:bold;
-}
-
-</style>
-
-</head>
-<body>
-
-<div id="login">
-
-<h1>AteşChat</h1>
-
-<input id="email" placeholder="Email">
-<input id="password" type="password" placeholder="Şifre">
+</style></head><body><div id="login"><h1>AteşChat</h1><input id="email" placeholder="Email"><br>
+<input id="password" type="password" placeholder="Şifre"><br>
+<input id="username" placeholder="Kullanıcı adı"><br>
 
 <button onclick="register()">Kayıt Ol</button>
 <button onclick="login()">Giriş Yap</button>
 
-</div>
-
-
-<div id="chat">
-
-<div id="left">
-
-<h3>Odalar</h3>
-
-<div># genel</div>
-
-</div>
-
-<div id="chatbox"></div>
-
-<div id="msg">
-<input id="messageInput" placeholder="Mesaj yaz...">
+</div><div id="app"><div class="container"><div id="sidebar"><h3>Odalar</h3>
+<div id="rooms"></div><h3>Online</h3>
+<div id="users"></div></div><div id="chat"><div id="messages"></div><div id="sendBox">
+<input id="msgInput" placeholder="Mesaj yaz">
 <button onclick="send()">Gönder</button>
-</div>
-
-</div>
-
-
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
-
-
-<script>
+</div></div></div></div><script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script><script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script><script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script><script>
 
 const firebaseConfig = {
 apiKey: "AIzaSyCwwqd4FfhvLRQu8DUUfbdorIu3iJpkHMM",
@@ -131,87 +112,160 @@ databaseURL: "https://ateschat-cd9f4-default-rtdb.firebaseio.com",
 projectId: "ateschat-cd9f4",
 storageBucket: "ateschat-cd9f4.firebasestorage.app",
 messagingSenderId: "174732212740",
-appId: "1:174732212740:web:9a8a298eca9b3313a95351",
-measurementId: "G-Z9GCVW4105"
+appId: "1:174732212740:web:9a8a298eca9b3313a95351"
 };
 
 firebase.initializeApp(firebaseConfig);
 
-const auth = firebase.auth();
-const db = firebase.database();
-
-
+let currentRoom="genel";
 
 function register(){
 
-let email=document.getElementById("email").value;
-let pass=document.getElementById("password").value;
+let email=document.getElementById("email").value
+let pass=document.getElementById("password").value
+let name=document.getElementById("username").value
 
-auth.createUserWithEmailAndPassword(email,pass)
-.then(()=>{
-alert("Kayıt başarılı");
+firebase.auth().createUserWithEmailAndPassword(email,pass)
+.then(res=>{
+
+firebase.database().ref("users/"+res.user.uid).set({
+name:name,
+online:true
 })
-.catch(e=>alert(e.message));
+
+alert("Kayıt tamam")
+
+})
+
+.catch(e=>alert(e.message))
 
 }
-
-
 
 function login(){
 
-let email=document.getElementById("email").value;
-let pass=document.getElementById("password").value;
+let email=document.getElementById("email").value
+let pass=document.getElementById("password").value
 
-auth.signInWithEmailAndPassword(email,pass)
+firebase.auth().signInWithEmailAndPassword(email,pass)
 .then(()=>{
-document.getElementById("login").style.display="none";
-document.getElementById("chat").style.display="block";
-loadMessages();
+
+document.getElementById("login").style.display="none"
+document.getElementById("app").style.display="block"
+
+init()
+
 })
-.catch(e=>alert(e.message));
+
+.catch(e=>alert(e.message))
 
 }
 
+function init(){
 
+let uid=firebase.auth().currentUser.uid
+
+firebase.database().ref("users/"+uid+"/online").set(true)
+
+loadUsers()
+loadRooms()
+loadMessages()
+
+}
 
 function send(){
 
-let text=document.getElementById("messageInput").value;
+let text=document.getElementById("msgInput").value
 
-if(text=="")return;
+if(text=="")return
 
-let user=auth.currentUser.email;
+let uid=firebase.auth().currentUser.uid
 
-db.ref("messages").push({
-user:user,
+firebase.database().ref("messages/"+currentRoom).push({
+user:uid,
 text:text,
 time:Date.now()
-});
+})
 
-document.getElementById("messageInput").value="";
+document.getElementById("msgInput").value=""
 
 }
-
-
 
 function loadMessages(){
 
-db.ref("messages").on("child_added",snap=>{
+document.getElementById("messages").innerHTML=""
 
-let m=snap.val();
+firebase.database().ref("messages/"+currentRoom).limitToLast(100).on("child_added",snap=>{
 
-let div=document.createElement("div");
-div.className="message";
+let m=snap.val()
 
-div.innerHTML="<span class='user'>"+m.user+"</span>: "+m.text;
+firebase.database().ref("users/"+m.user).once("value",u=>{
 
-document.getElementById("chatbox").appendChild(div);
+let name=u.val().name
 
-});
+let div=document.createElement("div")
+div.className="msg"
+
+div.innerHTML="<b>"+name+"</b>: "+m.text
+
+document.getElementById("messages").appendChild(div)
+
+document.getElementById("messages").scrollTop=999999
+
+})
+
+})
 
 }
 
-</script>
+function loadUsers(){
 
-</body>
+firebase.database().ref("users").on("value",snap=>{
+
+let list=""
+
+snap.forEach(u=>{
+
+let data=u.val()
+
+if(data.online){
+
+list+="<div>"+data.name+"</div>"
+
+}
+
+})
+
+document.getElementById("users").innerHTML=list
+
+})
+
+}
+
+function loadRooms(){
+
+let defaultRooms=["genel","oyun","sohbet"]
+
+let html=""
+
+defaultRooms.forEach(r=>{
+
+html+="<div onclick='changeRoom(\""+r+"\")'># "+r+"</div>"
+
+})
+
+document.getElementById("rooms").innerHTML=html
+
+}
+
+function changeRoom(r){
+
+currentRoom=r
+
+document.getElementById("messages").innerHTML=""
+
+loadMessages()
+
+}
+
+</script></body>
 </html>
