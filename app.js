@@ -28,7 +28,7 @@ db.ref("users/"+username).once("value",snap=>{
 let data=snap.val()
 
 if(!data){
-alert("Kullanıcı yok")
+alert("Kullanıcı bulunamadı")
 return
 }
 
@@ -55,6 +55,8 @@ currentRoom=room
 
 document.getElementById("messages").innerHTML=""
 
+document.getElementById("roomName").innerText=room
+
 loadMessages()
 
 }
@@ -80,12 +82,27 @@ db.ref("rooms/"+currentRoom).on("child_added",snap=>{
 
 let m=snap.val()
 
+db.ref("users/"+m.name).once("value",user=>{
+
+let data=user.val()
+
 let div=document.createElement("div")
 div.className="msg"
 
-div.innerText=m.name+" : "+m.text
+let img=document.createElement("img")
+img.src=data.photo || "https://i.imgur.com/4M34hi2.png"
+
+let text=document.createElement("div")
+text.innerText=m.name+" : "+m.text
+
+div.appendChild(img)
+div.appendChild(text)
 
 document.getElementById("messages").appendChild(div)
+
+document.title="Yeni mesaj 🔔"
+
+})
 
 })
 
