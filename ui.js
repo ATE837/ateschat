@@ -1,14 +1,17 @@
 auth.onAuthStateChanged(function(user){
 
+let login = document.getElementById("login")
+let app = document.getElementById("app")
+
 if(user){
 
-document.getElementById("login").style.display="none"
-document.getElementById("app").style.display="block"
+login.style.display = "none"
+app.style.display = "block"
 
 }else{
 
-document.getElementById("login").style.display="flex"
-document.getElementById("app").style.display="none"
+login.style.display = "flex"
+app.style.display = "none"
 
 }
 
