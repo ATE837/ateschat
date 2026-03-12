@@ -132,6 +132,7 @@ onAuthStateChanged(auth, async (user) => {
         document.getElementById('my-name').textContent = user.displayName || user.email;
         loadUserServers();
         listenForCalls();
+        updateFriendBadge();
     } else {
         currentUser = null;
         document.getElementById('auth-container').style.display = 'flex';
@@ -187,6 +188,7 @@ async function openServer(server) {
             const n = document.createElement('span');
             n.className = 'member-name'; n.textContent = m.name;
             div.appendChild(n);
+            div.onclick = () => showProfile(m.uid, m.name, photoURL);
             list.appendChild(div);
         }
     });
@@ -544,3 +546,230 @@ window.endCall = async () => {
 
 window.toggleMute = () => { if (!localStream) return; const a = localStream.getAudioTracks()[0]; if (a) { a.enabled = !a.enabled; document.getElementById('mute-btn').textContent = a.enabled ? '🎤' : '🔇'; } };
 window.toggleCam = () => { if (!localStream) return; const v = localStream.getVideoTracks()[0]; if (v) { v.enabled = !v.enabled; document.getElementById('cam-btn').textContent = v.enabled ? '📹' : '🚫'; } };
+
+// ===================== ARKADAŞ SİSTEMİ =====================
+
+// Üyeye tıklayınca profil kartı aç
+async function showProfile(uid, name, photoURL) {
+    const modal = document.getElementById('modal-profile');
+    const av = document.getElementById('profile-av');
+    document.getElementById('profile-username').textContent = name;
+    document.getElementById('profile-tag').textContent = '@ ' + uid.substring(0, 6).toLowerCase();
+    setAvatarEl(av, photoURL, name);
+    document.getElementById('profile-actions').innerHTML = '';
+
+    if (uid === currentUser.uid) {
+        // Kendi profilin
+        const btn = document.createElement('button');
+        btn.className = 'p-btn gray'; btn.textContent = 'Senin Profilin';
+        document.getElementById('profile-actions').appendChild(btn);
+    } else {
+        // Arkadaşlık durumunu kontrol et
+        const myFriendsDoc = await getDoc(doc(db, 'users', currentUser.uid));
+        const friends = myFriendsDoc.data()?.friends || [];
+        const sentRequests = myFriendsDoc.data()?.sentRequests || [];
+        const actions = document.getElementById('profile-actions');
+        actions.style.display = 'flex'; actions.style.gap = '8px';
+
+        if (friends.includes(uid)) {
+            // Zaten arkadaş
+            const msgBtn = document.createElement('button');
+            msgBtn.className = 'p-btn blue'; msgBtn.textContent = '💬 Mesaj';
+            msgBtn.onclick = () => hideModal('modal-profile');
+            const removeBtn = document.createElement('button');
+            removeBtn.className = 'p-btn red'; removeBtn.textContent = '✕ Çıkar';
+            removeBtn.onclick = () => removeFriend(uid, name);
+            actions.appendChild(msgBtn); actions.appendChild(removeBtn);
+        } else if (sentRequests.includes(uid)) {
+            const pendBtn = document.createElement('button');
+            pendBtn.className = 'p-btn gray'; pendBtn.textContent = '⏳ İstek Gönderildi';
+            actions.appendChild(pendBtn);
+        } else {
+            const addBtn = document.createElement('button');
+            addBtn.className = 'p-btn blue'; addBtn.textContent = '➕ Arkadaş Ekle';
+            addBtn.onclick = () => sendFriendRequestToUid(uid, name);
+            actions.appendChild(addBtn);
+        }
+    }
+    showModal('modal-profile');
+}
+
+window.sendFriendRequest = async () => {
+    const searchName = document.getElementById('friend-search-input').value.trim();
+    const msg = document.getElementById('friend-msg');
+    if (!searchName) { msg.style.color = '#ed4245'; msg.textContent = 'Kullanıcı adı girin.'; return; }
+    msg.style.color = '#949ba4'; msg.textContent = 'Aranıyor...';
+
+    // Firestore'da kullanıcıyı isimle ara
+    const snap = await getDocs(query(collection(db, 'users'), where('displayName', '==', searchName)));
+    if (snap.empty) { msg.style.color = '#ed4245'; msg.textContent = 'Kullanıcı bulunamadı.'; return; }
+
+    const targetDoc = snap.docs[0];
+    const targetUid = targetDoc.id;
+    if (targetUid === currentUser.uid) { msg.style.color = '#ed4245'; msg.textContent = 'Kendine istek gönderemezsin.'; return; }
+
+    await sendFriendRequestToUid(targetUid, targetDoc.data().displayName);
+    document.getElementById('friend-search-input').value = '';
+};
+
+async function sendFriendRequestToUid(targetUid, targetName) {
+    const msg = document.getElementById('friend-msg');
+    try {
+        // Karşı tarafa istek ekle
+        await setDoc(doc(db, 'users', targetUid), {
+            friendRequests: arrayUnion({ uid: currentUser.uid, name: currentUser.displayName || currentUser.email })
+        }, { merge: true });
+        // Kendi gönderilen istekler listesine ekle
+        await setDoc(doc(db, 'users', currentUser.uid), {
+            sentRequests: arrayUnion(targetUid)
+        }, { merge: true });
+        if (msg) { msg.style.color = '#23a55a'; msg.textContent = '✅ İstek gönderildi!'; setTimeout(() => { if(msg) msg.textContent=''; }, 2500); }
+        hideModal('modal-profile');
+    } catch(e) {
+        if (msg) { msg.style.color = '#ed4245'; msg.textContent = 'Hata: ' + e.message; }
+    }
+}
+
+async function removeFriend(targetUid, targetName) {
+    if (!confirm(`${targetName} arkadaşlıktan çıkarılsın mı?`)) return;
+    const myRef = doc(db, 'users', currentUser.uid);
+    const theirRef = doc(db, 'users', targetUid);
+    const mySnap = await getDoc(myRef);
+    const theirSnap = await getDoc(theirRef);
+    const myFriends = (mySnap.data()?.friends || []).filter(f => f !== targetUid);
+    const theirFriends = (theirSnap.data()?.friends || []).filter(f => f !== currentUser.uid);
+    await setDoc(myRef, { friends: myFriends }, { merge: true });
+    await setDoc(theirRef, { friends: theirFriends }, { merge: true });
+    hideModal('modal-profile');
+    loadFriends();
+}
+
+window.showFriendTab = (tab) => {
+    document.getElementById('ftab-all').classList.toggle('active', tab === 'all');
+    document.getElementById('ftab-pending').classList.toggle('active', tab === 'pending');
+    loadFriends(tab);
+};
+
+async function loadFriends(tab = 'all') {
+    const list = document.getElementById('friends-list');
+    list.innerHTML = '<div class="empty-state"><div class="e-icon">⏳</div>Yükleniyor...</div>';
+
+    const uDoc = await getDoc(doc(db, 'users', currentUser.uid));
+    const data = uDoc.data() || {};
+
+    if (tab === 'all') {
+        const friends = data.friends || [];
+        if (friends.length === 0) {
+            list.innerHTML = '<div class="empty-state"><div class="e-icon">👥</div>Henüz arkadaşın yok.<br>Arkadaş ekle butonuna bas!</div>';
+            return;
+        }
+        list.innerHTML = '';
+        for (const fUid of friends) {
+            try {
+                const fDoc = await getDoc(doc(db, 'users', fUid));
+                const fData = fDoc.data() || {};
+                const div = createFriendItem(fUid, fData.displayName || 'Kullanıcı', fData.photoURL, 'friend');
+                list.appendChild(div);
+            } catch(e) {}
+        }
+    } else {
+        const requests = data.friendRequests || [];
+        if (requests.length === 0) {
+            list.innerHTML = '<div class="empty-state"><div class="e-icon">📭</div>Bekleyen istek yok.</div>';
+            return;
+        }
+        list.innerHTML = '';
+        for (const req of requests) {
+            const div = createFriendItem(req.uid, req.name, null, 'pending');
+            list.appendChild(div);
+        }
+    }
+}
+
+function createFriendItem(uid, name, photoURL, type) {
+    const div = document.createElement('div');
+    div.className = 'friend-item';
+    const av = document.createElement('div');
+    av.className = 'friend-av';
+    setAvatarEl(av, photoURL, name);
+    const info = document.createElement('div');
+    info.className = 'friend-info';
+    info.innerHTML = `<div class="friend-name">${name}</div><div class="friend-status">${type === 'pending' ? '📨 Arkadaşlık isteği' : '🟢 Arkadaş'}</div>`;
+    div.appendChild(av); div.appendChild(info);
+
+    const btns = document.createElement('div');
+    btns.className = 'friend-btns';
+
+    if (type === 'pending') {
+        const acceptBtn = document.createElement('button');
+        acceptBtn.className = 'fi-btn accept'; acceptBtn.textContent = '✓';
+        acceptBtn.title = 'Kabul Et';
+        acceptBtn.onclick = () => acceptFriendRequest(uid, name);
+
+        const rejectBtn = document.createElement('button');
+        rejectBtn.className = 'fi-btn reject'; rejectBtn.textContent = '✕';
+        rejectBtn.title = 'Reddet';
+        rejectBtn.onclick = () => rejectFriendRequest(uid);
+
+        btns.appendChild(acceptBtn); btns.appendChild(rejectBtn);
+    } else {
+        const removeBtn = document.createElement('button');
+        removeBtn.className = 'fi-btn remove'; removeBtn.textContent = '✕';
+        removeBtn.title = 'Arkadaşlıktan Çıkar';
+        removeBtn.onclick = () => removeFriend(uid, name);
+        btns.appendChild(removeBtn);
+    }
+
+    div.appendChild(btns);
+    div.onclick = (e) => {
+        if (!e.target.closest('.friend-btns')) showProfile(uid, name, photoURL);
+    };
+    return div;
+}
+
+async function acceptFriendRequest(fromUid, fromName) {
+    const myRef = doc(db, 'users', currentUser.uid);
+    const theirRef = doc(db, 'users', fromUid);
+    const mySnap = await getDoc(myRef);
+    const requests = (mySnap.data()?.friendRequests || []).filter(r => r.uid !== fromUid);
+    // Her ikisini de arkadaş listesine ekle
+    await setDoc(myRef, { friends: arrayUnion(fromUid), friendRequests: requests }, { merge: true });
+    await setDoc(theirRef, { friends: arrayUnion(currentUser.uid), sentRequests: [] }, { merge: true });
+    loadFriends('pending');
+    updateFriendBadge();
+}
+
+async function rejectFriendRequest(fromUid) {
+    const myRef = doc(db, 'users', currentUser.uid);
+    const mySnap = await getDoc(myRef);
+    const requests = (mySnap.data()?.friendRequests || []).filter(r => r.uid !== fromUid);
+    await setDoc(myRef, { friendRequests: requests }, { merge: true });
+    loadFriends('pending');
+    updateFriendBadge();
+}
+
+async function updateFriendBadge() {
+    if (!currentUser) return;
+    try {
+        const uDoc = await getDoc(doc(db, 'users', currentUser.uid));
+        const count = (uDoc.data()?.friendRequests || []).length;
+        const badge = document.getElementById('req-badge');
+        const fbadge = document.getElementById('friends-badge');
+        if (badge) { badge.textContent = count; badge.style.display = count > 0 ? 'inline' : 'none'; }
+        if (fbadge) { fbadge.textContent = count; fbadge.style.display = count > 0 ? 'inline' : 'none'; }
+    } catch(e) {}
+}
+
+// Modal açılınca arkadaş listesini yükle
+const _origShowModal = window.showModal;
+window.showModal = (id) => {
+    document.getElementById(id).style.display = 'flex';
+    if (id === 'modal-settings') loadSettingsModal();
+    if (id === 'modal-friends') { loadFriends('all'); updateFriendBadge(); }
+};
+
+// Üye listesindeki kişiye tıklanabilirlik ekle (openServer'da üye oluşturulurken)
+const _origOpenServer = openServer;
+
+// Arkadaş bildirimi - her 30 saniyede kontrol et
+setInterval(updateFriendBadge, 30000);
