@@ -256,49 +256,56 @@ function openChannel(serverId,channelId,channelName){
         if(typers.length){tt.textContent=typers.join(', ')+' yazıyor';ti.style.display='flex';}else ti.style.display='none';
     });
     let firstLoad=true;
-    // Compat API'de limitToLast yok - desc+limit kullan
     const q=db.collection('servers').doc(serverId).collection('channels').doc(channelId).collection('messages').orderBy('createdAt','desc').limit(100);
     msgUnsub=q.onSnapshot(snap=>{
         const container=$('messages');
+        if(firstLoad){
+            firstLoad=false;
+            const docs=[];
+            snap.forEach(d=>docs.push({id:d.id,...d.data()}));
+            docs.reverse();
+            allMessages=docs;
+            renderMessages(allMessages);
+            container.scrollTop=container.scrollHeight;
+            allMessages.filter(d=>d.uid!==currentUser?.uid&&!(d.readBy||[]).includes(currentUser.uid)).slice(-20)
+                .forEach(d=>db.collection('servers').doc(currentServerId).collection('channels').doc(currentChannelId).collection('messages').doc(d.id).update({readBy:firebase.firestore.FieldValue.arrayUnion(currentUser.uid)}).catch(()=>{}));
+            return;
+        }
         const wasBottom=container.scrollHeight-container.scrollTop<=container.clientHeight+60;
         snap.docChanges().forEach(change=>{
             const data=change.doc.data(),msgId=change.doc.id;
             if(change.type==='added'){
+                if(allMessages.find(m=>m.id===msgId))return;
                 allMessages.push({id:msgId,...data});
-                if(!firstLoad){
-                    container.appendChild(buildMessageEl({id:msgId,...data}));
-                    if(data.uid!==currentUser?.uid){
-                        if(localStorage.getItem('notifSound')!=='false')playNotif();
-                        showBrowserNotif(data.name||'Birisi',data.text||'Yeni mesaj');
-                        if(!data.readBy?.includes(currentUser.uid))db.collection('servers').doc(currentServerId).collection('channels').doc(currentChannelId).collection('messages').doc(msgId).update({readBy:firebase.firestore.FieldValue.arrayUnion(currentUser.uid)}).catch(()=>{});
-                    }
+                container.appendChild(buildMessageEl({id:msgId,...data}));
+                if(data.uid!==currentUser?.uid){
+                    if(localStorage.getItem('notifSound')!=='false')playNotif();
+                    showBrowserNotif(data.name||'Birisi',data.text||'Yeni mesaj');
+                    if(!(data.readBy||[]).includes(currentUser.uid))
+                        db.collection('servers').doc(currentServerId).collection('channels').doc(currentChannelId).collection('messages').doc(msgId).update({readBy:firebase.firestore.FieldValue.arrayUnion(currentUser.uid)}).catch(()=>{});
                 }
             }else if(change.type==='modified'){
-                const idx=allMessages.findIndex(m=>m.id===msgId);if(idx!==-1)allMessages[idx]={id:msgId,...data};
-                const el=container.querySelector(`[data-msg-id="${msgId}"]`);
-                if(el){const ri=el.querySelector('[data-read-info]');if(ri&&data.uid===currentUser?.uid){const r=(data.readBy||[]).filter(x=>x!==currentUser.uid);ri.className='msg-read-info'+(r.length?' seen':'');ri.textContent=r.length?`👁️ ${r.length} kişi gördü`:'✓ Gönderildi';}
-                if(data.edited){const t=el.querySelector('.msg-text');if(t)t.textContent=data.text;if(!el.querySelector('.msg-edited-tag')){const tm=el.querySelector('.msg-time');if(tm){const tg=document.createElement('span');tg.className='msg-edited-tag';tg.textContent='(düzenlendi)';tm.insertAdjacentElement('afterend',tg);}}}}
-                return;
+                const i=allMessages.findIndex(m=>m.id===msgId);
+                if(i!==-1)allMessages[i]={id:msgId,...data};
+                const el=container.querySelector('[data-msg-id="'+msgId+'"]');
+                if(el){
+                    if(data.uid===currentUser?.uid){
+                        const ri=el.querySelector('[data-read-info]');
+                        if(ri){const r=(data.readBy||[]).filter(x=>x!==currentUser.uid);ri.className='msg-read-info'+(r.length?' seen':'');ri.textContent=r.length?'👁️ '+r.length+' kişi gördü':'✓ Gönderildi';}
+                    }
+                    if(data.edited){
+                        const t=el.querySelector('.msg-text');if(t)t.textContent=data.text;
+                        if(!el.querySelector('.msg-edited-tag')){const tm=el.querySelector('.msg-time');if(tm){const tg=document.createElement('span');tg.className='msg-edited-tag';tg.textContent='(düzenlendi)';tm.insertAdjacentElement('afterend',tg);}}
+                    }
+                }
             }else if(change.type==='removed'){
                 allMessages=allMessages.filter(m=>m.id!==msgId);
-                const el=container.querySelector(`[data-msg-id="${msgId}"]`);if(el)el.remove();return;
+                const el=container.querySelector('[data-msg-id="'+msgId+'"]');if(el)el.remove();
             }
         });
-        if(firstLoad){
-            allMessages=[];
-            const docs=[];snap.forEach(d=>docs.push({id:d.id,...d.data()}));
-            docs.reverse(); // desc'den asc'ye çevir
-            allMessages=docs;
-            renderMessages(allMessages);firstLoad=false;
-            container.scrollTop=container.scrollHeight;
-            const unread=allMessages.filter(d=>d.uid!==currentUser?.uid&&!(d.readBy||[]).includes(currentUser.uid)).slice(-20);
-            unread.forEach(data=>db.collection('servers').doc(currentServerId).collection('channels').doc(currentChannelId).collection('messages').doc(data.id).update({readBy:firebase.firestore.FieldValue.arrayUnion(currentUser.uid)}).catch(()=>{}));
-            return;
-        }
         if(wasBottom)container.scrollTop=container.scrollHeight;
     });
-}
-function buildMessageEl(data){
+}function buildMessageEl(data){
     const time=data.createdAt?.toDate().toLocaleTimeString('tr-TR',{hour:'2-digit',minute:'2-digit'})||'';
     const div=document.createElement('div');div.className='msg';div.dataset.msgId=data.id;
     div.appendChild(makeAvatar(data.photoURL||null,data.name,'msg-av'));
