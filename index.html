@@ -86,6 +86,7 @@
             <span>💬 Mesajlar</span>
             <button onclick="closeDM()" class="dm-close-btn">✕</button>
         </div>
+        <input type="text" id="dm-search" class="dm-search-input" placeholder="🔍 Arkadaş ara..." oninput="filterDMList()" style="margin:8px;padding:8px 12px;border-radius:8px;background:var(--input);border:none;color:var(--text);font-size:13px;width:calc(100% - 16px);box-sizing:border-box">
         <div id="dm-list"></div>
         <button class="add-channel-btn" style="margin:8px" onclick="showModal('modal-add-friend')">+ Yeni DM</button>
     </div>
@@ -181,7 +182,7 @@
         </div>
         <div id="chat-input-wrap">
             <button class="attach-btn" onclick="openFilePicker()" title="Dosya/Resim">📎</button>
-            <input type="text" id="msg-input" placeholder="Mesaj gönder..." oninput="handleTyping()">
+            <input type="text" id="msg-input" placeholder="Mesaj gönder..." oninput="handleTyping()" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMessage();}">
             <button class="voice-msg-btn" id="voice-btn" onmousedown="startVoiceRecord()" onmouseup="stopVoiceRecord()" ontouchstart="startVoiceRecord(event)" ontouchend="stopVoiceRecord()" title="Bas ve tut">🎙️</button>
             <button onclick="sendMessage()">➤</button>
         </div>
@@ -428,5 +429,17 @@ document.addEventListener('click', () => { const m = document.getElementById('ms
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
 <script src="app.js"></script>
+
+<!-- Keşfet Modal -->
+<div id="modal-discover" class="modal" style="display:none">
+    <div class="modal-box" style="width:480px;max-height:80vh">
+        <div class="modal-header">
+            <h3>🌐 Sunucu Keşfet</h3>
+            <button onclick="hideModal('modal-discover')" class="modal-close">✕</button>
+        </div>
+        <input type="text" id="discover-search" class="modal-input" placeholder="Sunucu ara..." oninput="filterDiscoverServers()" style="margin-bottom:12px">
+        <div id="discover-list" style="overflow-y:auto;max-height:50vh;display:flex;flex-direction:column;gap:8px"></div>
+    </div>
+</div>
 </body>
 </html>
