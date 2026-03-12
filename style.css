@@ -779,3 +779,67 @@ body {
     .stat-num { font-size: 20px; }
     .admin-body { padding: 14px; }
 }
+
+/* ========== SES KAYDI ========== */
+.voice-msg-btn {
+    background: transparent; border: none; color: var(--muted);
+    font-size: 20px; cursor: pointer; padding: 6px 8px;
+    transition: all 0.2s; flex-shrink: 0; user-select: none;
+    -webkit-user-select: none; touch-action: none;
+    border-radius: 8px;
+}
+.voice-msg-btn:hover { color: white; transform: scale(1.1); }
+.voice-msg-btn.recording { color: #ed4245; animation: recPulse 0.8s ease infinite; background: rgba(237,66,69,0.1); }
+@keyframes recPulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.2); }
+}
+
+#voice-recording-indicator {
+    position: fixed; bottom: 70px; left: 50%; transform: translateX(-50%);
+    z-index: 500; animation: fadeInUp 0.2s ease;
+}
+.voice-indicator-box {
+    background: var(--sidebar); border: 1px solid rgba(237,66,69,0.3);
+    border-radius: 14px; padding: 12px 20px;
+    display: flex; align-items: center; gap: 12px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+    white-space: nowrap;
+}
+.voice-indicator-box button {
+    background: rgba(237,66,69,0.15); color: #ed4245; border: none;
+    padding: 6px 10px; border-radius: 8px; cursor: pointer;
+    font-size: 12px; font-weight: 700; font-family: inherit;
+    margin-left: 4px;
+}
+.voice-indicator-box button:hover { background: #ed4245; color: white; }
+#voice-timer { color: #ed4245; font-size: 15px; font-weight: 800; font-variant-numeric: tabular-nums; }
+.voice-pulse {
+    width: 12px; height: 12px; border-radius: 50%; background: #ed4245;
+    animation: recPulse 0.8s ease infinite; flex-shrink: 0;
+}
+
+/* SES MESAJI OYNATICI */
+.msg-audio {
+    display: flex; align-items: center; gap: 10px;
+    background: var(--input); padding: 10px 14px; border-radius: 20px;
+    margin-top: 6px; max-width: 280px;
+    border: 1px solid rgba(255,255,255,0.06);
+}
+.audio-play-btn {
+    width: 36px; height: 36px; border-radius: 50%; border: none;
+    background: var(--blue); color: white; font-size: 14px;
+    cursor: pointer; transition: all 0.2s; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+}
+.audio-play-btn:hover { background: var(--blue2); transform: scale(1.05); }
+.audio-waveform {
+    flex: 1; height: 28px; cursor: pointer; position: relative;
+}
+.audio-duration { color: var(--muted); font-size: 12px; font-weight: 600; flex-shrink: 0; }
+
+@media (max-width: 700px) {
+    .msg-audio { max-width: 200px; }
+    #voice-recording-indicator { bottom: 65px; left: 10px; right: 10px; transform: none; }
+    .voice-indicator-box { flex-wrap: wrap; }
+}
