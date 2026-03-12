@@ -318,7 +318,7 @@ function openChannel(serverId,channelId,channelName){
     if(data.replyTo){const ref=document.createElement('div');ref.className='msg-reply-ref';ref.innerHTML=`<div class="msg-reply-ref-name">↩ ${data.replyTo.name}</div><div class="msg-reply-ref-text">${data.replyTo.text||'[medya]'}</div>`;ref.onclick=()=>{const c=$('messages');const el=c.querySelector(`[data-msg-id="${data.replyTo.id}"]`);if(el){el.scrollIntoView({behavior:'smooth',block:'center'});el.style.background='rgba(88,101,242,0.15)';setTimeout(()=>el.style.background='',1500);}};body.appendChild(ref);}
     const hdr=document.createElement('div');
     const ns=document.createElement('span');ns.className='msg-name';ns.style.cursor='pointer';ns.textContent=data.name||'Kullanıcı';
-    ns.onclick=e=>{e.stopPropagation();loadAndShowProfile(data.uid,data.name,data.photoURL);};
+    ns.onclick=e=>{e.stopPropagation();loadAndShowProfile(data.uid,data.name,data.photoURL||null).catch(err=>alert('Profil açılamadı: '+err.message));};
     const ts=document.createElement('span');ts.className='msg-time';ts.textContent=time;
     hdr.appendChild(ns);hdr.appendChild(ts);
     if(data.edited){const et=document.createElement('span');et.className='msg-edited-tag';et.textContent='(düzenlendi)';hdr.appendChild(et);}
@@ -529,6 +529,7 @@ async function deleteAccount(){if(!confirm('Hesabını sil?'))return;if(!confirm
 
 // ── PROFİL ───────────────────────────────────────────────
 async function showProfile(uid,name,photoURL,status){
+    try{
     setAvatarEl($('profile-av'),photoURL,name);
     try{const uDoc=await db.collection('users').doc(uid).get();applyFrameToEl($('profile-av'),uDoc.data()?.profileFrame||'none');}catch(e){}
     $('profile-username').textContent=name;
@@ -567,6 +568,8 @@ async function showProfile(uid,name,photoURL,status){
         }
     }
     showModal('modal-profile');
+
+    }catch(err){alert('Profil yüklenemedi: '+err.message);}
 }
 async function loadAndShowProfile(uid,name,photoURL){
     let ph=photoURL||null,st='offline';
