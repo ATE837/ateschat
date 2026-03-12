@@ -95,12 +95,18 @@ window.showTab = (tab) => {
 window.doLogin = async () => {
     const email=document.getElementById('login-email').value.trim(), pw=document.getElementById('login-password').value;
     const err=document.getElementById('login-error');
+    if(!email||!pw){err.style.color='#ed4245';err.textContent='E-posta ve şifre girin.';return;}
     err.style.color='#949ba4'; err.textContent='Giriş yapılıyor...';
     try {
-        const cred=await signInWithEmailAndPassword(auth,email,pw);
-        const uDoc=await getDoc(doc(db,'users',cred.user.uid));
-        if(uDoc.exists()&&uDoc.data().banned){await signOut(auth);err.style.color='#ed4245';err.textContent='🚫 Hesabın banlandı.';}
-    } catch(e){err.style.color='#ed4245';err.textContent=e.code==='auth/invalid-credential'?'E-posta veya şifre hatalı.':'Hata: '+e.message;}
+        await signInWithEmailAndPassword(auth,email,pw);
+        // onAuthStateChanged devralır
+    } catch(e){
+        err.style.color='#ed4245';
+        if(e.code==='auth/invalid-credential'||e.code==='auth/wrong-password'||e.code==='auth/user-not-found') err.textContent='E-posta veya şifre hatalı.';
+        else if(e.code==='auth/invalid-email') err.textContent='Geçersiz e-posta.';
+        else if(e.code==='auth/too-many-requests') err.textContent='Çok fazla deneme. Biraz bekle.';
+        else err.textContent='Hata: '+e.message;
+    }
 };
 window.doRegister = async () => {
     const name=document.getElementById('reg-name').value.trim(), email=document.getElementById('reg-email').value.trim(), pw=document.getElementById('reg-password').value;
@@ -111,9 +117,13 @@ window.doRegister = async () => {
     try {
         const r=await createUserWithEmailAndPassword(auth,email,pw);
         await updateProfile(r.user,{displayName:name});
-        await setDoc(doc(db,'users',r.user.uid),{displayName:name,email,photoURL:null,status:'online',banned:false,msgCount:0,createdAt:serverTimestamp()},{merge:true});
-        err.style.color='#23a55a';err.textContent='✅ Kayıt başarılı! Giriş yapılıyor...';
-    } catch(e){err.style.color='#ed4245';err.textContent=e.code==='auth/email-already-in-use'?'Bu e-posta zaten kayıtlı.':'Hata: '+e.message;}
+        await setDoc(doc(db,'users',r.user.uid),{
+            displayName:name, email, photoURL:null, status:'online',
+            banned:false, msgCount:0, servers:[], friends:[], createdAt:serverTimestamp()
+        });
+        err.style.color='#23a55a';err.textContent='✅ Kayıt başarılı!';
+        // onAuthStateChanged otomatik devralır
+    } catch(e){err.style.color='#ed4245';err.textContent=e.code==='auth/email-already-in-use'?'Bu e-posta zaten kayıtlı.':e.code==='auth/invalid-email'?'Geçersiz e-posta.':'Hata: '+e.message;}
 };
 window.doLogout = async () => {
     if(currentUser)try{await setDoc(doc(db,'users',currentUser.uid),{status:'offline'},{merge:true});}catch(e){}
@@ -199,7 +209,8 @@ onAuthStateChanged(auth, async(user)=>{
         await setDoc(doc(db,'users',user.uid),{status:localStorage.getItem('userStatus')||'online'},{merge:true});
         updateStatusDot(localStorage.getItem('userStatus')||'online');
         const nb=document.getElementById('notif-browser');if(nb)nb.checked=localStorage.getItem('browserNotif')==='true'&&Notification.permission==='granted';
-        loadUserServers();listenForCalls();updateFriendBadge();updateDMBadge();
+        try{loadUserServers();}catch(e){console.error('loadUserServers:',e);}
+        listenForCalls();updateFriendBadge();updateDMBadge();
     } else {
         if(isAdmin)return;
         currentUser=null;
@@ -220,10 +231,32 @@ window.toggleBrowserNotif=async(checked)=>{
 
 // ── SUNUCULAR ────────────────────────────────────────────
 async function loadUserServers(){
-    const uDoc=await getDoc(doc(db,'users',currentUser.uid));
-    const list=uDoc.exists()?(uDoc.data().servers||[]):[];
-    if(!list.length){document.getElementById('server-screen').style.display='flex';document.getElementById('main-layout').style.display='none';}
-    else{document.getElementById('server-screen').style.display='none';document.getElementById('main-layout').style.display='flex';renderServers(list);openServer(list[0]);}
+    try {
+        const uDoc=await getDoc(doc(db,'users',currentUser.uid));
+        // Firestore'da users dokümanı yoksa oluştur
+        if(!uDoc.exists()){
+            await setDoc(doc(db,'users',currentUser.uid),{
+                displayName:currentUser.displayName||currentUser.email,
+                email:currentUser.email, photoURL:null, status:'online',
+                banned:false, msgCount:0, servers:[], friends:[], createdAt:serverTimestamp()
+            });
+        }
+        const list=uDoc.exists()?(uDoc.data().servers||[]):[];
+        if(!list.length){
+            document.getElementById('server-screen').style.display='flex';
+            document.getElementById('main-layout').style.display='none';
+        } else {
+            document.getElementById('server-screen').style.display='none';
+            document.getElementById('main-layout').style.display='flex';
+            renderServers(list);
+            openServer(list[0]);
+        }
+    } catch(e) {
+        console.error('loadUserServers hata:', e);
+        // Hata olsa bile sunucu ekranını göster
+        document.getElementById('server-screen').style.display='flex';
+        document.getElementById('main-layout').style.display='none';
+    }
 }
 function renderServers(list){
     const el=document.getElementById('server-icons');el.innerHTML='';
