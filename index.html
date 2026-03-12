@@ -113,6 +113,7 @@
         <div id="chat-input-wrap">
             <button class="attach-btn" onclick="openFilePicker()" title="Dosya/Resim">📎</button>
             <input type="text" id="msg-input" placeholder="Mesaj gönder..." onkeydown="if(event.key==='Enter')sendMessage()">
+            <button class="voice-msg-btn" id="voice-btn" onmousedown="startVoiceRecord()" onmouseup="stopVoiceRecord()" ontouchstart="startVoiceRecord(event)" ontouchend="stopVoiceRecord()" title="Ses kaydı için bas ve tut">🎙️</button>
             <button onclick="sendMessage()">➤</button>
         </div>
     </div>
@@ -306,6 +307,16 @@
     </div>
 </div>
 
+<!-- SES KAYIT GÖSTERGESİ -->
+<div id="voice-recording-indicator" style="display:none">
+    <div class="voice-indicator-box">
+        <div class="voice-pulse"></div>
+        <span id="voice-timer">0:00</span>
+        <span style="color:var(--muted);font-size:13px">Kaydediliyor... Bırak gönder</span>
+        <button onclick="cancelVoiceRecord()">✕ İptal</button>
+    </div>
+</div>
+
 <input type="file" id="avatar-file-input" accept="image/*" style="display:none" onchange="onAvatarSelected(this)">
 <input type="file" id="file-input" accept="image/*,video/*,.pdf,.doc,.docx,.txt,.zip" style="display:none" onchange="onFileSelected(this)">
 
@@ -316,4 +327,4 @@ window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); deferr
 </script>
 <script type="module" src="app.js"></script>
 </body>
-                                                                                 </html>
+</html>
