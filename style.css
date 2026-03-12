@@ -1154,3 +1154,25 @@ body {
 }
 .sidebar-toggle-btn:hover { background: rgba(255,255,255,0.13); }
 .sidebar-toggle-btn.active { background: rgba(88,101,242,0.25); color: #5865f2; }
+
+/* DM - Kendi mesajım sağda */
+.msg-mine {
+    flex-direction: row-reverse;
+}
+.msg-mine .msg-body {
+    align-items: flex-end;
+    background: rgba(88,101,242,0.18);
+    border-radius: 16px 4px 16px 16px;
+    padding: 8px 12px;
+    max-width: 75%;
+}
+.msg-mine .msg-body .msg-text {
+    text-align: right;
+}
+.msg-mine .msg-time {
+    font-size: 10px;
+}
+.msg-mine .msg-read-info {
+    font-size: 11px;
+    color: #5865f2;
+}
