@@ -843,3 +843,105 @@ body {
     #voice-recording-indicator { bottom: 65px; left: 10px; right: 10px; transform: none; }
     .voice-indicator-box { flex-wrap: wrap; }
 }
+
+/* ========== REPLY ========== */
+#reply-preview { flex-shrink: 0; }
+.reply-preview-box {
+    display: flex; align-items: center; gap: 10px;
+    background: var(--input); padding: 8px 14px;
+    border-left: 3px solid var(--blue); margin: 0 12px 4px;
+    border-radius: 0 8px 8px 0;
+}
+.reply-icon { font-size: 14px; flex-shrink: 0; }
+.reply-preview-content { flex: 1; overflow: hidden; }
+.reply-preview-name { color: var(--blue); font-size: 12px; font-weight: 700; display: block; }
+.reply-preview-text { color: var(--muted); font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; }
+.reply-preview-box button { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 14px; padding: 2px 6px; }
+.reply-preview-box button:hover { color: var(--red); }
+
+.msg-reply-ref {
+    background: rgba(88,101,242,0.1); border-left: 3px solid var(--blue);
+    padding: 4px 8px; border-radius: 0 6px 6px 0; margin-bottom: 4px;
+    cursor: pointer; transition: background 0.15s;
+}
+.msg-reply-ref:hover { background: rgba(88,101,242,0.18); }
+.msg-reply-ref-name { color: var(--blue); font-size: 11px; font-weight: 700; }
+.msg-reply-ref-text { color: var(--muted); font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* ========== YAZIYOR ========== */
+#typing-indicator {
+    padding: 4px 20px 2px; font-size: 12px; color: var(--muted);
+    display: flex; align-items: center; gap: 6px; flex-shrink: 0;
+    min-height: 20px;
+}
+.typing-dots { display: flex; gap: 3px; align-items: center; }
+.typing-dots span {
+    width: 5px; height: 5px; border-radius: 50%; background: var(--muted);
+    animation: typingBounce 1.2s ease infinite;
+}
+.typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+.typing-dots span:nth-child(3) { animation-delay: 0.4s; }
+@keyframes typingBounce {
+    0%, 60%, 100% { transform: translateY(0); opacity: 0.5; }
+    30% { transform: translateY(-4px); opacity: 1; }
+}
+
+/* ========== CONTEXT MENU ========== */
+#msg-context-menu { position: fixed; z-index: 1000; }
+.context-menu {
+    background: var(--black); border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 10px; padding: 6px; min-width: 140px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+    animation: fadeInUp 0.1s ease;
+}
+.context-menu button {
+    display: block; width: 100%; padding: 9px 12px; text-align: left;
+    background: none; border: none; color: var(--text); font-size: 13px;
+    font-weight: 600; cursor: pointer; border-radius: 6px;
+    transition: background 0.15s; font-family: inherit;
+}
+.context-menu button:hover { background: rgba(255,255,255,0.08); color: white; }
+
+/* ========== MESAJ DÜZENLEME ========== */
+.msg-edit-wrap {
+    display: flex; gap: 6px; margin-top: 4px; align-items: center;
+}
+.msg-edit-input {
+    flex: 1; background: var(--input); border: 1.5px solid var(--blue);
+    border-radius: 8px; color: white; padding: 7px 10px;
+    font-size: 14px; outline: none; font-family: inherit;
+}
+.msg-edit-save { background: var(--blue); color: white; border: none; border-radius: 6px; padding: 7px 12px; cursor: pointer; font-size: 13px; font-weight: 700; font-family: inherit; }
+.msg-edit-cancel { background: var(--input); color: var(--muted); border: none; border-radius: 6px; padding: 7px 10px; cursor: pointer; font-size: 13px; font-family: inherit; }
+.msg-edited-tag { color: var(--muted); font-size: 10px; margin-left: 4px; }
+
+/* ========== ROL SİSTEMİ ========== */
+.role-badge { font-size: 11px; font-weight: 800; padding: 2px 8px; border-radius: 10px; }
+.role-owner { background: rgba(250,166,26,0.2); color: #faa61a; }
+.role-mod { background: rgba(88,101,242,0.2); color: #5865f2; }
+.role-member { background: rgba(142,146,151,0.2); color: #8e9297; }
+
+.role-options { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
+.role-option {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 14px; border-radius: 10px; cursor: pointer;
+    background: var(--input); border: 1.5px solid transparent;
+    transition: all 0.2s;
+}
+.role-option:hover { border-color: var(--blue); background: rgba(88,101,242,0.1); }
+.role-desc { color: var(--muted); font-size: 12px; }
+
+.member-role-badge { font-size: 10px; font-weight: 800; padding: 1px 6px; border-radius: 8px; margin-left: 4px; }
+
+/* MESAJ ARAMA */
+#search-bar { flex-shrink: 0; }
+.msg-highlight { background: rgba(250,166,26,0.25); border-radius: 3px; }
+
+/* TARAYICI BİLDİRİMİ */
+.notif-permission-btn {
+    background: rgba(88,101,242,0.15); color: var(--blue);
+    border: 1px solid rgba(88,101,242,0.3); padding: 8px 12px;
+    border-radius: 8px; font-size: 12px; font-weight: 700;
+    cursor: pointer; margin-top: 6px; width: 100%; font-family: inherit;
+}
+.notif-permission-btn:hover { background: var(--blue); color: white; }
