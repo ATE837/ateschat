@@ -1033,3 +1033,25 @@ function initEventListeners() {
 
 if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',initEventListeners);}
 else{initEventListeners();}
+
+// ── GLOBAL APP KÖPRÜSÜ ───────────────────────────────────
+window._app = {
+    doLogin, doRegister, doAdminLogin, adminLogout, doLogout,
+    showTab, showModal, hideModal,
+    sendMessage, sendDMMessage, handleTyping, handleDMTyping,
+    createServer, joinServer, addChannel, showInvite, copyInvite,
+    openFilePicker, openDMFilePicker, openAvatarPicker,
+    openDMList, closeDM, showServerScreen, showDiscover, toggleSidebar,
+    cancelReply, cancelVoiceRecord, cancelDMVoiceRecord,
+    contextReply, contextEdit, contextDelete,
+    startCall, endCall, acceptCall, rejectCall,
+    toggleMute, toggleCam, toggleScreen,
+    saveDisplayName, changePassword,
+    sendFriendRequest, showFriendTab,
+    setStatus, setTheme, setLang,
+    leaveServer, deleteAccount, setMemberRole,
+    saveProfileFrame, filterAdminUsers, filterDiscoverServers,
+    adminBan, adminUnban,
+    startDMVoiceRecord, stopDMVoiceRecord, cancelDMVoiceRecord,
+    startDMCall: (t) => alert('DM arama yakında!')
+};
