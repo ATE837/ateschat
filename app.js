@@ -1,5 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile, updatePassword, deleteUser, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile, updatePassword, deleteUser, sendEmailVerification, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 import { getFirestore, collection, addDoc, doc, getDoc, setDoc, updateDoc, deleteDoc, arrayUnion, query, orderBy, onSnapshot, serverTimestamp, getDocs, where } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -24,10 +24,11 @@ let channelUnsub = null;
 let currentCallId = null;
 let pc = null;
 let localStream = null;
+let screenStream = null;
 
 const iceServers = { iceServers: [{ urls: ['stun:stun1.l.google.com:19302', 'stun:stun2.l.google.com:19302'] }] };
 
-// Sayfa yüklenince kaydedilmiş temayı uygula
+// Tema uygula
 applyTheme(localStorage.getItem('theme') || 'dark');
 
 // ===================== AUTH =====================
@@ -44,7 +45,13 @@ window.doLogin = async () => {
     const err = document.getElementById('login-error');
     err.style.color = '#949ba4'; err.textContent = 'Giriş yapılıyor...';
     try {
-        await signInWithEmailAndPassword(auth, email, password);
+        const cred = await signInWithEmailAndPassword(auth, email, password);
+        if (!cred.user.emailVerified) {
+            err.style.color = '#faa61a';
+            err.textContent = '📧 E-postanı doğrulamadan giriş yapamazsın!';
+            await signOut(auth);
+            return;
+        }
     } catch (e) {
         err.style.color = '#ed4245';
         err.textContent = e.code === 'auth/invalid-credential' ? 'E-posta veya şifre hatalı.' : 'Hata: ' + e.message;
@@ -62,18 +69,31 @@ window.doRegister = async () => {
     try {
         const r = await createUserWithEmailAndPassword(auth, email, password);
         await updateProfile(r.user, { displayName: name });
-        await setDoc(doc(db, 'users', r.user.uid), { displayName: name, email, photoURL: null, createdAt: serverTimestamp() }, { merge: true });
-        err.style.color = '#23a55a'; err.textContent = 'Kayıt başarılı!';
+        await sendEmailVerification(r.user);
+        await setDoc(doc(db, 'users', r.user.uid), {
+            displayName: name, email, photoURL: null,
+            status: 'online', createdAt: serverTimestamp()
+        }, { merge: true });
+        await signOut(auth);
+        err.style.color = '#23a55a';
+        err.textContent = '✅ Kayıt başarılı! ' + email + ' adresine doğrulama maili gönderildi. Mailine tıklayıp giriş yap.';
     } catch (e) {
         err.style.color = '#ed4245';
         err.textContent = e.code === 'auth/email-already-in-use' ? 'Bu e-posta zaten kayıtlı.' : 'Hata: ' + e.message;
     }
 };
 
-window.doLogout = () => signOut(auth);
+window.doLogout = async () => {
+    if (currentUser) {
+        try { await setDoc(doc(db, 'users', currentUser.uid), { status: 'offline' }, { merge: true }); } catch(e) {}
+    }
+    signOut(auth);
+};
+
 window.showModal = (id) => {
     document.getElementById(id).style.display = 'flex';
     if (id === 'modal-settings') loadSettingsModal();
+    if (id === 'modal-friends') { loadFriends('all'); updateFriendBadge(); }
 };
 window.hideModal = (id) => document.getElementById(id).style.display = 'none';
 window.showServerScreen = () => {
@@ -130,6 +150,9 @@ onAuthStateChanged(auth, async (user) => {
         window._userPhotoURL = photoURL;
         setAvatarEl(document.getElementById('my-avatar'), photoURL, user.displayName);
         document.getElementById('my-name').textContent = user.displayName || user.email;
+        // Durumu online yap
+        await setDoc(doc(db, 'users', user.uid), { status: localStorage.getItem('userStatus') || 'online' }, { merge: true });
+        updateStatusDot(localStorage.getItem('userStatus') || 'online');
         loadUserServers();
         listenForCalls();
         updateFriendBadge();
@@ -140,6 +163,28 @@ onAuthStateChanged(auth, async (user) => {
         document.getElementById('server-screen').style.display = 'none';
     }
 });
+
+// ===================== DURUM =====================
+window.setStatus = async (status) => {
+    if (!currentUser) return;
+    localStorage.setItem('userStatus', status);
+    await setDoc(doc(db, 'users', currentUser.uid), { status }, { merge: true });
+    updateStatusDot(status);
+    hideModal('modal-settings');
+};
+
+function updateStatusDot(status) {
+    const bar = document.getElementById('channel-user-bar');
+    const dot = document.getElementById('status-dot');
+    if (!dot) return;
+    const colors = { online: '#23a55a', idle: '#faa61a', dnd: '#ed4245', offline: '#747f8d' };
+    dot.style.background = colors[status] || colors.online;
+    dot.title = { online: '🟢 Çevrimiçi', idle: '🌙 Boşta', dnd: '⛔ Rahatsız Etme', offline: '⚫ Görünmez' }[status] || '';
+}
+
+function getStatusColor(status) {
+    return { online: '#23a55a', idle: '#faa61a', dnd: '#ed4245', offline: '#747f8d' }[status] || '#747f8d';
+}
 
 // ===================== SUNUCULAR =====================
 async function loadUserServers() {
@@ -180,15 +225,24 @@ async function openServer(server) {
         const list = document.getElementById('members-list');
         list.innerHTML = '';
         for (const m of members) {
-            let photoURL = null;
-            try { const u = await getDoc(doc(db, 'users', m.uid)); if (u.exists()) photoURL = u.data().photoURL; } catch(e) {}
+            let photoURL = null; let status = 'offline';
+            try {
+                const u = await getDoc(doc(db, 'users', m.uid));
+                if (u.exists()) { photoURL = u.data().photoURL; status = u.data().status || 'offline'; }
+            } catch(e) {}
             const div = document.createElement('div');
             div.className = 'member';
-            div.appendChild(makeAvatar(photoURL, m.name, 'member-av'));
+            const avWrap = document.createElement('div');
+            avWrap.style.position = 'relative'; avWrap.style.flexShrink = '0';
+            const av = makeAvatar(photoURL, m.name, 'member-av');
+            const dot = document.createElement('div');
+            dot.className = 'member-status-dot';
+            dot.style.background = getStatusColor(status);
+            avWrap.appendChild(av); avWrap.appendChild(dot);
             const n = document.createElement('span');
             n.className = 'member-name'; n.textContent = m.name;
-            div.appendChild(n);
-            div.onclick = () => showProfile(m.uid, m.name, photoURL);
+            div.appendChild(avWrap); div.appendChild(n);
+            div.onclick = () => showProfile(m.uid, m.name, photoURL, status);
             list.appendChild(div);
         }
     });
@@ -204,17 +258,13 @@ async function loadChannels(serverId) {
         let channels = [];
         snap.forEach(d => channels.push({ id: d.id, ...d.data() }));
         channels.sort((a, b) => (a.createdAt?.seconds || 0) - (b.createdAt?.seconds || 0));
-
         if (channels.length === 0) {
             await addDoc(collection(db, 'servers', serverId, 'channels'), { name: 'genel', createdAt: serverTimestamp() });
             return;
         }
-
         const label = document.createElement('div');
-        label.className = 'channels-label';
-        label.textContent = 'Kanallar';
+        label.className = 'channels-label'; label.textContent = 'Kanallar';
         channelList.appendChild(label);
-
         channels.forEach(ch => {
             const el = document.createElement('div');
             el.className = 'channel-item' + (ch.id === currentChannelId ? ' active' : '');
@@ -222,7 +272,6 @@ async function loadChannels(serverId) {
             el.onclick = () => openChannel(serverId, ch.id, ch.name);
             channelList.appendChild(el);
         });
-
         if (!currentChannelId || !channels.find(c => c.id === currentChannelId)) {
             openChannel(serverId, channels[0].id, channels[0].name);
         }
@@ -235,11 +284,11 @@ function openChannel(serverId, channelId, channelName) {
     document.querySelectorAll('.channel-item').forEach(el => {
         el.classList.toggle('active', el.textContent.trim() === channelName);
     });
-
     if (msgUnsub) msgUnsub();
     const q = query(collection(db, 'servers', serverId, 'channels', channelId, 'messages'), orderBy('createdAt', 'asc'));
     msgUnsub = onSnapshot(q, snap => {
         const container = document.getElementById('messages');
+        const wasBottom = container.scrollHeight - container.scrollTop <= container.clientHeight + 50;
         container.innerHTML = '';
         snap.forEach(d => {
             const data = d.data();
@@ -249,7 +298,18 @@ function openChannel(serverId, channelId, channelName) {
             div.appendChild(makeAvatar(data.photoURL || null, data.name, 'msg-av'));
             const body = document.createElement('div');
             body.className = 'msg-body';
-            body.innerHTML = `<div><span class="msg-name">${data.name || 'Kullanıcı'}</span><span class="msg-time">${time}</span></div><span class="msg-text">${data.text}</span>`;
+
+            // Resim mi, dosya mı, metin mi?
+            let content = '';
+            if (data.type === 'image') {
+                content = `<img src="${data.fileData}" class="msg-image" onclick="openImage('${data.fileData}')">`;
+            } else if (data.type === 'file') {
+                content = `<a href="${data.fileData}" download="${data.fileName}" class="msg-file">📎 ${data.fileName} <span>(${data.fileSize})</span></a>`;
+            } else {
+                content = `<span class="msg-text">${data.text}</span>`;
+            }
+
+            body.innerHTML = `<div><span class="msg-name">${data.name || 'Kullanıcı'}</span><span class="msg-time">${time}</span></div>${content}`;
             div.appendChild(body);
             if (data.uid === currentUser?.uid) {
                 const del = document.createElement('button');
@@ -259,13 +319,22 @@ function openChannel(serverId, channelId, channelName) {
             }
             container.appendChild(div);
         });
-        container.scrollTop = container.scrollHeight;
-        // Bildirim sesi
-        if (localStorage.getItem('notifSound') !== 'false' && snap.docChanges().some(c => c.type === 'added')) {
-            playNotif();
-        }
+        if (wasBottom) container.scrollTop = container.scrollHeight;
+        if (localStorage.getItem('notifSound') !== 'false') playNotif();
     });
 }
+
+// Resim büyüt
+window.openImage = (src) => {
+    const overlay = document.createElement('div');
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.9);z-index:9999;display:flex;align-items:center;justify-content:center;cursor:zoom-out';
+    const img = document.createElement('img');
+    img.src = src;
+    img.style.cssText = 'max-width:95vw;max-height:95vh;border-radius:8px;box-shadow:0 8px 32px rgba(0,0,0,0.5)';
+    overlay.appendChild(img);
+    overlay.onclick = () => document.body.removeChild(overlay);
+    document.body.appendChild(overlay);
+};
 
 function playNotif() {
     try {
@@ -274,9 +343,9 @@ function playNotif() {
         const g = ctx.createGain();
         o.connect(g); g.connect(ctx.destination);
         o.frequency.value = 880;
-        g.gain.setValueAtTime(0.1, ctx.currentTime);
-        g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3);
-        o.start(); o.stop(ctx.currentTime + 0.3);
+        g.gain.setValueAtTime(0.08, ctx.currentTime);
+        g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.25);
+        o.start(); o.stop(ctx.currentTime + 0.25);
     } catch(e) {}
 }
 
@@ -294,6 +363,37 @@ async function deleteMessage(serverId, channelId, msgId) {
     await deleteDoc(doc(db, 'servers', serverId, 'channels', channelId, 'messages', msgId));
 }
 
+// ===================== DOSYA / RESİM GÖNDERME =====================
+window.openFilePicker = () => document.getElementById('file-input').click();
+
+window.onFileSelected = async (input) => {
+    const file = input.files[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) { alert('Dosya 5MB\'dan küçük olmalı.'); return; }
+
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+        const base64 = e.target.result;
+        const isImage = file.type.startsWith('image/');
+        const fileSize = (file.size / 1024).toFixed(1) + ' KB';
+        let photoURL = window._userPhotoURL || null;
+
+        await addDoc(collection(db, 'servers', currentServerId, 'channels', currentChannelId, 'messages'), {
+            name: currentUser.displayName || currentUser.email,
+            photoURL,
+            uid: currentUser.uid,
+            type: isImage ? 'image' : 'file',
+            fileData: base64,
+            fileName: file.name,
+            fileSize,
+            text: '',
+            createdAt: serverTimestamp()
+        });
+    };
+    reader.readAsDataURL(file);
+    input.value = '';
+};
+
 window.sendMessage = async () => {
     const input = document.getElementById('msg-input');
     const text = input.value.trim();
@@ -302,7 +402,7 @@ window.sendMessage = async () => {
     let photoURL = window._userPhotoURL || null;
     await addDoc(collection(db, 'servers', currentServerId, 'channels', currentChannelId, 'messages'), {
         text, name: currentUser.displayName || currentUser.email,
-        photoURL, uid: currentUser.uid, createdAt: serverTimestamp()
+        photoURL, uid: currentUser.uid, type: 'text', createdAt: serverTimestamp()
     });
 };
 
@@ -367,6 +467,8 @@ function loadSettingsModal() {
     document.getElementById('lang-tr').classList.toggle('active', lang === 'tr');
     document.getElementById('lang-en').classList.toggle('active', lang === 'en');
     document.getElementById('notif-sound').checked = localStorage.getItem('notifSound') !== 'false';
+    const st = localStorage.getItem('userStatus') || 'online';
+    document.querySelectorAll('.status-option').forEach(el => el.classList.toggle('active', el.dataset.status === st));
 }
 
 window.saveDisplayName = async () => {
@@ -410,19 +512,13 @@ window.setTheme = (theme) => {
 function applyTheme(theme) {
     const r = document.documentElement.style;
     if (theme === 'light') {
-        r.setProperty('--dark', '#f2f3f5');
-        r.setProperty('--sidebar', '#e3e5e8');
-        r.setProperty('--black', '#ffffff');
-        r.setProperty('--input', '#d9dadc');
-        r.setProperty('--text', '#2e3338');
-        r.setProperty('--muted', '#5c6370');
+        r.setProperty('--dark', '#f2f3f5'); r.setProperty('--sidebar', '#e3e5e8');
+        r.setProperty('--black', '#ffffff'); r.setProperty('--input', '#d9dadc');
+        r.setProperty('--text', '#2e3338'); r.setProperty('--muted', '#5c6370');
     } else {
-        r.setProperty('--dark', '#313338');
-        r.setProperty('--sidebar', '#2b2d31');
-        r.setProperty('--black', '#1e1f22');
-        r.setProperty('--input', '#383a40');
-        r.setProperty('--text', '#dbdee1');
-        r.setProperty('--muted', '#949ba4');
+        r.setProperty('--dark', '#1a1b1e'); r.setProperty('--sidebar', '#212226');
+        r.setProperty('--black', '#111214'); r.setProperty('--input', '#2e3035');
+        r.setProperty('--text', '#dcddde'); r.setProperty('--muted', '#8e9297');
     }
 }
 
@@ -433,6 +529,14 @@ window.setLang = (lang) => {
     const msg = document.getElementById('settings-msg');
     msg.textContent = lang === 'tr' ? '✅ Dil: Türkçe' : '✅ Language: English';
     setTimeout(() => msg.textContent = '', 2500);
+};
+
+window.setStatus = async (status) => {
+    if (!currentUser) return;
+    localStorage.setItem('userStatus', status);
+    await setDoc(doc(db, 'users', currentUser.uid), { status }, { merge: true });
+    updateStatusDot(status);
+    document.querySelectorAll('.status-option').forEach(el => el.classList.toggle('active', el.dataset.status === status));
 };
 
 window.leaveServer = async () => {
@@ -460,9 +564,166 @@ window.deleteAccount = async () => {
         await deleteDoc(doc(db, 'users', currentUser.uid));
         await deleteUser(currentUser);
     } catch(e) {
-        alert(e.code === 'auth/requires-recent-login' ? 'Çıkış yapıp tekrar giriş yap, sonra tekrar dene.' : 'Hata: ' + e.message);
+        alert(e.code === 'auth/requires-recent-login' ? 'Çıkış yapıp tekrar giriş yap.' : 'Hata: ' + e.message);
     }
 };
+
+// ===================== ARKADAŞ SİSTEMİ =====================
+async function showProfile(uid, name, photoURL, status) {
+    const av = document.getElementById('profile-av');
+    document.getElementById('profile-username').textContent = name;
+    document.getElementById('profile-tag').textContent = '@ ' + uid.substring(0, 6).toLowerCase();
+    const statusLabels = { online: '🟢 Çevrimiçi', idle: '🌙 Boşta', dnd: '⛔ Rahatsız Etme', offline: '⚫ Görünmez' };
+    document.getElementById('profile-status-text').textContent = statusLabels[status] || '⚫ Çevrimdışı';
+    setAvatarEl(av, photoURL, name);
+    const actions = document.getElementById('profile-actions');
+    actions.innerHTML = '';
+
+    if (uid === currentUser.uid) {
+        actions.innerHTML = '<button class="p-btn gray" style="width:100%">Senin Profilin</button>';
+    } else {
+        const myDoc = await getDoc(doc(db, 'users', currentUser.uid));
+        const friends = myDoc.data()?.friends || [];
+        const sentRequests = myDoc.data()?.sentRequests || [];
+        if (friends.includes(uid)) {
+            const r = document.createElement('button');
+            r.className = 'p-btn red'; r.textContent = '✕ Arkadaşlıktan Çıkar';
+            r.style.width = '100%';
+            r.onclick = () => removeFriend(uid, name);
+            actions.appendChild(r);
+        } else if (sentRequests.includes(uid)) {
+            actions.innerHTML = '<button class="p-btn gray" style="width:100%">⏳ İstek Gönderildi</button>';
+        } else {
+            const a = document.createElement('button');
+            a.className = 'p-btn blue'; a.textContent = '➕ Arkadaş Ekle';
+            a.style.width = '100%';
+            a.onclick = () => sendFriendRequestToUid(uid, name);
+            actions.appendChild(a);
+        }
+    }
+    showModal('modal-profile');
+}
+
+window.sendFriendRequest = async () => {
+    const searchName = document.getElementById('friend-search-input').value.trim();
+    const msg = document.getElementById('friend-msg');
+    if (!searchName) { msg.style.color = '#ed4245'; msg.textContent = 'Kullanıcı adı girin.'; return; }
+    msg.style.color = '#949ba4'; msg.textContent = 'Aranıyor...';
+    const snap = await getDocs(query(collection(db, 'users'), where('displayName', '==', searchName)));
+    if (snap.empty) { msg.style.color = '#ed4245'; msg.textContent = 'Kullanıcı bulunamadı.'; return; }
+    const targetDoc = snap.docs[0];
+    if (targetDoc.id === currentUser.uid) { msg.style.color = '#ed4245'; msg.textContent = 'Kendine istek gönderemezsin.'; return; }
+    await sendFriendRequestToUid(targetDoc.id, targetDoc.data().displayName);
+    document.getElementById('friend-search-input').value = '';
+};
+
+async function sendFriendRequestToUid(targetUid, targetName) {
+    const msg = document.getElementById('friend-msg');
+    try {
+        await setDoc(doc(db, 'users', targetUid), {
+            friendRequests: arrayUnion({ uid: currentUser.uid, name: currentUser.displayName || currentUser.email })
+        }, { merge: true });
+        await setDoc(doc(db, 'users', currentUser.uid), { sentRequests: arrayUnion(targetUid) }, { merge: true });
+        if (msg) { msg.style.color = '#23a55a'; msg.textContent = '✅ İstek gönderildi!'; setTimeout(() => { if(msg) msg.textContent=''; }, 2500); }
+        hideModal('modal-profile');
+    } catch(e) { if (msg) { msg.style.color = '#ed4245'; msg.textContent = 'Hata: ' + e.message; } }
+}
+
+async function removeFriend(targetUid, targetName) {
+    if (!confirm(`${targetName} arkadaşlıktan çıkarılsın mı?`)) return;
+    const myRef = doc(db, 'users', currentUser.uid);
+    const theirRef = doc(db, 'users', targetUid);
+    const mySnap = await getDoc(myRef);
+    const theirSnap = await getDoc(theirRef);
+    await setDoc(myRef, { friends: (mySnap.data()?.friends || []).filter(f => f !== targetUid) }, { merge: true });
+    await setDoc(theirRef, { friends: (theirSnap.data()?.friends || []).filter(f => f !== currentUser.uid) }, { merge: true });
+    hideModal('modal-profile');
+    loadFriends();
+}
+
+window.showFriendTab = (tab) => {
+    document.getElementById('ftab-all').classList.toggle('active', tab === 'all');
+    document.getElementById('ftab-pending').classList.toggle('active', tab === 'pending');
+    loadFriends(tab);
+};
+
+async function loadFriends(tab = 'all') {
+    const list = document.getElementById('friends-list');
+    list.innerHTML = '<div class="empty-state"><div class="e-icon">⏳</div>Yükleniyor...</div>';
+    const uDoc = await getDoc(doc(db, 'users', currentUser.uid));
+    const data = uDoc.data() || {};
+    if (tab === 'all') {
+        const friends = data.friends || [];
+        if (friends.length === 0) { list.innerHTML = '<div class="empty-state"><div class="e-icon">👥</div>Henüz arkadaşın yok.</div>'; return; }
+        list.innerHTML = '';
+        for (const fUid of friends) {
+            try {
+                const fDoc = await getDoc(doc(db, 'users', fUid));
+                const fData = fDoc.data() || {};
+                list.appendChild(createFriendItem(fUid, fData.displayName || 'Kullanıcı', fData.photoURL, fData.status, 'friend'));
+            } catch(e) {}
+        }
+    } else {
+        const requests = data.friendRequests || [];
+        if (requests.length === 0) { list.innerHTML = '<div class="empty-state"><div class="e-icon">📭</div>Bekleyen istek yok.</div>'; return; }
+        list.innerHTML = '';
+        for (const req of requests) list.appendChild(createFriendItem(req.uid, req.name, null, null, 'pending'));
+    }
+}
+
+function createFriendItem(uid, name, photoURL, status, type) {
+    const div = document.createElement('div');
+    div.className = 'friend-item';
+    const av = document.createElement('div'); av.className = 'friend-av';
+    setAvatarEl(av, photoURL, name);
+    const info = document.createElement('div'); info.className = 'friend-info';
+    const statusLabels = { online: '🟢 Çevrimiçi', idle: '🌙 Boşta', dnd: '⛔ Rahatsız Etme', offline: '⚫ Çevrimdışı' };
+    info.innerHTML = `<div class="friend-name">${name}</div><div class="friend-status">${type === 'pending' ? '📨 Arkadaşlık isteği' : (statusLabels[status] || '⚫ Çevrimdışı')}</div>`;
+    div.appendChild(av); div.appendChild(info);
+    const btns = document.createElement('div'); btns.className = 'friend-btns';
+    if (type === 'pending') {
+        const a = document.createElement('button'); a.className = 'fi-btn accept'; a.textContent = '✓'; a.title = 'Kabul Et'; a.onclick = () => acceptFriendRequest(uid, name);
+        const r = document.createElement('button'); r.className = 'fi-btn reject'; r.textContent = '✕'; r.title = 'Reddet'; r.onclick = () => rejectFriendRequest(uid);
+        btns.appendChild(a); btns.appendChild(r);
+    } else {
+        const r = document.createElement('button'); r.className = 'fi-btn remove'; r.textContent = '✕'; r.title = 'Çıkar'; r.onclick = () => removeFriend(uid, name);
+        btns.appendChild(r);
+    }
+    div.appendChild(btns);
+    div.onclick = e => { if (!e.target.closest('.friend-btns')) showProfile(uid, name, photoURL, status); };
+    return div;
+}
+
+async function acceptFriendRequest(fromUid, fromName) {
+    const myRef = doc(db, 'users', currentUser.uid);
+    const mySnap = await getDoc(myRef);
+    const requests = (mySnap.data()?.friendRequests || []).filter(r => r.uid !== fromUid);
+    await setDoc(myRef, { friends: arrayUnion(fromUid), friendRequests: requests }, { merge: true });
+    await setDoc(doc(db, 'users', fromUid), { friends: arrayUnion(currentUser.uid) }, { merge: true });
+    loadFriends('pending'); updateFriendBadge();
+}
+
+async function rejectFriendRequest(fromUid) {
+    const myRef = doc(db, 'users', currentUser.uid);
+    const mySnap = await getDoc(myRef);
+    const requests = (mySnap.data()?.friendRequests || []).filter(r => r.uid !== fromUid);
+    await setDoc(myRef, { friendRequests: requests }, { merge: true });
+    loadFriends('pending'); updateFriendBadge();
+}
+
+async function updateFriendBadge() {
+    if (!currentUser) return;
+    try {
+        const uDoc = await getDoc(doc(db, 'users', currentUser.uid));
+        const count = (uDoc.data()?.friendRequests || []).length;
+        ['req-badge', 'friends-badge'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) { el.textContent = count; el.style.display = count > 0 ? 'inline' : 'none'; }
+        });
+    } catch(e) {}
+}
+
+setInterval(updateFriendBadge, 30000);
 
 // ===================== ARAMA =====================
 window.startCall = async (type) => {
@@ -535,6 +796,7 @@ window.rejectCall = async () => {
 };
 
 window.endCall = async () => {
+    if (screenStream) { screenStream.getTracks().forEach(t => t.stop()); screenStream = null; }
     if (pc) { pc.close(); pc = null; }
     if (localStream) { localStream.getTracks().forEach(t => t.stop()); localStream = null; }
     if (currentCallId) { try { await updateDoc(doc(db, 'calls', currentCallId), { status: 'ended' }); } catch(e) {} currentCallId = null; }
@@ -542,234 +804,32 @@ window.endCall = async () => {
     document.getElementById('remote-video').srcObject = null;
     document.getElementById('local-video').srcObject = null;
     document.getElementById('local-video').style.display = 'block';
+    const btn = document.getElementById('screen-btn');
+    if (btn) { btn.textContent = '🖥️'; btn.classList.remove('active'); }
 };
 
 window.toggleMute = () => { if (!localStream) return; const a = localStream.getAudioTracks()[0]; if (a) { a.enabled = !a.enabled; document.getElementById('mute-btn').textContent = a.enabled ? '🎤' : '🔇'; } };
 window.toggleCam = () => { if (!localStream) return; const v = localStream.getVideoTracks()[0]; if (v) { v.enabled = !v.enabled; document.getElementById('cam-btn').textContent = v.enabled ? '📹' : '🚫'; } };
 
-// ===================== ARKADAŞ SİSTEMİ =====================
-
-// Üyeye tıklayınca profil kartı aç
-async function showProfile(uid, name, photoURL) {
-    const modal = document.getElementById('modal-profile');
-    const av = document.getElementById('profile-av');
-    document.getElementById('profile-username').textContent = name;
-    document.getElementById('profile-tag').textContent = '@ ' + uid.substring(0, 6).toLowerCase();
-    setAvatarEl(av, photoURL, name);
-    document.getElementById('profile-actions').innerHTML = '';
-
-    if (uid === currentUser.uid) {
-        // Kendi profilin
-        const btn = document.createElement('button');
-        btn.className = 'p-btn gray'; btn.textContent = 'Senin Profilin';
-        document.getElementById('profile-actions').appendChild(btn);
+window.toggleScreen = async () => {
+    const btn = document.getElementById('screen-btn');
+    if (screenStream) {
+        screenStream.getTracks().forEach(t => t.stop());
+        screenStream = null;
+        btn.textContent = '🖥️'; btn.classList.remove('active');
+        if (pc && localStream) {
+            const camTrack = localStream.getVideoTracks()[0];
+            if (camTrack) { const sender = pc.getSenders().find(s => s.track?.kind === 'video'); if (sender) sender.replaceTrack(camTrack); }
+        }
+        document.getElementById('local-video').srcObject = localStream;
     } else {
-        // Arkadaşlık durumunu kontrol et
-        const myFriendsDoc = await getDoc(doc(db, 'users', currentUser.uid));
-        const friends = myFriendsDoc.data()?.friends || [];
-        const sentRequests = myFriendsDoc.data()?.sentRequests || [];
-        const actions = document.getElementById('profile-actions');
-        actions.style.display = 'flex'; actions.style.gap = '8px';
-
-        if (friends.includes(uid)) {
-            // Zaten arkadaş
-            const msgBtn = document.createElement('button');
-            msgBtn.className = 'p-btn blue'; msgBtn.textContent = '💬 Mesaj';
-            msgBtn.onclick = () => hideModal('modal-profile');
-            const removeBtn = document.createElement('button');
-            removeBtn.className = 'p-btn red'; removeBtn.textContent = '✕ Çıkar';
-            removeBtn.onclick = () => removeFriend(uid, name);
-            actions.appendChild(msgBtn); actions.appendChild(removeBtn);
-        } else if (sentRequests.includes(uid)) {
-            const pendBtn = document.createElement('button');
-            pendBtn.className = 'p-btn gray'; pendBtn.textContent = '⏳ İstek Gönderildi';
-            actions.appendChild(pendBtn);
-        } else {
-            const addBtn = document.createElement('button');
-            addBtn.className = 'p-btn blue'; addBtn.textContent = '➕ Arkadaş Ekle';
-            addBtn.onclick = () => sendFriendRequestToUid(uid, name);
-            actions.appendChild(addBtn);
-        }
+        try {
+            screenStream = await navigator.mediaDevices.getDisplayMedia({ video: { frameRate: 30 }, audio: true });
+            btn.textContent = '⏹️'; btn.classList.add('active');
+            const screenTrack = screenStream.getVideoTracks()[0];
+            if (pc) { const sender = pc.getSenders().find(s => s.track?.kind === 'video'); if (sender) sender.replaceTrack(screenTrack); }
+            document.getElementById('local-video').srcObject = screenStream;
+            screenTrack.onended = () => window.toggleScreen();
+        } catch(e) { alert('Ekran paylaşımı başlatılamadı: ' + e.message); }
     }
-    showModal('modal-profile');
-}
-
-window.sendFriendRequest = async () => {
-    const searchName = document.getElementById('friend-search-input').value.trim();
-    const msg = document.getElementById('friend-msg');
-    if (!searchName) { msg.style.color = '#ed4245'; msg.textContent = 'Kullanıcı adı girin.'; return; }
-    msg.style.color = '#949ba4'; msg.textContent = 'Aranıyor...';
-
-    // Firestore'da kullanıcıyı isimle ara
-    const snap = await getDocs(query(collection(db, 'users'), where('displayName', '==', searchName)));
-    if (snap.empty) { msg.style.color = '#ed4245'; msg.textContent = 'Kullanıcı bulunamadı.'; return; }
-
-    const targetDoc = snap.docs[0];
-    const targetUid = targetDoc.id;
-    if (targetUid === currentUser.uid) { msg.style.color = '#ed4245'; msg.textContent = 'Kendine istek gönderemezsin.'; return; }
-
-    await sendFriendRequestToUid(targetUid, targetDoc.data().displayName);
-    document.getElementById('friend-search-input').value = '';
 };
-
-async function sendFriendRequestToUid(targetUid, targetName) {
-    const msg = document.getElementById('friend-msg');
-    try {
-        // Karşı tarafa istek ekle
-        await setDoc(doc(db, 'users', targetUid), {
-            friendRequests: arrayUnion({ uid: currentUser.uid, name: currentUser.displayName || currentUser.email })
-        }, { merge: true });
-        // Kendi gönderilen istekler listesine ekle
-        await setDoc(doc(db, 'users', currentUser.uid), {
-            sentRequests: arrayUnion(targetUid)
-        }, { merge: true });
-        if (msg) { msg.style.color = '#23a55a'; msg.textContent = '✅ İstek gönderildi!'; setTimeout(() => { if(msg) msg.textContent=''; }, 2500); }
-        hideModal('modal-profile');
-    } catch(e) {
-        if (msg) { msg.style.color = '#ed4245'; msg.textContent = 'Hata: ' + e.message; }
-    }
-}
-
-async function removeFriend(targetUid, targetName) {
-    if (!confirm(`${targetName} arkadaşlıktan çıkarılsın mı?`)) return;
-    const myRef = doc(db, 'users', currentUser.uid);
-    const theirRef = doc(db, 'users', targetUid);
-    const mySnap = await getDoc(myRef);
-    const theirSnap = await getDoc(theirRef);
-    const myFriends = (mySnap.data()?.friends || []).filter(f => f !== targetUid);
-    const theirFriends = (theirSnap.data()?.friends || []).filter(f => f !== currentUser.uid);
-    await setDoc(myRef, { friends: myFriends }, { merge: true });
-    await setDoc(theirRef, { friends: theirFriends }, { merge: true });
-    hideModal('modal-profile');
-    loadFriends();
-}
-
-window.showFriendTab = (tab) => {
-    document.getElementById('ftab-all').classList.toggle('active', tab === 'all');
-    document.getElementById('ftab-pending').classList.toggle('active', tab === 'pending');
-    loadFriends(tab);
-};
-
-async function loadFriends(tab = 'all') {
-    const list = document.getElementById('friends-list');
-    list.innerHTML = '<div class="empty-state"><div class="e-icon">⏳</div>Yükleniyor...</div>';
-
-    const uDoc = await getDoc(doc(db, 'users', currentUser.uid));
-    const data = uDoc.data() || {};
-
-    if (tab === 'all') {
-        const friends = data.friends || [];
-        if (friends.length === 0) {
-            list.innerHTML = '<div class="empty-state"><div class="e-icon">👥</div>Henüz arkadaşın yok.<br>Arkadaş ekle butonuna bas!</div>';
-            return;
-        }
-        list.innerHTML = '';
-        for (const fUid of friends) {
-            try {
-                const fDoc = await getDoc(doc(db, 'users', fUid));
-                const fData = fDoc.data() || {};
-                const div = createFriendItem(fUid, fData.displayName || 'Kullanıcı', fData.photoURL, 'friend');
-                list.appendChild(div);
-            } catch(e) {}
-        }
-    } else {
-        const requests = data.friendRequests || [];
-        if (requests.length === 0) {
-            list.innerHTML = '<div class="empty-state"><div class="e-icon">📭</div>Bekleyen istek yok.</div>';
-            return;
-        }
-        list.innerHTML = '';
-        for (const req of requests) {
-            const div = createFriendItem(req.uid, req.name, null, 'pending');
-            list.appendChild(div);
-        }
-    }
-}
-
-function createFriendItem(uid, name, photoURL, type) {
-    const div = document.createElement('div');
-    div.className = 'friend-item';
-    const av = document.createElement('div');
-    av.className = 'friend-av';
-    setAvatarEl(av, photoURL, name);
-    const info = document.createElement('div');
-    info.className = 'friend-info';
-    info.innerHTML = `<div class="friend-name">${name}</div><div class="friend-status">${type === 'pending' ? '📨 Arkadaşlık isteği' : '🟢 Arkadaş'}</div>`;
-    div.appendChild(av); div.appendChild(info);
-
-    const btns = document.createElement('div');
-    btns.className = 'friend-btns';
-
-    if (type === 'pending') {
-        const acceptBtn = document.createElement('button');
-        acceptBtn.className = 'fi-btn accept'; acceptBtn.textContent = '✓';
-        acceptBtn.title = 'Kabul Et';
-        acceptBtn.onclick = () => acceptFriendRequest(uid, name);
-
-        const rejectBtn = document.createElement('button');
-        rejectBtn.className = 'fi-btn reject'; rejectBtn.textContent = '✕';
-        rejectBtn.title = 'Reddet';
-        rejectBtn.onclick = () => rejectFriendRequest(uid);
-
-        btns.appendChild(acceptBtn); btns.appendChild(rejectBtn);
-    } else {
-        const removeBtn = document.createElement('button');
-        removeBtn.className = 'fi-btn remove'; removeBtn.textContent = '✕';
-        removeBtn.title = 'Arkadaşlıktan Çıkar';
-        removeBtn.onclick = () => removeFriend(uid, name);
-        btns.appendChild(removeBtn);
-    }
-
-    div.appendChild(btns);
-    div.onclick = (e) => {
-        if (!e.target.closest('.friend-btns')) showProfile(uid, name, photoURL);
-    };
-    return div;
-}
-
-async function acceptFriendRequest(fromUid, fromName) {
-    const myRef = doc(db, 'users', currentUser.uid);
-    const theirRef = doc(db, 'users', fromUid);
-    const mySnap = await getDoc(myRef);
-    const requests = (mySnap.data()?.friendRequests || []).filter(r => r.uid !== fromUid);
-    // Her ikisini de arkadaş listesine ekle
-    await setDoc(myRef, { friends: arrayUnion(fromUid), friendRequests: requests }, { merge: true });
-    await setDoc(theirRef, { friends: arrayUnion(currentUser.uid), sentRequests: [] }, { merge: true });
-    loadFriends('pending');
-    updateFriendBadge();
-}
-
-async function rejectFriendRequest(fromUid) {
-    const myRef = doc(db, 'users', currentUser.uid);
-    const mySnap = await getDoc(myRef);
-    const requests = (mySnap.data()?.friendRequests || []).filter(r => r.uid !== fromUid);
-    await setDoc(myRef, { friendRequests: requests }, { merge: true });
-    loadFriends('pending');
-    updateFriendBadge();
-}
-
-async function updateFriendBadge() {
-    if (!currentUser) return;
-    try {
-        const uDoc = await getDoc(doc(db, 'users', currentUser.uid));
-        const count = (uDoc.data()?.friendRequests || []).length;
-        const badge = document.getElementById('req-badge');
-        const fbadge = document.getElementById('friends-badge');
-        if (badge) { badge.textContent = count; badge.style.display = count > 0 ? 'inline' : 'none'; }
-        if (fbadge) { fbadge.textContent = count; fbadge.style.display = count > 0 ? 'inline' : 'none'; }
-    } catch(e) {}
-}
-
-// Modal açılınca arkadaş listesini yükle
-const _origShowModal = window.showModal;
-window.showModal = (id) => {
-    document.getElementById(id).style.display = 'flex';
-    if (id === 'modal-settings') loadSettingsModal();
-    if (id === 'modal-friends') { loadFriends('all'); updateFriendBadge(); }
-};
-
-// Üye listesindeki kişiye tıklanabilirlik ekle (openServer'da üye oluşturulurken)
-const _origOpenServer = openServer;
-
-// Arkadaş bildirimi - her 30 saniyede kontrol et
-setInterval(updateFriendBadge, 30000);
