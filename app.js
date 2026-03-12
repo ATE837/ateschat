@@ -256,7 +256,8 @@ function openChannel(serverId,channelId,channelName){
         if(typers.length){tt.textContent=typers.join(', ')+' yazıyor';ti.style.display='flex';}else ti.style.display='none';
     });
     let firstLoad=true;
-    const q=db.collection('servers').doc(serverId).collection('channels').doc(channelId).collection('messages').orderBy('createdAt','asc').limitToLast(100);
+    // Compat API'de limitToLast yok - desc+limit kullan
+    const q=db.collection('servers').doc(serverId).collection('channels').doc(channelId).collection('messages').orderBy('createdAt','desc').limit(100);
     msgUnsub=q.onSnapshot(snap=>{
         const container=$('messages');
         const wasBottom=container.scrollHeight-container.scrollTop<=container.clientHeight+60;
@@ -284,10 +285,15 @@ function openChannel(serverId,channelId,channelName){
             }
         });
         if(firstLoad){
-            allMessages=[];snap.forEach(d=>allMessages.push({id:d.id,...d.data()}));
+            allMessages=[];
+            const docs=[];snap.forEach(d=>docs.push({id:d.id,...d.data()}));
+            docs.reverse(); // desc'den asc'ye çevir
+            allMessages=docs;
             renderMessages(allMessages);firstLoad=false;
-            const unread=allMessages.filter(d=>d.uid!==currentUser?.uid&&!d.readBy?.includes(currentUser.uid)).slice(-20);
+            container.scrollTop=container.scrollHeight;
+            const unread=allMessages.filter(d=>d.uid!==currentUser?.uid&&!(d.readBy||[]).includes(currentUser.uid)).slice(-20);
             unread.forEach(data=>db.collection('servers').doc(currentServerId).collection('channels').doc(currentChannelId).collection('messages').doc(data.id).update({readBy:firebase.firestore.FieldValue.arrayUnion(currentUser.uid)}).catch(()=>{}));
+            return;
         }
         if(wasBottom)container.scrollTop=container.scrollHeight;
     });
@@ -642,6 +648,14 @@ async function loadDMList(){
         }catch(e){}
     }
 }
+function filterDMList(){
+    const q=document.getElementById('dm-search')?.value.toLowerCase()||'';
+    document.querySelectorAll('#dm-list .dm-item').forEach(item=>{
+        const name=item.querySelector('.dm-item-name')?.textContent.toLowerCase()||'';
+        item.style.display=name.includes(q)?'':'none';
+    });
+}
+
 async function openDMChat(uid,name,photoURL,status){
     currentDMPartner={uid,name,photoURL};
     setAvatarEl($('dm-partner-av'),photoURL,name);
@@ -697,6 +711,23 @@ async function onDMFileSelected(input){
 async function openDMFromProfile(uid,name,photoURL,status){hideModal('modal-profile');$('dm-screen').style.display='flex';$('main-layout').style.display='none';await loadDMList();openDMChat(uid,name,photoURL,status);}
 
 // ── KEŞFET ───────────────────────────────────────────────
+function showDiscover(){showModal('modal-discover');loadDiscover();}
+
+async function startDMCall(type){
+    if(!currentDMPartner){alert('Önce bir DM aç.');return;}
+    try{localStream=await navigator.mediaDevices.getUserMedia({video:type==='video',audio:true});}catch(e){alert('Mikrofon/kamera erişimi reddedildi.');return;}
+    await requestWakeLock();pc=new RTCPeerConnection(iceServers);localStream.getTracks().forEach(t=>pc.addTrack(t,localStream));
+    $('local-video').srcObject=localStream;if(type!=='video')$('local-video').style.display='none';
+    pc.ontrack=e=>{$('remote-video').srcObject=e.streams[0];};
+    const callRef=db.collection('calls').doc();currentCallId=callRef.id;
+    pc.onicecandidate=async e=>{if(e.candidate)await callRef.collection('offerCandidates').add(e.candidate.toJSON());};
+    const offer=await pc.createOffer();await pc.setLocalDescription(offer);
+    await callRef.set({offer:{type:offer.type,sdp:offer.sdp},callType:type,callerName:currentUser.displayName||currentUser.email,callerUid:currentUser.uid,targetUid:currentDMPartner.uid,dmCall:true,status:'ringing',createdAt:firebase.firestore.FieldValue.serverTimestamp()});
+    $('call-screen').style.display='flex';$('call-status').textContent='Bağlanıyor...';$('remote-video').style.display=type==='video'?'block':'none';
+    callRef.onSnapshot(async snap=>{const data=snap.data();if(!data)return;if(data.answer&&!pc.currentRemoteDescription){await pc.setRemoteDescription(new RTCSessionDescription(data.answer));$('call-status').textContent='Bağlandı ✅';}if(data.status==='rejected'||data.status==='ended')endCall();});
+    callRef.collection('answerCandidates').onSnapshot(snap=>{snap.docChanges().forEach(c=>{if(c.type==='added')pc.addIceCandidate(new RTCIceCandidate(c.doc.data()));});});
+}
+
 async function loadDiscover(){
     const list=$('discover-list');list.innerHTML='<div style="color:var(--muted);text-align:center;padding:20px">Yükleniyor...</div>';
     try{const snap=await db.collection('servers').get();allDiscoverServers=[];snap.forEach(d=>{const data=d.data();if(data.public!==false)allDiscoverServers.push({id:d.id,...data});});allDiscoverServers.sort((a,b)=>(b.members?.length||0)-(a.members?.length||0));renderDiscoverServers(allDiscoverServers);}catch(e){list.innerHTML='<div style="color:#ed4245;text-align:center;padding:20px">Yüklenemedi.</div>';}
