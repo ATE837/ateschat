@@ -78,6 +78,43 @@
     </div>
 </div>
 
+
+<!-- DM EKRANI -->
+<div id="dm-screen" style="display:none">
+    <div id="dm-sidebar">
+        <div class="dm-header">
+            <span>💬 Mesajlar</span>
+            <button onclick="closeDM()" class="dm-close-btn">✕</button>
+        </div>
+        <div id="dm-list"></div>
+        <button class="add-channel-btn" style="margin:8px" onclick="showModal('modal-add-friend')">+ Yeni DM</button>
+    </div>
+    <div id="dm-chat">
+        <div id="dm-chat-header">
+            <div style="display:flex;align-items:center;gap:10px">
+                <div id="dm-partner-av" class="user-avatar-small">?</div>
+                <span id="dm-partner-name">Kullanıcı</span>
+                <div id="dm-partner-status" style="width:10px;height:10px;border-radius:50%;background:#747f8d"></div>
+            </div>
+            <div style="display:flex;gap:8px">
+                <button class="call-btn voice" onclick="startDMCall('voice')">📞</button>
+                <button class="call-btn video" onclick="startDMCall('video')">📹</button>
+            </div>
+        </div>
+        <div id="dm-messages"></div>
+        <div id="dm-typing-indicator" style="display:none">
+            <span id="dm-typing-text"></span>
+            <span class="typing-dots"><span></span><span></span><span></span></span>
+        </div>
+        <div id="dm-input-wrap">
+            <button class="attach-btn" onclick="openDMFilePicker()" title="Dosya">📎</button>
+            <input type="text" id="dm-input" placeholder="Mesaj gönder..." onkeydown="if(event.key==='Enter')sendDMMessage()" oninput="handleDMTyping()">
+            <button onclick="sendDMMessage()">➤</button>
+        </div>
+    </div>
+</div>
+<input type="file" id="dm-file-input" accept="image/*,.pdf,.doc,.docx,.txt,.zip" style="display:none" onchange="onDMFileSelected(this)">
+
 <!-- ANA LAYOUT -->
 <div id="main-layout" style="display:none">
     <div id="server-list">
@@ -91,6 +128,7 @@
         <div id="channels"></div>
         <button class="add-channel-btn" onclick="showModal('modal-add-channel')">＋ Kanal Ekle</button>
         <button class="add-channel-btn" onclick="showModal('modal-friends')" id="friends-btn">👥 Arkadaşlar <span id="friends-badge" class="req-badge" style="display:none">0</span></button>
+        <button class="add-channel-btn" onclick="openDMList()" id="dm-btn">💬 Mesajlar <span id="dm-badge" class="req-badge" style="display:none">0</span></button>
         <div id="channel-user-bar" onclick="showModal('modal-settings')">
             <div style="position:relative;flex-shrink:0">
                 <div class="user-avatar-small" id="my-avatar">?</div>
