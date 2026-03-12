@@ -1,6 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signInAnonymously, updateProfile, updatePassword, deleteUser, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-import { getFirestore, collection, addDoc, doc, getDoc, setDoc, updateDoc, deleteDoc, arrayUnion, query, orderBy, onSnapshot, serverTimestamp, getDocs, where } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { getFirestore, collection, addDoc, doc, getDoc, setDoc, updateDoc, deleteDoc, arrayUnion, query, orderBy, limit as fsLimit, onSnapshot, serverTimestamp, getDocs, where } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 const firebaseConfig = {
     apiKey: "AIzaSyCwwqd4FfhvLRQu8DUUfbdorIu3iJpkHMM",
@@ -352,7 +352,6 @@ function openChannel(serverId,channelId,channelName){
         if(typers.length){tt.textContent=typers.join(', ')+' yazıyor';ti.style.display='flex';}else ti.style.display='none';
     });
     let firstLoad=true;
-    const { limit: fsLimit } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
     const q=query(collection(db,'servers',serverId,'channels',channelId,'messages'),orderBy('createdAt','asc'),fsLimit(100));
     msgUnsub=onSnapshot(q,snap=>{
         const container=document.getElementById('messages');
@@ -767,6 +766,7 @@ async function openDMChat(uid,name,photoURL,status){
             body.innerHTML=`<div><span class="msg-name">${data.name||'Kullanıcı'}</span><span class="msg-time">${time}</span></div>`;
             if(data.type==='image'){const img=document.createElement('img');img.src=data.fileData;img.className='msg-image';img.onclick=()=>openImage(data.fileData);body.appendChild(img);}
             else if(data.type==='file'){const a=document.createElement('a');a.href=data.fileData;a.download=data.fileName;a.className='msg-file';a.innerHTML=`📎 ${data.fileName}`;body.appendChild(a);}
+            else if(data.type==='audio'){body.appendChild(renderAudioMessage(data.fileData,data.duration));}
             else{const t=document.createElement('span');t.className='msg-text';t.textContent=data.text;body.appendChild(t);}
             if(data.uid===currentUser.uid){const ri=document.createElement('div');const r=(data.readBy||[]).filter(x=>x!==currentUser.uid);ri.className='msg-read-info'+(r.length?' seen':'');ri.textContent=r.length?'👁️ Görüldü':'✓ Gönderildi';body.appendChild(ri);}
             div.appendChild(body);container.appendChild(div);
@@ -933,59 +933,103 @@ window.toggleSidebar = () => {
     }
 };
 
-// ── DOM HAZIR: BUTON BAĞLAMALARI ─────────────────────────
-document.addEventListener('DOMContentLoaded', () => {
+
+// ── DM SES KAYDI ─────────────────────────────────────────
+let dmMediaRecorder=null, dmAudioChunks=[], dmVoiceTimer=null, dmVoiceSeconds=0, dmVoiceCancelled=false;
+
+window.startDMVoiceRecord=async(e)=>{
+    if(e)e.preventDefault();
+    if(dmMediaRecorder&&dmMediaRecorder.state==='recording')return;
+    try{
+        const stream=await navigator.mediaDevices.getUserMedia({audio:true});
+        dmAudioChunks=[];dmVoiceCancelled=false;
+        dmMediaRecorder=new MediaRecorder(stream);
+        dmMediaRecorder.ondataavailable=e=>{if(e.data.size>0)dmAudioChunks.push(e.data);};
+        dmMediaRecorder.onstop=async()=>{
+            stream.getTracks().forEach(t=>t.stop());
+            clearInterval(dmVoiceTimer);
+            document.getElementById('dm-voice-recording-indicator').style.display='none';
+            document.getElementById('dm-voice-btn').classList.remove('recording');
+            if(dmVoiceCancelled||!dmAudioChunks.length||!currentDMPartner)return;
+            const blob=new Blob(dmAudioChunks,{type:'audio/webm'});
+            if(blob.size>5*1024*1024){alert('Ses kaydı çok uzun.');return;}
+            const reader=new FileReader();
+            reader.onload=async(ev)=>{
+                const dmId=getDMId(currentUser.uid,currentDMPartner.uid);
+                await addDoc(collection(db,'dms',dmId,'messages'),{
+                    name:currentUser.displayName||currentUser.email,
+                    photoURL:window._userPhotoURL||null,
+                    uid:currentUser.uid, type:'audio',
+                    fileData:ev.target.result,
+                    duration:formatDuration(dmVoiceSeconds),
+                    text:'', readBy:[currentUser.uid],
+                    createdAt:serverTimestamp()
+                });
+            };
+            reader.readAsDataURL(blob);
+        };
+        dmMediaRecorder.start();
+        dmVoiceSeconds=0;
+        document.getElementById('dm-voice-timer').textContent='0:00';
+        document.getElementById('dm-voice-recording-indicator').style.display='flex';
+        document.getElementById('dm-voice-btn').classList.add('recording');
+        dmVoiceTimer=setInterval(()=>{
+            dmVoiceSeconds++;
+            document.getElementById('dm-voice-timer').textContent=formatDuration(dmVoiceSeconds);
+            if(dmVoiceSeconds>=120)window.stopDMVoiceRecord();
+        },1000);
+    }catch(e){alert('Mikrofon erişimi reddedildi.');}
+};
+
+window.stopDMVoiceRecord=(e)=>{
+    if(e)e.preventDefault();
+    if(dmMediaRecorder&&dmMediaRecorder.state==='recording'){
+        if(dmVoiceSeconds<1)dmVoiceCancelled=true;
+        dmMediaRecorder.stop();
+    }
+};
+
+window.cancelDMVoiceRecord=()=>{
+    dmVoiceCancelled=true;
+    if(dmMediaRecorder&&dmMediaRecorder.state==='recording')dmMediaRecorder.stop();
+    clearInterval(dmVoiceTimer);
+    document.getElementById('dm-voice-recording-indicator').style.display='none';
+    document.getElementById('dm-voice-btn').classList.remove('recording');
+};
+
+// ── BUTON BAĞLAMALARI ───────────────────────────────────
+function initEventListeners() {
     const $ = id => document.getElementById(id);
 
-    // Auth butonları
     $('login-btn')?.addEventListener('click', doLogin);
     $('register-btn')?.addEventListener('click', doRegister);
     $('admin-login-btn')?.addEventListener('click', doAdminLogin);
-
-    // Enter tuşu - admin
     $('admin-key-input')?.addEventListener('keydown', e => { if(e.key==='Enter') doAdminLogin(); });
 
-    // Mesaj input enter
     $('msg-input')?.addEventListener('keydown', e => {
-        if(e.key==='Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
-        if(e.key==='Escape') cancelReply();
+        if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMessage();}
+        if(e.key==='Escape')cancelReply();
         handleTyping();
     });
-
-    // DM input enter
     $('dm-input')?.addEventListener('keydown', e => {
-        if(e.key==='Enter' && !e.shiftKey) { e.preventDefault(); sendDMMessage(); }
+        if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendDMMessage();}
         handleDMTyping();
     });
 
-    // Ses kaydı
-    const vBtn = $('voice-btn');
-    if(vBtn) {
-        vBtn.addEventListener('mousedown', startVoiceRecord);
-        vBtn.addEventListener('mouseup', stopVoiceRecord);
-        vBtn.addEventListener('mouseleave', stopVoiceRecord);
-        vBtn.addEventListener('touchstart', startVoiceRecord);
-        vBtn.addEventListener('touchend', stopVoiceRecord);
-    }
+    const vBtn=$('voice-btn');
+    if(vBtn){['mousedown','touchstart'].forEach(ev=>vBtn.addEventListener(ev,startVoiceRecord));['mouseup','mouseleave','touchend'].forEach(ev=>vBtn.addEventListener(ev,stopVoiceRecord));}
 
-    // Bildirim toggle
-    $('notif-browser')?.addEventListener('change', e => toggleBrowserNotif(e.target.checked));
-    $('notif-sound')?.addEventListener('change', e => saveSetting('notifSound', e.target.checked));
+    const dmVBtn=$('dm-voice-btn');
+    if(dmVBtn){['mousedown','touchstart'].forEach(ev=>dmVBtn.addEventListener(ev,startDMVoiceRecord));['mouseup','mouseleave','touchend'].forEach(ev=>dmVBtn.addEventListener(ev,stopDMVoiceRecord));}
 
-    // Admin arama
+    $('notif-browser')?.addEventListener('change', e=>toggleBrowserNotif(e.target.checked));
+    $('notif-sound')?.addEventListener('change', e=>saveSetting('notifSound',e.target.checked));
     $('admin-user-search')?.addEventListener('input', filterAdminUsers);
-
-    // Keşfet arama
     $('discover-search')?.addEventListener('input', filterDiscoverServers);
 
-    // Context menu dışına tıklayınca kapat
-    document.addEventListener('click', e => {
-        const menu = $('msg-context-menu');
-        if(menu && !menu.contains(e.target)) menu.style.display = 'none';
-    });
+    document.addEventListener('click', e=>{const m=$('msg-context-menu');if(m&&!m.contains(e.target))m.style.display='none';});
+    document.querySelectorAll('.modal').forEach(modal=>{modal.addEventListener('click',e=>{if(e.target===modal)modal.style.display='none';});});
+}
 
-    // Modal dışına tıklayınca kapat
-    document.querySelectorAll('.modal').forEach(modal => {
-        modal.addEventListener('click', e => { if(e.target === modal) modal.style.display = 'none'; });
-    });
-});
+if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',initEventListeners);}
+else{initEventListeners();}
