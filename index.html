@@ -5,6 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ateş Chat</title>
     <link rel="stylesheet" href="style.css">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#1e1f22">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Ateş Chat">
+    <link rel="apple-touch-icon" href="icon-192.png">
 </head>
 <body>
 
@@ -168,6 +174,37 @@
 </div>
 
 <input type="file" id="avatar-file-input" accept="image/*" style="display:none" onchange="onAvatarSelected(this)">
+
+<!-- YÜKLE BUTONU -->
+<div id="install-bar" style="display:none">
+    <button id="install-btn" onclick="installApp()">📲 Uygulamayı Yükle</button>
+</div>
+
+<script>
+// Service Worker kayıt
+if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/ateschat/sw.js');
+}
+
+// Yükleme butonu
+let deferredPrompt;
+window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+    document.getElementById('install-bar').style.display = 'flex';
+});
+window.installApp = async () => {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    deferredPrompt = null;
+    document.getElementById('install-bar').style.display = 'none';
+};
+window.addEventListener('appinstalled', () => {
+    document.getElementById('install-bar').style.display = 'none';
+});
+</script>
+
 <script type="module" src="app.js"></script>
 </body>
 </html>
