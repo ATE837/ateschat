@@ -828,9 +828,50 @@ async function updateFriendBadge(){
 setInterval(updateFriendBadge,30000);
 
 // ===================== ARAMA =====================
+// Arka planda aramayı canlı tut
+let wakeLock = null;
+let keepAliveCtx = null;
+
+async function requestWakeLock() {
+    try { if ('wakeLock' in navigator) { wakeLock = await navigator.wakeLock.request('screen'); } } catch(e) {}
+    try {
+        keepAliveCtx = new AudioContext();
+        const osc = keepAliveCtx.createOscillator();
+        const gain = keepAliveCtx.createGain();
+        gain.gain.value = 0.00001;
+        osc.connect(gain); gain.connect(keepAliveCtx.destination);
+        osc.start();
+    } catch(e) {}
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+}
+
+async function handleVisibilityChange() {
+    if (document.visibilityState === 'visible' && pc && localStream) {
+        localStream.getTracks().forEach(t => {
+            if (t.readyState === 'ended') {
+                navigator.mediaDevices.getUserMedia({audio:true, video:t.kind==='video'})
+                    .then(newStream => {
+                        const newTrack = newStream.getTracks().find(nt=>nt.kind===t.kind);
+                        if (newTrack && pc) {
+                            const sender = pc.getSenders().find(s=>s.track?.kind===t.kind);
+                            if (sender) sender.replaceTrack(newTrack);
+                        }
+                    }).catch(()=>{});
+            }
+        });
+    }
+}
+
+function releaseWakeLock() {
+    try { if (wakeLock) { wakeLock.release(); wakeLock = null; } } catch(e) {}
+    try { if (keepAliveCtx) { keepAliveCtx.close(); keepAliveCtx = null; } } catch(e) {}
+    document.removeEventListener('visibilitychange', handleVisibilityChange);
+}
+
 window.startCall = async (type) => {
     if(!currentServerId){alert('Önce bir sunucu seç!');return;}
-    try{localStream=await navigator.mediaDevices.getUserMedia({video:type==='video',audio:true});}catch(e){alert('Kamera/mikrofon erişimi reddedildi.');return;}
+    try{localStream=await navigator.mediaDevices.getUserMedia({video:type==='video',audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true}});}catch(e){alert('Kamera/mikrofon erişimi reddedildi.');return;}
+    await requestWakeLock();
     pc=new RTCPeerConnection(iceServers);localStream.getTracks().forEach(t=>pc.addTrack(t,localStream));
     document.getElementById('local-video').srcObject=localStream;if(type!=='video')document.getElementById('local-video').style.display='none';
     pc.ontrack=e=>{document.getElementById('remote-video').srcObject=e.streams[0];};
@@ -854,6 +895,7 @@ window.acceptCall = async () => {
     try{localStream=await navigator.mediaDevices.getUserMedia({video:callData.callType==='video',audio:true});}catch(e){alert('Erişim reddedildi.');return;}
     pc=new RTCPeerConnection(iceServers);localStream.getTracks().forEach(t=>pc.addTrack(t,localStream));
     document.getElementById('local-video').srcObject=localStream;
+    await requestWakeLock();
     pc.ontrack=e=>{document.getElementById('remote-video').srcObject=e.streams[0];};
     pc.onicecandidate=async e=>{if(e.candidate)await addDoc(collection(db,'calls',currentCallId,'answerCandidates'),e.candidate.toJSON());};
     await pc.setRemoteDescription(new RTCSessionDescription(callData.offer));const answer=await pc.createAnswer();await pc.setLocalDescription(answer);
@@ -866,6 +908,7 @@ window.acceptCall = async () => {
 window.rejectCall=async()=>{document.getElementById('incoming-call').style.display='none';if(currentCallId){await updateDoc(doc(db,'calls',currentCallId),{status:'rejected'});currentCallId=null;}};
 
 window.endCall=async()=>{
+    releaseWakeLock();
     if(screenStream){screenStream.getTracks().forEach(t=>t.stop());screenStream=null;}
     if(pc){pc.close();pc=null;}if(localStream){localStream.getTracks().forEach(t=>t.stop());localStream=null;}
     if(currentCallId){try{await updateDoc(doc(db,'calls',currentCallId),{status:'ended'});}catch(e){}currentCallId=null;}
