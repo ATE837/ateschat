@@ -716,3 +716,66 @@ body {
 @media (max-width: 700px) {
     .msg-image { max-width: 180px; max-height: 140px; }
 }
+
+/* ========== ADMIN PANELİ ========== */
+.admin-tab { background: rgba(237,66,69,0.15) !important; color: #ed4245 !important; font-size: 16px !important; }
+.admin-tab.active { background: #ed4245 !important; color: white !important; }
+.admin-warning {
+    background: rgba(237,66,69,0.1); border: 1px solid rgba(237,66,69,0.3);
+    color: #ed4245; padding: 10px 14px; border-radius: 8px;
+    font-size: 14px; font-weight: 700; margin-bottom: 14px; text-align: center;
+}
+.admin-login-btn { background: linear-gradient(135deg, #ed4245, #c0392b) !important; }
+
+#admin-panel {
+    display: flex; flex-direction: column;
+    flex: 1; background: var(--dark); overflow: hidden;
+}
+.admin-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 24px; background: #1a0a0a;
+    border-bottom: 2px solid rgba(237,66,69,0.3);
+    flex-shrink: 0;
+}
+.admin-logo { color: white; font-size: 18px; font-weight: 900; display: flex; align-items: center; gap: 10px; }
+.admin-logo span { background: linear-gradient(90deg, #ed4245, #ff6b6b); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+.admin-logout { background: rgba(237,66,69,0.15); color: #ed4245; border: 1px solid rgba(237,66,69,0.3); padding: 8px 16px; border-radius: 8px; cursor: pointer; font-weight: 700; font-family: inherit; transition: all 0.2s; }
+.admin-logout:hover { background: #ed4245; color: white; }
+
+.admin-body { flex: 1; overflow-y: auto; padding: 20px 24px; }
+
+.admin-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 24px; }
+.stat-card { background: var(--sidebar); border-radius: 12px; padding: 16px; text-align: center; border: 1px solid rgba(255,255,255,0.06); }
+.stat-num { font-size: 28px; font-weight: 900; color: white; margin-bottom: 4px; }
+.stat-label { color: var(--muted); font-size: 12px; font-weight: 600; }
+
+.admin-section { background: var(--sidebar); border-radius: 14px; padding: 16px; border: 1px solid rgba(255,255,255,0.06); }
+.admin-section-title { color: white; font-size: 15px; font-weight: 800; margin-bottom: 14px; }
+.admin-search { width: 100%; padding: 10px 14px; background: var(--black); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; color: white; font-size: 14px; outline: none; margin-bottom: 12px; font-family: inherit; }
+.admin-search::placeholder { color: var(--muted); }
+
+.admin-user-item {
+    display: flex; align-items: center; gap: 12px;
+    padding: 10px 12px; border-radius: 10px; transition: all 0.15s;
+    border: 1px solid transparent;
+}
+.admin-user-item:hover { background: rgba(255,255,255,0.04); }
+.admin-user-item.banned { background: rgba(237,66,69,0.06); border-color: rgba(237,66,69,0.15); }
+.admin-user-av { width: 38px; height: 38px; border-radius: 50%; background: linear-gradient(135deg, #5865f2, #9b59b6); color: white; font-weight: 800; font-size: 15px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.admin-user-info { flex: 1; }
+.admin-user-name { color: white; font-size: 14px; font-weight: 700; }
+.admin-user-email { color: var(--muted); font-size: 12px; margin-top: 1px; }
+.admin-user-badge { font-size: 10px; font-weight: 800; padding: 2px 7px; border-radius: 10px; margin-left: 6px; }
+.badge-banned { background: rgba(237,66,69,0.2); color: #ed4245; }
+.admin-user-btns { display: flex; gap: 6px; }
+.ban-btn { padding: 7px 12px; border: none; border-radius: 8px; font-size: 12px; font-weight: 700; cursor: pointer; transition: all 0.2s; font-family: inherit; }
+.ban-btn.do-ban { background: rgba(237,66,69,0.15); color: #ed4245; border: 1px solid rgba(237,66,69,0.2); }
+.ban-btn.do-ban:hover { background: #ed4245; color: white; }
+.ban-btn.do-unban { background: rgba(87,242,135,0.15); color: #57f287; border: 1px solid rgba(87,242,135,0.2); }
+.ban-btn.do-unban:hover { background: #57f287; color: #111; }
+
+@media (max-width: 700px) {
+    .admin-stats { grid-template-columns: repeat(3,1fr); gap: 8px; }
+    .stat-num { font-size: 20px; }
+    .admin-body { padding: 14px; }
+}
