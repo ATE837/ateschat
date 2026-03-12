@@ -362,12 +362,20 @@ async function handleTyping(){
 // ── MESAJ GÖNDER ─────────────────────────────────────────
 async function sendMessage(){
     const input=$('msg-input');const text=input.value.trim();
-    if(!text||!currentServerId||!currentChannelId||!currentUser)return;
+    if(!text){return;}
+    if(!currentServerId){alert('Sunucu seçilmedi, sayfayı yenile.');return;}
+    if(!currentChannelId){alert('Kanal seçilmedi, sayfayı yenile.');return;}
+    if(!currentUser){alert('Giriş yapılmadı.');return;}
     input.value='';clearTimeout(typingTimeout);
     const msgData={text,name:currentUser.displayName||currentUser.email,photoURL:window._userPhotoURL||null,uid:currentUser.uid,type:'text',readBy:[currentUser.uid],createdAt:firebase.firestore.FieldValue.serverTimestamp()};
     if(replyTo){msgData.replyTo=replyTo;cancelReply();}
-    await db.collection('servers').doc(currentServerId).collection('channels').doc(currentChannelId).collection('messages').add(msgData);
-    db.collection('users').doc(currentUser.uid).update({msgCount:firebase.firestore.FieldValue.increment(1)}).catch(()=>{});
+    try{
+        await db.collection('servers').doc(currentServerId).collection('channels').doc(currentChannelId).collection('messages').add(msgData);
+        db.collection('users').doc(currentUser.uid).update({msgCount:firebase.firestore.FieldValue.increment(1)}).catch(()=>{});
+    }catch(e){
+        input.value=text; // geri koy
+        alert('Mesaj gönderilemedi: '+e.message+'\n\nServerId: '+currentServerId+'\nChannelId: '+currentChannelId);
+    }
 }
 async function addChannel(){const name=$('new-channel-name').value.trim().toLowerCase().replace(/\s+/g,'-');const err=$('channel-error');if(!name){err.textContent='Kanal adı girin.';return;}await db.collection('servers').doc(currentServerId).collection('channels').add({name,createdAt:firebase.firestore.FieldValue.serverTimestamp()});hideModal('modal-add-channel');$('new-channel-name').value='';}
 async function createServer(){
