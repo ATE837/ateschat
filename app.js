@@ -178,39 +178,77 @@ function renderServers(list){
     const el=$('server-icons');el.innerHTML='';
     list.forEach(s=>{const d=document.createElement('div');d.className='server-icon'+(s.id===currentServerId?' active':'');d.textContent=s.name[0].toUpperCase();d.title=s.name;d.onclick=()=>openServer(s);el.appendChild(d);});
 }
-async function openServer(server){
+function openServer(server){
+    // Önceki listener'ları hemen kapat
+    if(memberUnsub){memberUnsub();memberUnsub=null;}
+    if(channelUnsub){channelUnsub();channelUnsub=null;}
+    if(msgUnsub){msgUnsub();msgUnsub=null;}
+
     currentServerId=server.id;
     $('channel-server-name').textContent=server.name;
     document.querySelectorAll('.server-icon').forEach(el=>el.classList.toggle('active',el.title===server.name));
-    currentServerData=(await db.collection('servers').doc(server.id).get()).data();
-    if(memberUnsub)memberUnsub();
-    if(!window._userCache)window._userCache={};
-    memberUnsub=db.collection('servers').doc(server.id).onSnapshot(async snap=>{
-        currentServerData=snap.data();
-        const members=snap.data()?.members||[],roles=snap.data()?.roles||{};
-        const list=$('members-list');list.innerHTML='';
-        updateChannelOnlineMembers(members);
-        for(const m of members){
-            let photoURL=null,status='offline';
-            try{const now=Date.now();const cached=window._userCache[m.uid];if(cached&&(now-cached.ts)<60000){photoURL=cached.photoURL;status=cached.status;}else{const u=await db.collection('users').doc(m.uid).get();if(u.exists){photoURL=u.data().photoURL;status=u.data().status||'offline';window._userCache[m.uid]={photoURL,status,ts:now};}}}catch(e){}
-            const div=document.createElement('div');div.className='member';
-            const avWrap=document.createElement('div');avWrap.style.cssText='position:relative;flex-shrink:0';
-            const av=makeAvatar(photoURL,m.name,'member-av');
-            const dot=document.createElement('div');dot.className='member-status-dot';dot.style.background=getStatusColor(status);
-            avWrap.appendChild(av);avWrap.appendChild(dot);
-            const nameEl=document.createElement('span');nameEl.className='member-name';nameEl.textContent=m.name;
-            const role=roles[m.uid]||'member';
-            if(role!=='member'){const b=document.createElement('span');b.className='member-role-badge '+(role==='owner'?'role-owner':'role-mod');b.textContent=role==='owner'?'👑':'🛡️';nameEl.appendChild(b);}
-            div.appendChild(avWrap);div.appendChild(nameEl);
-            div.onclick=()=>showProfile(m.uid,m.name,photoURL,status);
-            list.appendChild(div);
-        }
-    });
-    // Layout: server-list göster, channel-list göster, chat-area beklet
+
+    // Layout hemen göster - bekleme yok
     $('server-list').style.display='flex';
     $('channel-list').style.display='flex';
     $('chat-area').style.display='none';
+    $('channels').innerHTML='<div style="color:var(--muted);padding:8px 12px;font-size:13px">Yükleniyor...</div>';
+    $('members-list').innerHTML='';
+
+    if(!window._userCache)window._userCache={};
+
+    // Server snapshot - get() YOK, direkt onSnapshot
+    memberUnsub=db.collection('servers').doc(server.id).onSnapshot(async snap=>{
+        if(!snap.exists)return;
+        currentServerData=snap.data();
+        const members=snap.data()?.members||[],roles=snap.data()?.roles||{};
+        const list=$('members-list');
+
+        // Önce cache'deki verileri hemen render et
+        list.innerHTML='';
+        members.forEach(m=>{
+            const cached=window._userCache[m.uid]||{};
+            renderMemberItem(list,m,cached.photoURL||null,cached.status||'offline',roles);
+        });
+
+        // Sonra cache'de olmayanları arka planda güncelle
+        const now=Date.now();
+        const toFetch=members.filter(m=>!window._userCache[m.uid]||(now-window._userCache[m.uid].ts)>120000);
+        if(toFetch.length){
+            Promise.all(toFetch.map(m=>db.collection('users').doc(m.uid).get())).then(docs=>{
+                docs.forEach((u,i)=>{
+                    if(u.exists){
+                        const m=toFetch[i];
+                        window._userCache[m.uid]={photoURL:u.data().photoURL||null,status:u.data().status||'offline',ts:Date.now()};
+                    }
+                });
+                // Sessizce güncelle
+                list.innerHTML='';
+                members.forEach(m=>{
+                    const cached=window._userCache[m.uid]||{};
+                    renderMemberItem(list,m,cached.photoURL||null,cached.status||'offline',roles);
+                });
+                updateChannelOnlineMembers(members);
+            }).catch(()=>{});
+        }
+        updateChannelOnlineMembers(members);
+    });
+
     loadChannels(server.id);
+}
+
+function renderMemberItem(list,m,photoURL,status,roles){
+    const div=document.createElement('div');div.className='member';
+    const avWrap=document.createElement('div');avWrap.style.cssText='position:relative;flex-shrink:0';
+    const av=makeAvatar(photoURL,m.name,'member-av');
+    const dot=document.createElement('div');dot.className='member-status-dot';dot.style.background=getStatusColor(status);
+    avWrap.appendChild(av);avWrap.appendChild(dot);
+    const nameEl=document.createElement('span');nameEl.className='member-name';nameEl.textContent=m.name;
+    const role=(roles||{})[m.uid]||'member';
+    if(role!=='member'){const b=document.createElement('span');b.className='member-role-badge '+(role==='owner'?'role-owner':'role-mod');b.textContent=role==='owner'?'👑':'🛡️';nameEl.appendChild(b);}
+    div.appendChild(avWrap);div.appendChild(nameEl);
+    div.onclick=()=>showProfile(m.uid,m.name,photoURL,status);
+    list.appendChild(div);
 }
 async function updateChannelOnlineMembers(members){
     const container=$('channel-online-members');if(!container)return;
@@ -229,16 +267,33 @@ function openRoleModal(uid,name){roleTargetUid=uid;$('role-target-name').textCon
 async function setMemberRole(role){if(!roleTargetUid||!currentServerId)return;const roles=currentServerData?.roles||{};roles[roleTargetUid]=role;await db.collection('servers').doc(currentServerId).update({roles});hideModal('modal-roles');hideModal('modal-profile');}
 
 // ── KANALLAR ─────────────────────────────────────────────
+function renderChannelList(el,chs,serverId){
+    el.innerHTML='';
+    const lbl=document.createElement('div');lbl.className='channels-label';lbl.textContent='Kanallar';el.appendChild(lbl);
+    chs.forEach(ch=>{const d=document.createElement('div');d.className='channel-item'+(ch.id===currentChannelId?' active':'');d.innerHTML='<span class="ch-hash">#</span>'+ch.name;d.onclick=()=>openChannel(serverId,ch.id,ch.name);el.appendChild(d);});
+}
+
 function loadChannels(serverId){
     if(channelUnsub)channelUnsub();
-    channelUnsub=db.collection('servers').doc(serverId).collection('channels').onSnapshot(async snap=>{
-        const el=$('channels');el.innerHTML='';
+    const ref=db.collection('servers').doc(serverId).collection('channels');
+    let firstSnap=true;
+    // İlk yükleme: get() ile anında göster
+    ref.orderBy('createdAt','asc').get().then(snap=>{
+        const el=$('channels');
+        let chs=[];snap.forEach(d=>chs.push({id:d.id,...d.data()}));
+        if(!chs.length){ref.add({name:'genel',createdAt:firebase.firestore.FieldValue.serverTimestamp()});return;}
+        renderChannelList(el,chs,serverId);
+        if(!currentChannelId||!chs.find(c=>c.id===currentChannelId))openChannel(serverId,chs[0].id,chs[0].name);
+        firstSnap=false;
+    }).catch(()=>{firstSnap=false;});
+    // Sonraki değişiklikler için onSnapshot
+    channelUnsub=ref.onSnapshot(snap=>{
+        if(firstSnap)return; // get() zaten halletti
+        const el=$('channels');
         let chs=[];snap.forEach(d=>chs.push({id:d.id,...d.data()}));
         chs.sort((a,b)=>(a.createdAt?.seconds||0)-(b.createdAt?.seconds||0));
-        if(!chs.length){db.collection('servers').doc(serverId).collection('channels').add({name:'genel',createdAt:firebase.firestore.FieldValue.serverTimestamp()});return;}
-        const lbl=document.createElement('div');lbl.className='channels-label';lbl.textContent='Kanallar';el.appendChild(lbl);
-        chs.forEach(ch=>{const d=document.createElement('div');d.className='channel-item'+(ch.id===currentChannelId?' active':'');d.innerHTML=`<span class="ch-hash">#</span>${ch.name}`;d.onclick=()=>openChannel(serverId,ch.id,ch.name);el.appendChild(d);});
-        if(!currentChannelId||!chs.find(c=>c.id===currentChannelId))openChannel(serverId,chs[0].id,chs[0].name);
+        if(!chs.length)return;
+        renderChannelList(el,chs,serverId);
     });
 }
 function openChannel(serverId,channelId,channelName){
@@ -530,6 +585,13 @@ async function deleteAccount(){if(!confirm('Hesabını sil?'))return;if(!confirm
 // ── PROFİL ───────────────────────────────────────────────
 async function showProfile(uid,name,photoURL,status){
     try{
+    // Cache'den al
+    const now=Date.now();
+    if(window._userCache?.[uid]&&(now-window._userCache[uid].ts)<60000){
+        const c=window._userCache[uid];
+        if(c.photoURL)photoURL=c.photoURL;
+        if(c.status)status=c.status;
+    }
     setAvatarEl($('profile-av'),photoURL,name);
     try{const uDoc=await db.collection('users').doc(uid).get();applyFrameToEl($('profile-av'),uDoc.data()?.profileFrame||'none');}catch(e){}
     $('profile-username').textContent=name;
@@ -604,7 +666,11 @@ async function loadFriends(tab='all'){
     const uDoc=await db.collection('users').doc(currentUser.uid).get();const data=uDoc.data()||{};
     if(tab==='all'){
         const friends=data.friends||[];if(!friends.length){list.innerHTML='<div class="empty-state"><div class="e-icon">👥</div>Henüz arkadaşın yok.</div>';return;}
-        list.innerHTML='';for(const fUid of friends){try{const fd=await db.collection('users').doc(fUid).get();const fData=fd.data()||{};list.appendChild(createFriendItem(fUid,fData.displayName||'Kullanıcı',fData.photoURL,fData.status,'friend'));}catch(e){}}
+        list.innerHTML='';
+        try{
+            const results=await Promise.all(friends.map(fUid=>db.collection('users').doc(fUid).get()));
+            results.forEach((fd,i)=>{if(fd.exists){const d=fd.data();list.appendChild(createFriendItem(friends[i],d.displayName||'Kullanıcı',d.photoURL,d.status,'friend'));}});
+        }catch(e){}
     }else{
         const reqs=data.friendRequests||[];if(!reqs.length){list.innerHTML='<div class="empty-state"><div class="e-icon">📭</div>Bekleyen istek yok.</div>';return;}
         list.innerHTML='';for(const req of reqs)list.appendChild(createFriendItem(req.uid,req.name,null,null,'pending'));
@@ -637,7 +703,7 @@ async function updateFriendBadge(){
     if(!currentUser)return;
     try{const uDoc=await db.collection('users').doc(currentUser.uid).get();const count=(uDoc.data()?.friendRequests||[]).length;['req-badge','friends-badge'].forEach(id=>{const el=$(id);if(el){el.textContent=count;el.style.display=count>0?'inline':'none';}});}catch(e){}
 }
-setInterval(updateFriendBadge,300000);
+setInterval(updateFriendBadge,600000);
 
 // ── DM ───────────────────────────────────────────────────
 async function openDMList(){$('dm-screen').style.display='flex';$('main-layout').style.display='none';loadDMList();}
@@ -647,9 +713,12 @@ async function loadDMList(){
     const uDoc=await db.collection('users').doc(currentUser.uid).get();const friends=uDoc.data()?.friends||[];
     if(!friends.length){list.innerHTML='<div style="color:var(--muted);padding:12px;font-size:13px;text-align:center">Arkadaş ekleyerek DM başlat!</div>';return;}
     list.innerHTML='';
-    for(const fUid of friends){
+    // Tüm arkadaşları parallel oku
+    const friendDocs=await Promise.all(friends.map(fUid=>db.collection('users').doc(fUid).get().catch(()=>null)));
+    for(let fi=0;fi<friends.length;fi++){
+        const fUid=friends[fi];
         try{
-            const fDoc=await db.collection('users').doc(fUid).get();const fData=fDoc.data()||{};
+            const fDoc=friendDocs[fi];if(!fDoc||!fDoc.exists)continue;const fData=fDoc.data()||{};
             const dmId=getDMId(currentUser.uid,fUid);
             let preview='Henüz mesaj yok',hasUnread=false;
             try{const lm=await db.collection('dms').doc(dmId).collection('messages').orderBy('createdAt','desc').limit(1).get();if(!lm.empty){const ld=lm.docs[0].data();preview=ld.type==='text'?(ld.text||'').substring(0,30):ld.type==='image'?'📷 Fotoğraf':'📎 Dosya';if(ld.uid!==currentUser.uid&&!ld.readBy?.includes(currentUser.uid))hasUnread=true;}}catch(e){}
