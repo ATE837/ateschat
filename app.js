@@ -758,10 +758,11 @@ async function openDMChat(uid,name,photoURL,status){
         container.innerHTML='';
         snap.forEach(d=>{
             const data=d.data();const time=data.createdAt?.toDate().toLocaleTimeString('tr-TR',{hour:'2-digit',minute:'2-digit'})||'';
-            const div=document.createElement('div');div.className='msg';
-            div.appendChild(makeAvatar(data.photoURL||null,data.name,'msg-av'));
+            const isMe=data.uid===currentUser?.uid;
+            const div=document.createElement('div');div.className='msg'+(isMe?' msg-mine':'');
+            if(!isMe)div.appendChild(makeAvatar(data.photoURL||null,data.name,'msg-av'));
             const body=document.createElement('div');body.className='msg-body';
-            body.innerHTML=`<div><span class="msg-name">${data.name||'Kullanıcı'}</span><span class="msg-time">${time}</span></div>`;
+            body.innerHTML=`<div><span class="msg-name" style="${isMe?'display:none':''}">${data.name||'Kullanıcı'}</span><span class="msg-time">${time}</span></div>`;
             if(data.type==='image'){const img=document.createElement('img');img.src=data.fileData;img.className='msg-image';img.onclick=()=>openImage(data.fileData);body.appendChild(img);}
             else if(data.type==='file'){const a=document.createElement('a');a.href=data.fileData;a.download=data.fileName;a.className='msg-file';a.innerHTML=`📎 ${data.fileName}`;body.appendChild(a);}
             else if(data.type==='audio'){body.appendChild(renderAudioMessage(data.fileData,data.duration));}
@@ -872,7 +873,13 @@ async function startCall(type){
     callRef.collection('answerCandidates').onSnapshot(snap=>{snap.docChanges().forEach(c=>{if(c.type==='added')pc.addIceCandidate(new RTCIceCandidate(c.doc.data()));});});
 }
 function listenForCalls(){
-    db.collection('calls').onSnapshot(snap=>{snap.docChanges().forEach(change=>{if(change.type==='added'){const data=change.doc.data();if(data.status==='ringing'&&data.callerUid!==currentUser?.uid&&data.serverId===currentServerId){currentCallId=change.doc.id;$('caller-avatar').textContent=(data.callerName||'A')[0].toUpperCase();$('caller-name').textContent=data.callerName||'Biri';$('caller-type').textContent=data.callType==='video'?'📹 Görüntülü':'📞 Sesli Arama';$('incoming-call').style.display='flex';}}}); });
+    db.collection('calls').onSnapshot(snap=>{snap.docChanges().forEach(change=>{if(change.type==='added'){const data=change.doc.data();
+        const isForMe=data.callerUid!==currentUser?.uid&&data.status==='ringing'&&(
+            (data.dmCall&&data.targetUid===currentUser?.uid) ||
+            (!data.dmCall&&data.serverId===currentServerId)
+        );
+        if(isForMe){currentCallId=change.doc.id;$('caller-avatar').textContent=(data.callerName||'A')[0].toUpperCase();$('caller-name').textContent=data.callerName||'Biri';$('caller-type').textContent=data.callType==='video'?'📹 Görüntülü':'📞 Sesli Arama';$('incoming-call').style.display='flex';}
+    }}); });
 }
 async function acceptCall(){
     $('incoming-call').style.display='none';
