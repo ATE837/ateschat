@@ -256,14 +256,13 @@ function openChannel(serverId,channelId,channelName){
         if(typers.length){tt.textContent=typers.join(', ')+' yazıyor';ti.style.display='flex';}else ti.style.display='none';
     });
     let firstLoad=true;
-    const q=db.collection('servers').doc(serverId).collection('channels').doc(channelId).collection('messages').orderBy('createdAt','desc').limit(100);
+    const q=db.collection('servers').doc(serverId).collection('channels').doc(channelId).collection('messages').orderBy('createdAt','asc').limit(100);
     msgUnsub=q.onSnapshot(snap=>{
         const container=$('messages');
         if(firstLoad){
             firstLoad=false;
             const docs=[];
             snap.forEach(d=>docs.push({id:d.id,...d.data()}));
-            docs.reverse();
             allMessages=docs;
             renderMessages(allMessages);
             container.scrollTop=container.scrollHeight;
