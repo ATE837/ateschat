@@ -171,7 +171,7 @@ async function loadUserServers(){
         const uDoc=await db.collection('users').doc(currentUser.uid).get();
         const list=uDoc.exists?(uDoc.data().servers||[]):[];
         if(!list.length){$('server-screen').style.display='flex';$('main-layout').style.display='none';}
-        else{$('server-screen').style.display='none';$('main-layout').style.display='flex';renderServers(list);openServer(list[0]);}
+        else{$('server-screen').style.display='none';$('main-layout').style.display='flex';$('channel-list').style.display='none';renderServers(list);openServer(list[0]);}
     }catch(e){$('server-screen').style.display='flex';$('main-layout').style.display='none';}
 }
 function renderServers(list){
@@ -243,7 +243,8 @@ function openChannel(serverId,channelId,channelName){
     document.querySelectorAll('.channel-item').forEach(el=>el.classList.toggle('active',el.textContent.trim()===channelName));
     cancelReply();
     $('server-list').style.display='none';
-    $('channel-sidebar').style.display='none';
+    $('channel-list').style.display='none';
+    $('chat-area').style.display='flex';
     $('chat-area').style.flex='1';
     sidebarVisible=false;
     const btn=$('sidebar-toggle-btn');if(btn)btn.classList.remove('active');
@@ -770,7 +771,7 @@ async function saveProfileFrame(){
 function toggleSidebar(){
     sidebarVisible=!sidebarVisible;
     $('server-list').style.display=sidebarVisible?'flex':'none';
-    $('channel-sidebar').style.display=sidebarVisible?'flex':'none';
+    $('channel-list').style.display=sidebarVisible?'flex':'none';
     const btn=$('sidebar-toggle-btn');if(btn)btn.classList.toggle('active',sidebarVisible);
 }
 
