@@ -1,5 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile, updatePassword, deleteUser, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signInAnonymously, updateProfile, updatePassword, deleteUser, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 import { getFirestore, collection, addDoc, doc, getDoc, setDoc, updateDoc, deleteDoc, arrayUnion, query, orderBy, onSnapshot, serverTimestamp, getDocs, where } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -117,10 +117,7 @@ window.doAdminLogin = async () => {
     isAdmin = true;
     err.textContent = 'Giriş yapılıyor...';
     // Admin için anonim auth - Firestore erişimi için gerekli
-    try {
-        const { signInAnonymously } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js");
-        await signInAnonymously(auth);
-    } catch(e) { console.log('anon auth:', e); }
+    try { await signInAnonymously(auth); } catch(e) { console.log('anon auth:', e); }
     document.getElementById('auth-container').style.display = 'none';
     document.getElementById('admin-panel').style.display = 'flex';
     loadAdminPanel();
@@ -239,6 +236,8 @@ function makeAvatar(photoURL, name, className) {
 // ===================== OTURUM =====================
 onAuthStateChanged(auth, async (user) => {
     if (user) {
+        // Admin veya anonim kullanıcıyı atla
+        if (isAdmin || user.isAnonymous) return;
         currentUser = user;
         document.getElementById('auth-container').style.display = 'none';
         const uDoc = await getDoc(doc(db,'users',user.uid));
