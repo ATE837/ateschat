@@ -188,16 +188,23 @@ if ('serviceWorker' in navigator) {
 
 // Yükleme butonu
 let deferredPrompt;
+// Zaten uygulama olarak açılmışsa butonu gösterme
+const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+if (!isStandalone) {
+    document.getElementById('install-bar').style.display = 'flex';
+}
 window.addEventListener('beforeinstallprompt', (e) => {
     e.preventDefault();
     deferredPrompt = e;
-    document.getElementById('install-bar').style.display = 'flex';
 });
 window.installApp = async () => {
-    if (!deferredPrompt) return;
-    deferredPrompt.prompt();
-    const { outcome } = await deferredPrompt.userChoice;
-    deferredPrompt = null;
+    if (deferredPrompt) {
+        deferredPrompt.prompt();
+        const { outcome } = await deferredPrompt.userChoice;
+        deferredPrompt = null;
+    } else {
+        alert('Tarayıcı menüsünden "Ana Ekrana Ekle" seçeneğini kullan! 📲');
+    }
     document.getElementById('install-bar').style.display = 'none';
 };
 window.addEventListener('appinstalled', () => {
@@ -207,4 +214,4 @@ window.addEventListener('appinstalled', () => {
 
 <script type="module" src="app.js"></script>
 </body>
-</html>
+            </html>
