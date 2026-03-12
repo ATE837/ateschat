@@ -68,6 +68,8 @@ body { background: var(--dark); color: var(--text); font-family: 'Segoe UI', san
 #channel-user-bar { display: flex; align-items: center; gap: 8px; padding: 10px 12px; background: #232428; border-top: 1px solid var(--black); }
 .user-avatar-small { width: 32px; height: 32px; border-radius: 50%; background: var(--blue); color: white; font-weight: 700; font-size: 14px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; cursor: pointer; }
 #my-name { color: white; font-size: 13px; font-weight: 600; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.photo-btn { background: transparent; color: var(--muted); border: none; font-size: 16px; cursor: pointer; padding: 2px; }
+.photo-btn:hover { color: white; }
 .logout-btn { background: transparent; color: var(--muted); border: none; font-size: 16px; cursor: pointer; padding: 4px; }
 .logout-btn:hover { color: var(--red); }
 
@@ -138,8 +140,15 @@ body { background: var(--dark); color: var(--text); font-family: 'Segoe UI', san
 
 @media (max-width: 700px) {
     #members-panel { display: none; }
-    #channel-list { width: 160px; }
-    #server-list { width: 56px; }
-    .server-icon { width: 40px; height: 40px; }
-    .add-server-btn { width: 40px; height: 40px; }
+    #server-list { width: 52px; }
+    .server-icon { width: 38px; height: 38px; font-size: 14px; }
+    .add-server-btn { width: 38px; height: 38px; font-size: 20px; }
+    #channel-list { width: 130px; min-width: 130px; }
+    #channel-list-header { padding: 10px 8px; }
+    #channel-server-name { font-size: 12px; }
+    .channel-item { font-size: 12px; padding: 5px 6px; margin: 1px 3px; }
+    .add-channel-btn { font-size: 11px; padding: 6px 8px; }
+    #channel-user-bar { padding: 8px 6px; gap: 4px; }
+    #my-name { font-size: 11px; }
+    .user-avatar-small { width: 26px; height: 26px; font-size: 11px; }
 }
