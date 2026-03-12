@@ -268,6 +268,8 @@ async function openServer(server){
     document.querySelectorAll('.server-icon').forEach(el=>el.classList.toggle('active',el.title===server.name));
     currentServerData=(await getDoc(doc(db,'servers',server.id))).data();
     if(memberUnsub)memberUnsub();
+    // Kullanıcı önbelleği - aynı UID için tekrar sorgu yapma
+    if(!window._userCache) window._userCache={};
     memberUnsub=onSnapshot(doc(db,'servers',server.id),async snap=>{
         currentServerData=snap.data();
         const members=snap.data()?.members||[], roles=snap.data()?.roles||{};
@@ -275,7 +277,16 @@ async function openServer(server){
         updateChannelOnlineMembers(members);
         for(const m of members){
             let photoURL=null,status='offline';
-            try{const u=await getDoc(doc(db,'users',m.uid));if(u.exists()){photoURL=u.data().photoURL;status=u.data().status||'offline';}}catch(e){}
+            try{
+                const cached=window._userCache[m.uid];
+                const now=Date.now();
+                if(cached&&(now-cached.ts)<60000){ // 1 dakika önbellek
+                    photoURL=cached.photoURL;status=cached.status;
+                } else {
+                    const u=await getDoc(doc(db,'users',m.uid));
+                    if(u.exists()){photoURL=u.data().photoURL;status=u.data().status||'offline';window._userCache[m.uid]={photoURL,status,ts:now};}
+                }
+            }catch(e){}
             const div=document.createElement('div');div.className='member';
             const avWrap=document.createElement('div');avWrap.style.cssText='position:relative;flex-shrink:0';
             const av=makeAvatar(photoURL,m.name,'member-av');
@@ -293,9 +304,14 @@ async function openServer(server){
 }
 async function updateChannelOnlineMembers(members){
     const container=document.getElementById('channel-online-members');if(!container)return;
+    // Önbellek: son 30 saniyede çalıştıysa atla
+    const now=Date.now();
+    if(window._lastOnlineUpdate&&(now-window._lastOnlineUpdate)<30000)return;
+    window._lastOnlineUpdate=now;
     container.innerHTML='';let count=0;
     const wrap=document.createElement('div');wrap.style.cssText='display:flex;align-items:center';
-    for(const m of members.slice(0,20)){
+    // Maksimum 8 üye sorgula - Firestore yükünü azalt
+    for(const m of members.slice(0,8)){
         try{const u=await getDoc(doc(db,'users',m.uid));const ud=u.data()||{};if(ud.status&&ud.status!=='offline'){count++;if(count<=5){const av=document.createElement('div');av.style.cssText=`width:24px;height:24px;border-radius:50%;background:linear-gradient(135deg,#5865f2,#9b59b6);color:white;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;margin-left:${count>1?'-6px':'0'};border:2px solid var(--dark);z-index:${6-count};cursor:pointer;flex-shrink:0`;setAvatarEl(av,ud.photoURL||null,m.name);av.title=m.name;av.onclick=()=>loadAndShowProfile(m.uid,m.name,ud.photoURL);wrap.appendChild(av);}}}catch(e){}
     }
     if(count>0){container.appendChild(wrap);const c=document.createElement('span');c.style.cssText='color:var(--muted);font-size:12px;font-weight:600;margin-left:8px';c.textContent=count+' çevrimiçi';container.appendChild(c);}
@@ -336,7 +352,8 @@ function openChannel(serverId,channelId,channelName){
         if(typers.length){tt.textContent=typers.join(', ')+' yazıyor';ti.style.display='flex';}else ti.style.display='none';
     });
     let firstLoad=true;
-    const q=query(collection(db,'servers',serverId,'channels',channelId,'messages'),orderBy('createdAt','asc'));
+    const { limit: fsLimit } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
+    const q=query(collection(db,'servers',serverId,'channels',channelId,'messages'),orderBy('createdAt','asc'),fsLimit(100));
     msgUnsub=onSnapshot(q,snap=>{
         const container=document.getElementById('messages');
         const wasBottom=container.scrollHeight-container.scrollTop<=container.clientHeight+60;
@@ -371,7 +388,14 @@ function openChannel(serverId,channelId,channelName){
         if(firstLoad){
             allMessages=[];snap.forEach(d=>allMessages.push({id:d.id,...d.data()}));
             renderMessages(allMessages);firstLoad=false;
-            allMessages.forEach(data=>{if(data.uid!==currentUser?.uid&&!data.readBy?.includes(currentUser.uid))updateDoc(doc(db,'servers',currentServerId,'channels',currentChannelId,'messages',data.id),{readBy:arrayUnion(currentUser.uid)}).catch(()=>{});});
+            // Sadece son 20 mesajın readBy'ını güncelle - Firestore yükünü azalt
+            const unreadMsgs=allMessages.filter(d=>d.uid!==currentUser?.uid&&!d.readBy?.includes(currentUser.uid)).slice(-20);
+            // Toplu güncelleme - aynı anda max 5 istek
+            const chunks=(arr,n)=>Array.from({length:Math.ceil(arr.length/n)},(_,i)=>arr.slice(i*n,(i+1)*n));
+            for(const chunk of chunks(unreadMsgs,5)){
+                await Promise.all(chunk.map(data=>updateDoc(doc(db,'servers',currentServerId,'channels',currentChannelId,'messages',data.id),{readBy:arrayUnion(currentUser.uid)}).catch(()=>{})));
+                await new Promise(r=>setTimeout(r,300)); // 300ms ara ver
+            }
         }
         if(wasBottom)container.scrollTop=container.scrollHeight;
     });
@@ -434,12 +458,16 @@ window.contextDelete=()=>{if(!contextMsgData)return;document.getElementById('msg
 window.cancelReply=()=>{replyTo=null;document.getElementById('reply-preview').style.display='none';};
 
 // ── YAZIYOR ──────────────────────────────────────────────
+let _lastTypingWrite=0;
 window.handleTyping=async()=>{
     if(!currentUser||!currentServerId||!currentChannelId)return;
+    const now=Date.now();
+    if(now-_lastTypingWrite<2000)return; // 2 saniyede bir yaz
+    _lastTypingWrite=now;
     const ref=doc(db,'servers',currentServerId,'channels',currentChannelId,'meta','typing');
-    await setDoc(ref,{[currentUser.uid]:{name:currentUser.displayName||currentUser.email,ts:Date.now()}},{merge:true});
+    await setDoc(ref,{[currentUser.uid]:{name:currentUser.displayName||currentUser.email,ts:now}},{merge:true});
     clearTimeout(typingTimeout);
-    typingTimeout=setTimeout(async()=>await setDoc(ref,{[currentUser.uid]:{name:'',ts:0}},{merge:true}),3000);
+    typingTimeout=setTimeout(async()=>await setDoc(ref,{[currentUser.uid]:{name:'',ts:0}},{merge:true}),5000);
 };
 
 // ── MESAJ GÖNDER ─────────────────────────────────────────
@@ -687,7 +715,7 @@ async function updateFriendBadge(){
     if(!currentUser)return;
     try{const uDoc=await getDoc(doc(db,'users',currentUser.uid));const count=(uDoc.data()?.friendRequests||[]).length;['req-badge','friends-badge'].forEach(id=>{const el=document.getElementById(id);if(el){el.textContent=count;el.style.display=count>0?'inline':'none';}});}catch(e){}
 }
-setInterval(updateFriendBadge,30000);
+setInterval(updateFriendBadge,300000); // 5 dakikada bir
 
 // ── DM ───────────────────────────────────────────────────
 window.openDMList=async()=>{document.getElementById('dm-screen').style.display='flex';document.getElementById('main-layout').style.display='none';loadDMList();};
@@ -770,9 +798,15 @@ window.onDMFileSelected=async(input)=>{
 window.openDMFromProfile=async(uid,name,photoURL,status)=>{hideModal('modal-profile');document.getElementById('dm-screen').style.display='flex';document.getElementById('main-layout').style.display='none';await loadDMList();openDMChat(uid,name,photoURL,status);};
 async function updateDMBadge(){
     if(!currentUser)return;
-    try{const uDoc=await getDoc(doc(db,'users',currentUser.uid));const friends=uDoc.data()?.friends||[];let unread=0;for(const fUid of friends){const dmId=getDMId(currentUser.uid,fUid);try{const snap=await getDocs(query(collection(db,'dms',dmId,'messages'),orderBy('createdAt','desc')));snap.forEach(d=>{const data=d.data();if(data.uid!==currentUser.uid&&!data.readBy?.includes(currentUser.uid))unread++;});}catch(e){}}const badge=document.getElementById('dm-badge');if(badge){badge.textContent=unread;badge.style.display=unread>0?'inline':'none';}}catch(e){}
+    try{
+        // Sadece dms koleksiyonunda kendi UID'ine göre unread say - tek sorgu
+        const uDoc=await getDoc(doc(db,'users',currentUser.uid));
+        const unread=(uDoc.data()?.dmUnread)||0;
+        const badge=document.getElementById('dm-badge');
+        if(badge){badge.textContent=unread;badge.style.display=unread>0?'inline':'none';}
+    }catch(e){}
 }
-setInterval(updateDMBadge,25000);
+// Interval YOK - sadece mesaj gelince çağrılır
 
 // ── KEŞFET ───────────────────────────────────────────────
 async function loadDiscover(){
