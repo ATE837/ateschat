@@ -387,91 +387,138 @@ function openChannel(serverId, channelId, channelName) {
         else { ti.style.display='none'; }
     });
     const q = query(collection(db,'servers',serverId,'channels',channelId,'messages'), orderBy('createdAt','asc'));
+    let firstLoad = true;
     msgUnsub = onSnapshot(q, snap => {
         const container = document.getElementById('messages');
         const wasBottom = container.scrollHeight-container.scrollTop <= container.clientHeight+60;
-        allMessages = [];
-        snap.forEach(d => allMessages.push({id:d.id,...d.data()}));
-        renderMessages(allMessages);
-        if (wasBottom) container.scrollTop = container.scrollHeight;
+
         snap.docChanges().forEach(change => {
-            if (change.type==='added') {
-                const data=change.doc.data();
-                if (data.uid!==currentUser?.uid) {
-                    if (localStorage.getItem('notifSound')!=='false') playNotif();
-                    showBrowserNotif(data.name||'Birisi', data.text||'Yeni mesaj');
-                    // Okundu işaretle
-                    if (!data.readBy?.includes(currentUser.uid)) {
-                        updateDoc(doc(db,'servers',currentServerId,'channels',currentChannelId,'messages',change.doc.id), {
-                            readBy: arrayUnion(currentUser.uid)
-                        }).catch(()=>{});
+            const data = change.doc.data();
+            const msgId = change.doc.id;
+
+            if (change.type === 'added') {
+                // Yeni mesaj - listeye ekle ve DOM'a ekle
+                allMessages.push({id:msgId,...data});
+                if (!firstLoad) {
+                    // Sadece yeni mesajı DOM'a ekle
+                    const msgEl = buildMessageEl({id:msgId,...data});
+                    container.appendChild(msgEl);
+                    if (data.uid !== currentUser?.uid) {
+                        if (localStorage.getItem('notifSound')!=='false') playNotif();
+                        showBrowserNotif(data.name||'Birisi', data.text||'Yeni mesaj');
+                        if (!data.readBy?.includes(currentUser.uid)) {
+                            updateDoc(doc(db,'servers',currentServerId,'channels',currentChannelId,'messages',msgId), {
+                                readBy: arrayUnion(currentUser.uid)
+                            }).catch(()=>{});
+                        }
                     }
                 }
+            } else if (change.type === 'modified') {
+                // Mesaj güncellendi (okundu, düzenleme) - sadece o elementi güncelle
+                const idx = allMessages.findIndex(m => m.id === msgId);
+                if (idx !== -1) allMessages[idx] = {id:msgId,...data};
+
+                // DOM'da sadece okundu spanını veya text'i güncelle - scroll yok!
+                const msgEl = container.querySelector(`[data-msg-id="${msgId}"]`);
+                if (msgEl) {
+                    // Okundu bilgisi güncelle
+                    const readEl = msgEl.querySelector('[data-read-info]');
+                    if (readEl && data.uid === currentUser?.uid) {
+                        const readers = (data.readBy || []).filter(id => id !== currentUser.uid);
+                        readEl.className = 'msg-read-info' + (readers.length > 0 ? ' seen' : '');
+                        readEl.textContent = readers.length > 0 ? `👁️ ${readers.length} kişi gördü` : '✓ Gönderildi';
+                    }
+                    // Düzenleme güncelle
+                    if (data.edited) {
+                        const textEl = msgEl.querySelector('.msg-text');
+                        if (textEl) textEl.textContent = data.text;
+                        const editTag = msgEl.querySelector('.msg-edited-tag');
+                        if (!editTag) {
+                            const timeEl = msgEl.querySelector('.msg-time');
+                            if (timeEl) { const tag = document.createElement('span'); tag.className='msg-edited-tag'; tag.textContent='(düzenlendi)'; timeEl.insertAdjacentElement('afterend', tag); }
+                        }
+                    }
+                }
+                return; // scroll güncelleme yok
+            } else if (change.type === 'removed') {
+                allMessages = allMessages.filter(m => m.id !== msgId);
+                const msgEl = container.querySelector(`[data-msg-id="${msgId}"]`);
+                if (msgEl) msgEl.remove();
+                return;
             }
         });
+
+        if (firstLoad) {
+            // İlk yükleme - hepsini bir kerede çiz
+            allMessages = [];
+            snap.forEach(d => allMessages.push({id:d.id,...d.data()}));
+            renderMessages(allMessages);
+            firstLoad = false;
+            // Okunmamış mesajları işaretle
+            allMessages.forEach(data => {
+                if (data.uid !== currentUser?.uid && !data.readBy?.includes(currentUser.uid)) {
+                    updateDoc(doc(db,'servers',currentServerId,'channels',currentChannelId,'messages',data.id), {
+                        readBy: arrayUnion(currentUser.uid)
+                    }).catch(()=>{});
+                }
+            });
+        }
+
+        if (wasBottom) container.scrollTop = container.scrollHeight;
     });
 }
 
 // ===================== MESAJ RENDER =====================
+function buildMessageEl(data) {
+    const time = data.createdAt?.toDate().toLocaleTimeString('tr-TR',{hour:'2-digit',minute:'2-digit'}) || '';
+    const div = document.createElement('div'); div.className='msg'; div.dataset.msgId=data.id;
+    div.appendChild(makeAvatar(data.photoURL||null, data.name, 'msg-av'));
+    const body = document.createElement('div'); body.className='msg-body';
+    if (data.replyTo) {
+        const ref = document.createElement('div'); ref.className='msg-reply-ref';
+        ref.innerHTML=`<div class="msg-reply-ref-name">↩ ${data.replyTo.name}</div><div class="msg-reply-ref-text">${data.replyTo.text||'[medya]'}</div>`;
+        ref.onclick = () => {
+            const container = document.getElementById('messages');
+            const el = container.querySelector(`[data-msg-id="${data.replyTo.id}"]`);
+            if (el) { el.scrollIntoView({behavior:'smooth',block:'center'}); el.style.background='rgba(88,101,242,0.15)'; setTimeout(()=>el.style.background='',1500); }
+        };
+        body.appendChild(ref);
+    }
+    const header = document.createElement('div');
+    const nameSpan = document.createElement('span'); nameSpan.className='msg-name'; nameSpan.textContent=data.name||'Kullanıcı';
+    nameSpan.style.cursor='pointer';
+    nameSpan.onclick = () => loadAndShowProfile(data.uid, data.name, data.photoURL);
+    header.appendChild(nameSpan);
+    header.innerHTML += `<span class="msg-time">${time}</span>${data.edited?'<span class="msg-edited-tag">(düzenlendi)</span>':''}`;
+    body.appendChild(header);
+    if (data.type==='image') {
+        const img=document.createElement('img'); img.src=data.fileData; img.className='msg-image'; img.onclick=()=>openImage(data.fileData); body.appendChild(img);
+    } else if (data.type==='file') {
+        const a=document.createElement('a'); a.href=data.fileData; a.download=data.fileName; a.className='msg-file'; a.innerHTML=`📎 ${data.fileName} <span>(${data.fileSize})</span>`; body.appendChild(a);
+    } else if (data.type==='audio') {
+        body.appendChild(renderAudioMessage(data.fileData, data.duration));
+    } else {
+        const t=document.createElement('span'); t.className='msg-text'; t.textContent=data.text; body.appendChild(t);
+    }
+    if (data.uid === currentUser?.uid) {
+        const readInfo = document.createElement('div');
+        const readers = (data.readBy || []).filter(id => id !== currentUser.uid);
+        readInfo.className = 'msg-read-info' + (readers.length > 0 ? ' seen' : '');
+        readInfo.setAttribute('data-read-info', data.id);
+        readInfo.textContent = readers.length > 0 ? `👁️ ${readers.length} kişi gördü` : '✓ Gönderildi';
+        body.appendChild(readInfo);
+    }
+    div.appendChild(body);
+    div.addEventListener('contextmenu', e => { e.preventDefault(); showContextMenu(e, data); });
+    let touchTimer;
+    div.addEventListener('touchstart', () => { touchTimer=setTimeout(()=>showContextMenu({clientX:window.innerWidth/2,clientY:window.innerHeight/2},data),600); });
+    div.addEventListener('touchend', () => clearTimeout(touchTimer));
+    return div;
+}
+
 function renderMessages(msgs) {
     const container = document.getElementById('messages'); container.innerHTML='';
-    msgs.forEach(data => {
-        const time = data.createdAt?.toDate().toLocaleTimeString('tr-TR',{hour:'2-digit',minute:'2-digit'})||'';
-        const div = document.createElement('div'); div.className='msg'; div.dataset.msgId=data.id;
-        const msgAv = makeAvatar(data.photoURL||null, data.name, 'msg-av');
-        msgAv.style.cursor = 'pointer';
-        msgAv.onclick = async () => {
-            let status = 'offline';
-            try { const u = await getDoc(doc(db,'users',data.uid)); if(u.exists()) status = u.data().status||'offline'; } catch(e) {}
-            showProfile(data.uid, data.name, data.photoURL||null, status);
-        };
-        div.appendChild(msgAv);
-        const body = document.createElement('div'); body.className='msg-body';
-        // Reply referansı
-        if (data.replyTo) {
-            const ref = document.createElement('div'); ref.className='msg-reply-ref';
-            ref.innerHTML=`<div class="msg-reply-ref-name">↩ ${data.replyTo.name}</div><div class="msg-reply-ref-text">${data.replyTo.text||'[medya]'}</div>`;
-            ref.onclick = () => {
-                const el = container.querySelector(`[data-msg-id="${data.replyTo.id}"]`);
-                if (el) { el.scrollIntoView({behavior:'smooth',block:'center'}); el.style.background='rgba(88,101,242,0.15)'; setTimeout(()=>el.style.background='',1500); }
-            };
-            body.appendChild(ref);
-        }
-        // Header
-        const header = document.createElement('div');
-        const nameSpan = document.createElement('span'); nameSpan.className = 'msg-name'; nameSpan.textContent = data.name||'Kullanıcı';
-        nameSpan.style.cursor = 'pointer';
-        nameSpan.onclick = () => loadAndShowProfile(data.uid, data.name, data.photoURL);
-        header.appendChild(nameSpan);
-        header.innerHTML += `<span class="msg-time">${time}</span>${data.edited?'<span class="msg-edited-tag">(düzenlendi)</span>':''}`;
-        body.appendChild(header);
-        // İçerik
-        if (data.type==='image') {
-            const img = document.createElement('img'); img.src=data.fileData; img.className='msg-image'; img.onclick=()=>openImage(data.fileData); body.appendChild(img);
-        } else if (data.type==='file') {
-            const a=document.createElement('a'); a.href=data.fileData; a.download=data.fileName; a.className='msg-file'; a.innerHTML=`📎 ${data.fileName} <span>(${data.fileSize})</span>`; body.appendChild(a);
-        } else if (data.type==='audio') {
-            body.appendChild(renderAudioMessage(data.fileData, data.duration));
-        } else {
-            const t = document.createElement('span'); t.className='msg-text'; t.textContent=data.text; body.appendChild(t);
-        }
-        div.appendChild(body);
-        // Okundu bilgisi (kanal mesajları için kendi mesajlarında)
-        if (data.uid === currentUser?.uid) {
-            const readInfo = document.createElement('div');
-            readInfo.className = 'msg-read-info';
-            const readers = (data.readBy || []).filter(id => id !== currentUser.uid);
-            readInfo.className = 'msg-read-info' + (readers.length > 0 ? ' seen' : '');
-            readInfo.textContent = readers.length > 0 ? `👁️ ${readers.length} kişi gördü` : '✓ Gönderildi';
-            body.appendChild(readInfo);
-        }
-        // Context menu - sağ tık veya uzun basma
-        div.addEventListener('contextmenu', e => { e.preventDefault(); showContextMenu(e, data); });
-        let touchTimer;
-        div.addEventListener('touchstart', () => { touchTimer=setTimeout(()=>showContextMenu({clientX:window.innerWidth/2,clientY:window.innerHeight/2},data),600); });
-        div.addEventListener('touchend', () => clearTimeout(touchTimer));
-        container.appendChild(div);
-    });
+    msgs.forEach(data => container.appendChild(buildMessageEl(data)));
 }
 
 // ===================== CONTEXT MENU =====================
