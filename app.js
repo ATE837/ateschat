@@ -323,6 +323,10 @@ function openChannel(serverId,channelId,channelName){
     document.getElementById('channel-title').textContent='# '+channelName;
     document.querySelectorAll('.channel-item').forEach(el=>el.classList.toggle('active',el.textContent.trim()===channelName));
     cancelReply();
+    // Sol sidebar'ı gizle - tam ekran chat
+    document.getElementById('server-list').style.display='none';
+    document.getElementById('channel-sidebar').style.display='none';
+    document.getElementById('chat-area').style.flex='1';
     if(msgUnsub)msgUnsub();
     if(typingUnsub)typingUnsub();
     typingUnsub=onSnapshot(doc(db,'servers',serverId,'channels',channelId,'meta','typing'),snap=>{
@@ -380,8 +384,10 @@ function buildMessageEl(data){
     if(data.replyTo){const ref=document.createElement('div');ref.className='msg-reply-ref';ref.innerHTML=`<div class="msg-reply-ref-name">↩ ${data.replyTo.name}</div><div class="msg-reply-ref-text">${data.replyTo.text||'[medya]'}</div>`;ref.onclick=()=>{const c=document.getElementById('messages');const el=c.querySelector(`[data-msg-id="${data.replyTo.id}"]`);if(el){el.scrollIntoView({behavior:'smooth',block:'center'});el.style.background='rgba(88,101,242,0.15)';setTimeout(()=>el.style.background='',1500);}};body.appendChild(ref);}
     const hdr=document.createElement('div');
     const ns=document.createElement('span');ns.className='msg-name';ns.style.cursor='pointer';ns.textContent=data.name||'Kullanıcı';
-    ns.onclick=()=>loadAndShowProfile(data.uid,data.name,data.photoURL);
-    hdr.appendChild(ns);hdr.innerHTML+=`<span class="msg-time">${time}</span>${data.edited?'<span class="msg-edited-tag">(düzenlendi)</span>':''}`;
+    ns.onclick=(e)=>{e.stopPropagation();loadAndShowProfile(data.uid,data.name,data.photoURL);};
+    const timeSpan=document.createElement('span');timeSpan.className='msg-time';timeSpan.textContent=time;
+    hdr.appendChild(ns);hdr.appendChild(timeSpan);
+    if(data.edited){const et=document.createElement('span');et.className='msg-edited-tag';et.textContent='(düzenlendi)';hdr.appendChild(et);}
     body.appendChild(hdr);
     if(data.type==='image'){const img=document.createElement('img');img.src=data.fileData;img.className='msg-image';img.onclick=()=>openImage(data.fileData);body.appendChild(img);}
     else if(data.type==='file'){const a=document.createElement('a');a.href=data.fileData;a.download=data.fileName;a.className='msg-file';a.innerHTML=`📎 ${data.fileName} <span>(${data.fileSize})</span>`;body.appendChild(a);}
@@ -873,6 +879,25 @@ window.toggleScreen=async()=>{
 
 // Service worker
 if('serviceWorker'in navigator)navigator.serviceWorker.register('/ateschat/sw.js').catch(()=>{});
+
+
+// ── SİDEBAR TOGGLE ───────────────────────────────────────
+let sidebarVisible = false;
+window.toggleSidebar = () => {
+    sidebarVisible = !sidebarVisible;
+    const serverList = document.getElementById('server-list');
+    const channelSidebar = document.getElementById('channel-sidebar');
+    const btn = document.getElementById('sidebar-toggle-btn');
+    if(sidebarVisible) {
+        serverList.style.display = 'flex';
+        channelSidebar.style.display = 'flex';
+        btn.classList.add('active');
+    } else {
+        serverList.style.display = 'none';
+        channelSidebar.style.display = 'none';
+        btn.classList.remove('active');
+    }
+};
 
 // ── DOM HAZIR: BUTON BAĞLAMALARI ─────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
