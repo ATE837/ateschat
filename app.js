@@ -87,7 +87,7 @@ window.openAvatarPicker = () => document.getElementById('avatar-file-input').cli
 window.onAvatarSelected = async (input) => {
     const file = input.files[0];
     if (!file) return;
-    if (file.size > 500 * 1024) { alert('Fotoğraf 500KB\'dan küçük olmalı.'); return; }
+    if (file.size > 700 * 1024) { alert('Fotoğraf 700KB\'dan küçük olmalı.'); return; }
     const reader = new FileReader();
     reader.onload = async (e) => {
         const base64 = e.target.result;
