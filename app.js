@@ -115,6 +115,12 @@ window.doAdminLogin = async () => {
     const hash = await sha256(key);
     if (hash !== ADMIN_KEY_HASH) { err.style.color='#ed4245'; err.textContent='❌ Geçersiz anahtar.'; return; }
     isAdmin = true;
+    err.textContent = 'Giriş yapılıyor...';
+    // Admin için anonim auth - Firestore erişimi için gerekli
+    try {
+        const { signInAnonymously } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js");
+        await signInAnonymously(auth);
+    } catch(e) { console.log('anon auth:', e); }
     document.getElementById('auth-container').style.display = 'none';
     document.getElementById('admin-panel').style.display = 'flex';
     loadAdminPanel();
@@ -129,15 +135,27 @@ window.adminLogout = () => {
 };
 
 async function loadAdminPanel() {
-    const usersSnap = await getDocs(collection(db,'users'));
-    const serversSnap = await getDocs(collection(db,'servers'));
-    allAdminUsers = [];
-    let bannedCount = 0;
-    usersSnap.forEach(d => { const data = d.data(); allAdminUsers.push({uid:d.id,...data}); if(data.banned) bannedCount++; });
-    document.getElementById('stat-users').textContent = usersSnap.size;
-    document.getElementById('stat-servers').textContent = serversSnap.size;
-    document.getElementById('stat-banned').textContent = bannedCount;
-    renderAdminUsers(allAdminUsers);
+    document.getElementById('stat-users').textContent = '...';
+    document.getElementById('stat-servers').textContent = '...';
+    document.getElementById('stat-banned').textContent = '...';
+    document.getElementById('admin-users-list').innerHTML = '<div style="color:var(--muted);text-align:center;padding:20px">Yükleniyor...</div>';
+    try {
+        const usersSnap = await getDocs(collection(db,'users'));
+        const serversSnap = await getDocs(collection(db,'servers'));
+        allAdminUsers = [];
+        let bannedCount = 0;
+        usersSnap.forEach(d => { const data = d.data(); allAdminUsers.push({uid:d.id,...data}); if(data.banned) bannedCount++; });
+        document.getElementById('stat-users').textContent = usersSnap.size;
+        document.getElementById('stat-servers').textContent = serversSnap.size;
+        document.getElementById('stat-banned').textContent = bannedCount;
+        renderAdminUsers(allAdminUsers);
+    } catch(e) {
+        console.error('Admin panel yüklenemedi:', e);
+        document.getElementById('admin-users-list').innerHTML = '<div style="color:#ed4245;text-align:center;padding:20px">⚠️ Firestore erişim hatası.<br><small>Firebase Console'dan Anonymous Auth'u etkinleştir.</small></div>';
+        document.getElementById('stat-users').textContent = '!';
+        document.getElementById('stat-servers').textContent = '!';
+        document.getElementById('stat-banned').textContent = '!';
+    }
 }
 
 function renderAdminUsers(users) {
@@ -518,7 +536,15 @@ function buildMessageEl(data) {
 
 function renderMessages(msgs) {
     const container = document.getElementById('messages'); container.innerHTML='';
-    msgs.forEach(data => container.appendChild(buildMessageEl(data)));
+    // Engellenen kullanıcıların mesajlarını filtrele
+    getDoc(doc(db,'users',currentUser.uid)).then(uDoc => {
+        const blocked = uDoc.data()?.blocked || [];
+        msgs.forEach(data => {
+            if (!blocked.includes(data.uid)) container.appendChild(buildMessageEl(data));
+        });
+    }).catch(() => {
+        msgs.forEach(data => container.appendChild(buildMessageEl(data)));
+    });
 }
 
 // ===================== CONTEXT MENU =====================
@@ -862,16 +888,44 @@ async function showProfile(uid, name, photoURL, status) {
         actions.innerHTML='<button class="p-btn gray" style="width:100%">Senin Profilin</button>';
     } else {
         const myDoc=await getDoc(doc(db,'users',currentUser.uid));
-        const friends=myDoc.data()?.friends||[], sent=myDoc.data()?.sentRequests||[];
-        if(friends.includes(uid)){
-            const dm=document.createElement('button');dm.className='p-btn blue';dm.textContent='💬 Mesaj Gönder';dm.style.cssText='width:100%;margin-bottom:6px';dm.onclick=()=>openDMFromProfile(uid,name,photoURL,status);actions.appendChild(dm);
-            const r=document.createElement('button');r.className='p-btn red';r.textContent='✕ Arkadaşlıktan Çıkar';r.style.width='100%';r.onclick=()=>removeFriend(uid,name);actions.appendChild(r);}
-        else if(sent.includes(uid)){actions.innerHTML='<button class="p-btn gray" style="width:100%">⏳ İstek Gönderildi</button>';}
-        else{const a=document.createElement('button');a.className='p-btn blue';a.textContent='➕ Arkadaş Ekle';a.style.width='100%';a.onclick=()=>sendFriendRequestToUid(uid,name);actions.appendChild(a);}
-        // Rol yönetimi (sadece owner görebilir)
-        if (getMyRole()==='owner' && uid!==currentUser.uid) {
-            const roleBtn=document.createElement('button');roleBtn.className='p-btn gray';roleBtn.textContent='👑 Rol Değiştir';roleBtn.style.cssText='width:100%;margin-top:6px';
-            roleBtn.onclick=()=>openRoleModal(uid,name); actions.appendChild(roleBtn);
+        const myData=myDoc.data()||{};
+        const friends=myData.friends||[], sent=myData.sentRequests||[], blocked=myData.blocked||[];
+
+        // Engelliyse farklı göster
+        if (blocked.includes(uid)) {
+            const ub=document.createElement('button');ub.className='p-btn gray';ub.textContent='🔓 Engeli Kaldır';ub.style.width='100%';
+            ub.onclick=async()=>{const ref=doc(db,'users',currentUser.uid);const s=await getDoc(ref);await setDoc(ref,{blocked:(s.data()?.blocked||[]).filter(b=>b!==uid)},{merge:true});hideModal('modal-profile');};
+            actions.appendChild(ub);
+        } else {
+            // DM butonu (her zaman)
+            const dm=document.createElement('button');dm.className='p-btn blue';dm.textContent='💬 Mesaj Gönder';dm.style.cssText='width:100%;margin-bottom:6px';
+            dm.onclick=()=>openDMFromProfile(uid,name,photoURL,status);actions.appendChild(dm);
+
+            // Arkadaş buton
+            if(friends.includes(uid)){
+                const r=document.createElement('button');r.className='p-btn red';r.textContent='✕ Arkadaşlıktan Çıkar';r.style.cssText='width:100%;margin-bottom:6px';
+                r.onclick=()=>removeFriend(uid,name);actions.appendChild(r);
+            } else if(sent.includes(uid)){
+                const p=document.createElement('button');p.className='p-btn gray';p.textContent='⏳ İstek Gönderildi';p.style.cssText='width:100%;margin-bottom:6px';p.disabled=true;actions.appendChild(p);
+            } else {
+                const a=document.createElement('button');a.className='p-btn blue';a.textContent='➕ Arkadaş Ekle';a.style.cssText='width:100%;margin-bottom:6px';
+                a.onclick=()=>{sendFriendRequestToUid(uid,name);a.textContent='⏳ İstek Gönderildi';a.disabled=true;};actions.appendChild(a);
+            }
+
+            // Engelle butonu
+            const blockBtn=document.createElement('button');blockBtn.className='p-btn red';blockBtn.textContent='🚫 Engelle';blockBtn.style.cssText='width:100%;margin-bottom:6px';
+            blockBtn.onclick=async()=>{
+                if(!confirm(name+' engellensin mi? Bu kişinin mesajlarını göremezsin.'))return;
+                await setDoc(doc(db,'users',currentUser.uid),{blocked:arrayUnion(uid)},{merge:true});
+                hideModal('modal-profile');
+            };
+            actions.appendChild(blockBtn);
+
+            // Rol yönetimi (sadece owner)
+            if (getMyRole()==='owner' && uid!==currentUser.uid) {
+                const roleBtn=document.createElement('button');roleBtn.className='p-btn gray';roleBtn.textContent='👑 Rol Değiştir';roleBtn.style.cssText='width:100%;margin-top:2px';
+                roleBtn.onclick=()=>openRoleModal(uid,name);actions.appendChild(roleBtn);
+            }
         }
     }
     showModal('modal-profile');
