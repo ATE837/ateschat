@@ -11,12 +11,12 @@
     --gold: #f0b132;
 }
 * { box-sizing: border-box; margin: 0; padding: 0; }
-body { background: var(--dark); color: var(--text); font-family: 'Segoe UI', sans-serif; height: 100vh; overflow: hidden; }
+body { background: var(--dark); color: var(--text); font-family: 'Segoe UI', sans-serif; height: 100dvh; overflow: hidden; }
 
 /* ===================== AUTH ===================== */
 #auth-container, #server-screen {
     display: flex; align-items: center; justify-content: center;
-    height: 100vh;
+    height: 100dvh;
     background: radial-gradient(ellipse at top, #2c2f3a 0%, #1a1b1e 100%);
 }
 .auth-card {
@@ -100,7 +100,7 @@ body { background: var(--dark); color: var(--text); font-family: 'Segoe UI', san
 }
 
 /* ===================== ANA LAYOUT ===================== */
-#main-layout { display: flex; height: 100vh; }
+#main-layout { display: flex; height: 100dvh; }
 
 /* SUNUCU LİSTESİ */
 #server-list {
@@ -332,17 +332,17 @@ body { background: var(--dark); color: var(--text); font-family: 'Segoe UI', san
 
 /* YÜKLE BUTONU */
 #install-bar {
-    position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+    position: fixed; top: 0; left: 0; right: 0;
     z-index: 999; display: flex; justify-content: center;
+    padding: 10px;
+    background: linear-gradient(135deg, #ff8c00, #f0b132);
 }
 #install-btn {
-    background: linear-gradient(135deg, #ff8c00, #f0b132);
-    color: white; border: none; padding: 14px 28px;
-    border-radius: 50px; font-size: 16px; font-weight: 800;
-    cursor: pointer; box-shadow: 0 4px 20px rgba(255,140,0,0.4);
-    transition: all 0.2s;
+    background: transparent;
+    color: white; border: none; padding: 6px 20px;
+    border-radius: 50px; font-size: 15px; font-weight: 800;
+    cursor: pointer; width: 100%;
 }
-#install-btn:hover { transform: scale(1.05); box-shadow: 0 6px 24px rgba(255,140,0,0.5); }
 
 /* MOBİL */
 @media (max-width: 700px) {
@@ -362,4 +362,8 @@ body { background: var(--dark); color: var(--text); font-family: 'Segoe UI', san
     #channel-title { font-size: 15px; }
     #chat-input-wrap { margin: 0 8px 14px; padding: 4px 4px 4px 12px; }
     #msg-input { font-size: 15px; }
+    
+    /* Klavye açıldığında taşma olmasın */
+    #main-layout { height: 100dvh; }
+    #chat-area { height: 100dvh; }
 }
