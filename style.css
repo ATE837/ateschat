@@ -462,7 +462,9 @@ body {
 #call-status { color: white; font-size: 15px; font-weight: 700; text-shadow: 0 2px 12px rgba(0,0,0,0.9); background: rgba(0,0,0,0.4); padding: 6px 16px; border-radius: 20px; backdrop-filter: blur(8px); }
 #call-controls { display: flex; justify-content: center; gap: 20px; padding: 24px; background: rgba(0,0,0,0.75); backdrop-filter: blur(16px); }
 .ctrl-btn { width: 58px; height: 58px; border-radius: 50%; border: none; font-size: 22px; cursor: pointer; transition: all 0.2s; box-shadow: 0 4px 12px rgba(0,0,0,0.4); }
-.ctrl-btn.mute { background: var(--input); }
+.ctrl-btn.screen { background: #7289da; }
+.ctrl-btn.screen:hover { background: #5b6eae; transform: scale(1.1); }
+.ctrl-btn.screen.active { background: var(--green); box-shadow: 0 0 16px rgba(87,242,135,0.4); }
 .ctrl-btn.mute:hover { background: #4a4d55; transform: scale(1.1); }
 .ctrl-btn.hangup { background: var(--red); box-shadow: 0 4px 12px rgba(237,66,69,0.4); }
 .ctrl-btn.hangup:hover { transform: scale(1.1); box-shadow: 0 6px 16px rgba(237,66,69,0.5); }
@@ -600,4 +602,117 @@ body {
 .req-badge {
     background: var(--red); color: white; font-size: 10px; font-weight: 800;
     padding: 1px 5px; border-radius: 10px; margin-left: 4px; vertical-align: middle;
+}
+
+/* ========== DURUM NOKTASI ========== */
+.status-dot {
+    width: 12px; height: 12px; border-radius: 50%;
+    background: #23a55a;
+    border: 2px solid var(--black);
+    position: absolute; bottom: -1px; right: -1px;
+    transition: background 0.3s;
+}
+.member-status-dot {
+    width: 10px; height: 10px; border-radius: 50%;
+    border: 2px solid var(--sidebar);
+    position: absolute; bottom: -1px; right: -1px;
+}
+
+/* DURUM SEÇENEKLERİ */
+.status-options { display: flex; flex-direction: column; gap: 4px; }
+.status-option {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 12px; border-radius: 8px; cursor: pointer;
+    color: var(--text); font-size: 14px; font-weight: 500;
+    transition: all 0.15s;
+}
+.status-option:hover { background: rgba(255,255,255,0.07); }
+.status-option.active { background: rgba(88,101,242,0.15); color: white; font-weight: 700; }
+.status-dot-sm { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+
+/* PROFİL KARTI */
+.profile-box { padding: 0; overflow: hidden; max-width: 300px; text-align: left; position: relative; }
+.profile-banner { height: 80px; background: linear-gradient(135deg, #5865f2, #9b59b6, #e91e8c); }
+.profile-body { padding: 0 16px 20px; }
+.profile-av {
+    width: 68px; height: 68px; border-radius: 50%;
+    background: linear-gradient(135deg, #5865f2, #9b59b6);
+    color: white; font-weight: 800; font-size: 24px;
+    display: flex; align-items: center; justify-content: center;
+    border: 4px solid var(--sidebar);
+    margin-top: -34px; margin-bottom: 10px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+}
+.profile-name { color: white; font-size: 17px; font-weight: 800; margin-bottom: 2px; }
+.profile-tag { color: var(--muted); font-size: 12px; margin-bottom: 6px; }
+.profile-status-row { color: var(--muted); font-size: 13px; margin-bottom: 14px; }
+#profile-actions { display: flex; flex-direction: column; gap: 6px; }
+.p-btn {
+    flex: 1; padding: 10px; border: none; border-radius: 8px;
+    font-size: 13px; font-weight: 700; cursor: pointer; transition: all 0.2s; font-family: inherit;
+}
+.p-btn.blue { background: linear-gradient(135deg, var(--blue), var(--blue2)); color: white; }
+.p-btn.blue:hover { transform: translateY(-1px); }
+.p-btn.gray { background: var(--input); color: var(--text); }
+.p-btn.red { background: rgba(237,66,69,0.12); color: var(--red); border: 1px solid rgba(237,66,69,0.2); }
+.p-btn.red:hover { background: var(--red); color: white; }
+
+/* ARKADAŞLAR */
+.friends-box { max-width: 420px; max-height: 85vh; overflow-y: auto; text-align: left; padding: 0; }
+.friends-tabs { display: flex; gap: 4px; padding: 10px 16px 0; border-bottom: 1px solid rgba(255,255,255,0.06); }
+.f-tab { padding: 8px 16px; border: none; background: transparent; color: var(--muted); font-size: 14px; font-weight: 600; cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.2s; font-family: inherit; }
+.f-tab.active { color: white; border-bottom-color: var(--blue); }
+.f-tab:hover { color: var(--text); }
+#friends-list { padding: 8px; min-height: 80px; }
+.friend-item { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 10px; transition: all 0.15s; cursor: pointer; }
+.friend-item:hover { background: rgba(255,255,255,0.05); }
+.friend-av { width: 40px; height: 40px; border-radius: 50%; flex-shrink: 0; background: linear-gradient(135deg, #5865f2, #9b59b6); color: white; font-weight: 800; font-size: 16px; display: flex; align-items: center; justify-content: center; }
+.friend-info { flex: 1; }
+.friend-name { color: white; font-size: 14px; font-weight: 700; }
+.friend-status { color: var(--muted); font-size: 12px; margin-top: 1px; }
+.friend-btns { display: flex; gap: 6px; }
+.fi-btn { width: 32px; height: 32px; border-radius: 50%; border: none; font-size: 14px; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; }
+.fi-btn.accept { background: rgba(87,242,135,0.15); color: var(--green); }
+.fi-btn.accept:hover { background: var(--green); color: #111; }
+.fi-btn.reject, .fi-btn.remove { background: rgba(237,66,69,0.15); color: var(--red); }
+.fi-btn.reject:hover, .fi-btn.remove:hover { background: var(--red); color: white; }
+.empty-state { text-align: center; padding: 28px 16px; color: var(--muted); font-size: 14px; }
+.empty-state .e-icon { font-size: 36px; margin-bottom: 10px; }
+.req-badge { background: var(--red); color: white; font-size: 10px; font-weight: 800; padding: 1px 5px; border-radius: 10px; margin-left: 4px; vertical-align: middle; }
+
+/* DOSYA / RESİM MESAJLARI */
+.attach-btn {
+    background: transparent; border: none; color: var(--muted);
+    font-size: 18px; cursor: pointer; padding: 6px 8px;
+    transition: all 0.2s; flex-shrink: 0;
+}
+.attach-btn:hover { color: white; transform: scale(1.1); }
+.msg-image {
+    max-width: 280px; max-height: 200px; border-radius: 10px;
+    margin-top: 6px; cursor: zoom-in; transition: opacity 0.2s;
+    display: block;
+}
+.msg-image:hover { opacity: 0.9; }
+.msg-file {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: var(--input); padding: 10px 14px; border-radius: 10px;
+    color: var(--text); text-decoration: none; font-size: 13px; font-weight: 600;
+    margin-top: 6px; transition: all 0.2s; border: 1px solid rgba(255,255,255,0.06);
+}
+.msg-file:hover { background: #3a3d44; color: white; }
+.msg-file span { color: var(--muted); font-size: 11px; }
+
+/* EKRAN PAYLAŞIMI */
+.ctrl-btn.screen { background: #7289da; }
+.ctrl-btn.screen:hover { background: #5b6eae; transform: scale(1.1); }
+.ctrl-btn.screen.active { background: var(--green); box-shadow: 0 0 16px rgba(87,242,135,0.4); }
+.ctrl-btn.mute { background: var(--input); }
+.ctrl-btn.mute:hover { background: #4a4d55; transform: scale(1.1); }
+.ctrl-btn.hangup { background: var(--red); box-shadow: 0 4px 12px rgba(237,66,69,0.4); }
+.ctrl-btn.hangup:hover { transform: scale(1.1); }
+.ctrl-btn.cam { background: var(--input); }
+.ctrl-btn.cam:hover { background: #4a4d55; transform: scale(1.1); }
+
+@media (max-width: 700px) {
+    .msg-image { max-width: 180px; max-height: 140px; }
 }
