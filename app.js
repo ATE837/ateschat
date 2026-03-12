@@ -459,14 +459,21 @@ window.createServer=async()=>{
     hideModal('modal-create');document.getElementById('new-server-name').value='';loadUserServers();
 };
 window.joinServer=async()=>{
-    const code=document.getElementById('join-code').value.trim().toUpperCase();const err=document.getElementById('join-error');if(!code){err.textContent='Davet kodu girin.';return;}
-    err.textContent='Aranıyor...';
-    const snap=await getDocs(query(collection(db,'servers'),where('inviteCode','==',code)));
-    if(snap.empty){err.style.color='#ed4245';err.textContent='Geçersiz kod.';return;}
+    const input=document.getElementById('join-code').value.trim();
+    const err=document.getElementById('join-error');
+    if(!input){err.style.color='#ed4245';err.textContent='Kod veya sunucu adı girin.';return;}
+    err.style.color='#949ba4';err.textContent='Aranıyor...';
+    let snap = await getDocs(query(collection(db,'servers'),where('inviteCode','==',input.toUpperCase())));
+    if(snap.empty) snap = await getDocs(query(collection(db,'servers'),where('name','==',input)));
+    if(snap.empty) snap = await getDocs(collection(db,'servers')).then(s=>({empty:!s.docs.some(d=>d.data().name?.toLowerCase()===input.toLowerCase()),docs:s.docs.filter(d=>d.data().name?.toLowerCase()===input.toLowerCase())}));
+    if(snap.empty||!snap.docs.length){err.style.color='#ed4245';err.textContent='Sunucu bulunamadı.';return;}
     const sd=snap.docs[0];
+    const already=(sd.data().members||[]).some(m=>m.uid===currentUser.uid);
+    if(already){err.style.color='#faa61a';err.textContent='Zaten bu sunucudasın.';return;}
     await updateDoc(doc(db,'servers',sd.id),{members:arrayUnion({uid:currentUser.uid,name:currentUser.displayName||currentUser.email})});
     await setDoc(doc(db,'users',currentUser.uid),{servers:arrayUnion({id:sd.id,name:sd.data().name})},{merge:true});
-    hideModal('modal-join');document.getElementById('join-code').value='';loadUserServers();
+    err.style.color='#23a55a';err.textContent='✅ Katıldın!';
+    setTimeout(()=>{hideModal('modal-join');document.getElementById('join-code').value='';loadUserServers();},800);
 };
 window.showInvite=async()=>{if(!currentServerId)return;const snap=await getDoc(doc(db,'servers',currentServerId));document.getElementById('invite-code').textContent=snap.data()?.inviteCode||'???';showModal('modal-invite');};
 window.copyInvite=()=>{navigator.clipboard.writeText(document.getElementById('invite-code').textContent);const btn=event.target;btn.textContent='✅ Kopyalandı!';setTimeout(()=>btn.textContent='Kopyala',2000);};
@@ -557,8 +564,37 @@ async function showProfile(uid,name,photoURL,status){
     const roleBadge=document.getElementById('profile-role-badge');roleBadge.innerHTML='';
     const badgesDiv=document.createElement('div');badgesDiv.className='profile-badges';
     if(currentServerData){const role=(currentServerData.roles||{})[uid]||'member';if(role!=='member'){const rb=document.createElement('span');rb.className='role-badge '+(role==='owner'?'role-owner':'role-mod');rb.textContent=role==='owner'?'👑 Sunucu Sahibi':'🛡️ Moderatör';badgesDiv.appendChild(rb);}}
-    try{const uDoc=await getDoc(doc(db,'users',uid));const count=uDoc.data()?.msgCount||0;const badge=getBadge(count);if(badge){const mb=document.createElement('span');mb.className='msg-badge '+badge.cls;mb.textContent=badge.label+' ('+count+' mesaj)';badgesDiv.appendChild(mb);}}catch(e){}
+    let targetMsgCount=0;
+    try{const uDoc=await getDoc(doc(db,'users',uid));targetMsgCount=uDoc.data()?.msgCount||0;const badge=getBadge(targetMsgCount);if(badge){const mb=document.createElement('span');mb.className='msg-badge '+badge.cls;mb.textContent=badge.label+' ('+targetMsgCount+' mesaj)';badgesDiv.appendChild(mb);}}catch(e){}
     if(badgesDiv.children.length)roleBadge.appendChild(badgesDiv);
+    // Like butonu
+    const likeWrap=document.getElementById('profile-like-wrap')||document.createElement('div');
+    likeWrap.id='profile-like-wrap';likeWrap.innerHTML='';likeWrap.style.cssText='text-align:center;margin:10px 0 4px';
+    if(uid!==currentUser?.uid){
+        try{
+            const likeDoc=await getDoc(doc(db,'users',uid));
+            const likes=likeDoc.data()?.likes||[];
+            const liked=likes.includes(currentUser.uid);
+            const likeBtn=document.createElement('button');
+            likeBtn.className='like-btn'+(liked?' liked':'');
+            likeBtn.innerHTML=`${liked?'❤️':'🤍'} <span class="like-count">${likes.length}</span>`;
+            likeBtn.onclick=async()=>{
+                const ref=doc(db,'users',uid);const snap=await getDoc(ref);
+                const curLikes=snap.data()?.likes||[];
+                if(curLikes.includes(currentUser.uid)){
+                    await setDoc(ref,{likes:curLikes.filter(l=>l!==currentUser.uid)},{merge:true});
+                    likeBtn.className='like-btn';likeBtn.innerHTML=`🤍 <span class="like-count">${curLikes.length-1}</span>`;
+                }else{
+                    await setDoc(ref,{likes:arrayUnion(currentUser.uid)},{merge:true});
+                    likeBtn.className='like-btn liked';likeBtn.innerHTML=`❤️ <span class="like-count">${curLikes.length+1}</span>`;
+                }
+            };
+            likeWrap.appendChild(likeBtn);
+        }catch(e){}
+    }
+    const existingLikeWrap=document.getElementById('profile-like-wrap');
+    if(!existingLikeWrap){const pStatus=document.getElementById('profile-status-text');pStatus.parentNode.insertBefore(likeWrap,pStatus.nextSibling);}
+    else existingLikeWrap.replaceWith(likeWrap);
     const actions=document.getElementById('profile-actions');actions.innerHTML='';
     if(uid===currentUser.uid){actions.innerHTML='<button class="p-btn gray" style="width:100%">Senin Profilin</button>';}
     else{
