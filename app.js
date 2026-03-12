@@ -398,6 +398,12 @@ function openChannel(serverId, channelId, channelName) {
                 if (data.uid!==currentUser?.uid) {
                     if (localStorage.getItem('notifSound')!=='false') playNotif();
                     showBrowserNotif(data.name||'Birisi', data.text||'Yeni mesaj');
+                    // Okundu işaretle
+                    if (!data.readBy?.includes(currentUser.uid)) {
+                        updateDoc(doc(db,'servers',currentServerId,'channels',currentChannelId,'messages',change.doc.id), {
+                            readBy: arrayUnion(currentUser.uid)
+                        }).catch(()=>{});
+                    }
                 }
             }
         });
@@ -437,6 +443,15 @@ function renderMessages(msgs) {
             const t = document.createElement('span'); t.className='msg-text'; t.textContent=data.text; body.appendChild(t);
         }
         div.appendChild(body);
+        // Okundu bilgisi (kanal mesajları için kendi mesajlarında)
+        if (data.uid === currentUser?.uid) {
+            const readInfo = document.createElement('div');
+            readInfo.className = 'msg-read-info';
+            const readers = (data.readBy || []).filter(id => id !== currentUser.uid);
+            readInfo.className = 'msg-read-info' + (readers.length > 0 ? ' seen' : '');
+            readInfo.textContent = readers.length > 0 ? `👁️ ${readers.length} kişi gördü` : '✓ Gönderildi';
+            body.appendChild(readInfo);
+        }
         // Context menu - sağ tık veya uzun basma
         div.addEventListener('contextmenu', e => { e.preventDefault(); showContextMenu(e, data); });
         let touchTimer;
@@ -740,7 +755,9 @@ async function showProfile(uid, name, photoURL, status) {
     } else {
         const myDoc=await getDoc(doc(db,'users',currentUser.uid));
         const friends=myDoc.data()?.friends||[], sent=myDoc.data()?.sentRequests||[];
-        if(friends.includes(uid)){const r=document.createElement('button');r.className='p-btn red';r.textContent='✕ Arkadaşlıktan Çıkar';r.style.width='100%';r.onclick=()=>removeFriend(uid,name);actions.appendChild(r);}
+        if(friends.includes(uid)){
+            const dm=document.createElement('button');dm.className='p-btn blue';dm.textContent='💬 Mesaj Gönder';dm.style.cssText='width:100%;margin-bottom:6px';dm.onclick=()=>openDMFromProfile(uid,name,photoURL,status);actions.appendChild(dm);
+            const r=document.createElement('button');r.className='p-btn red';r.textContent='✕ Arkadaşlıktan Çıkar';r.style.width='100%';r.onclick=()=>removeFriend(uid,name);actions.appendChild(r);}
         else if(sent.includes(uid)){actions.innerHTML='<button class="p-btn gray" style="width:100%">⏳ İstek Gönderildi</button>';}
         else{const a=document.createElement('button');a.className='p-btn blue';a.textContent='➕ Arkadaş Ekle';a.style.width='100%';a.onclick=()=>sendFriendRequestToUid(uid,name);actions.appendChild(a);}
         // Rol yönetimi (sadece owner görebilir)
@@ -924,4 +941,246 @@ window.toggleScreen=async()=>{
     const btn=document.getElementById('screen-btn');
     if(screenStream){screenStream.getTracks().forEach(t=>t.stop());screenStream=null;btn.textContent='🖥️';btn.classList.remove('active');if(pc&&localStream){const ct=localStream.getVideoTracks()[0];if(ct){const s=pc.getSenders().find(s=>s.track?.kind==='video');if(s)s.replaceTrack(ct);}}document.getElementById('local-video').srcObject=localStream;}
     else{try{screenStream=await navigator.mediaDevices.getDisplayMedia({video:{frameRate:30},audio:true});btn.textContent='⏹️';btn.classList.add('active');const st=screenStream.getVideoTracks()[0];if(pc){const s=pc.getSenders().find(s=>s.track?.kind==='video');if(s)s.replaceTrack(st);}document.getElementById('local-video').srcObject=screenStream;st.onended=()=>window.toggleScreen();}catch(e){alert('Ekran paylaşımı başlatılamadı.');}}
+};
+
+// ===================== DM SİSTEMİ =====================
+let currentDMPartner = null; // {uid, name, photoURL}
+let dmMsgUnsub = null;
+let dmTypingUnsub = null;
+let dmTypingTimeout = null;
+
+window.openDMList = async () => {
+    document.getElementById('dm-screen').style.display = 'flex';
+    document.getElementById('main-layout').style.display = 'none';
+    loadDMList();
+};
+
+window.closeDM = () => {
+    document.getElementById('dm-screen').style.display = 'none';
+    document.getElementById('main-layout').style.display = 'flex';
+    if (dmMsgUnsub) { dmMsgUnsub(); dmMsgUnsub = null; }
+    if (dmTypingUnsub) { dmTypingUnsub(); dmTypingUnsub = null; }
+    currentDMPartner = null;
+};
+
+async function loadDMList() {
+    const list = document.getElementById('dm-list');
+    list.innerHTML = '<div style="color:var(--muted);padding:12px;font-size:13px">Yükleniyor...</div>';
+    const uDoc = await getDoc(doc(db, 'users', currentUser.uid));
+    const friends = uDoc.data()?.friends || [];
+    if (friends.length === 0) {
+        list.innerHTML = '<div style="color:var(--muted);padding:12px;font-size:13px;text-align:center">Henüz arkadaşın yok.<br>Arkadaş ekleyerek DM başlat!</div>';
+        return;
+    }
+    list.innerHTML = '';
+    for (const fUid of friends) {
+        try {
+            const fDoc = await getDoc(doc(db, 'users', fUid));
+            const fData = fDoc.data() || {};
+            // Son mesajı çek
+            const dmId = getDMId(currentUser.uid, fUid);
+            const lastMsgSnap = await getDocs(query(collection(db,'dms',dmId,'messages'), orderBy('createdAt','desc')));
+            let preview = 'Henüz mesaj yok';
+            let hasUnread = false;
+            if (!lastMsgSnap.empty) {
+                const lastMsg = lastMsgSnap.docs[0].data();
+                preview = lastMsg.type === 'text' ? (lastMsg.text||'').substring(0,30) : lastMsg.type === 'image' ? '📷 Fotoğraf' : '📎 Dosya';
+                // Okunmamış mesaj kontrolü
+                if (lastMsg.uid !== currentUser.uid && !lastMsg.readBy?.includes(currentUser.uid)) hasUnread = true;
+            }
+            const div = createDMItem(fUid, fData.displayName||'Kullanıcı', fData.photoURL, fData.status, preview, hasUnread);
+            list.appendChild(div);
+        } catch(e) {}
+    }
+}
+
+function getDMId(uid1, uid2) {
+    return [uid1, uid2].sort().join('_');
+}
+
+function createDMItem(uid, name, photoURL, status, preview, hasUnread) {
+    const div = document.createElement('div');
+    div.className = 'dm-item' + (currentDMPartner?.uid === uid ? ' active' : '');
+    const av = document.createElement('div'); av.className = 'dm-item-av';
+    setAvatarEl(av, photoURL, name);
+    const info = document.createElement('div'); info.className = 'dm-item-info';
+    info.innerHTML = `<div class="dm-item-name">${name}</div><div class="dm-item-preview">${preview}</div>`;
+    div.appendChild(av); div.appendChild(info);
+    if (hasUnread) { const dot = document.createElement('div'); dot.className = 'dm-unread-dot'; div.appendChild(dot); }
+    div.onclick = () => openDMChat(uid, name, photoURL, status);
+    return div;
+}
+
+async function openDMChat(uid, name, photoURL, status) {
+    currentDMPartner = { uid, name, photoURL };
+    // Header güncelle
+    setAvatarEl(document.getElementById('dm-partner-av'), photoURL, name);
+    document.getElementById('dm-partner-name').textContent = name;
+    document.getElementById('dm-partner-status').style.background = getStatusColor(status);
+    // Aktif DM item
+    document.querySelectorAll('.dm-item').forEach(el => el.classList.remove('active'));
+    // Mesajları dinle
+    if (dmMsgUnsub) dmMsgUnsub();
+    if (dmTypingUnsub) dmTypingUnsub();
+    const dmId = getDMId(currentUser.uid, uid);
+    // Yazıyor dinleyici
+    dmTypingUnsub = onSnapshot(doc(db,'dms',dmId,'meta','typing'), snap => {
+        const data = snap.data() || {}; const now = Date.now();
+        const typers = Object.entries(data).filter(([tUid,info]) => tUid !== currentUser.uid && info.ts && (now-info.ts) < 4000).map(([,info]) => info.name);
+        const ti = document.getElementById('dm-typing-indicator'), tt = document.getElementById('dm-typing-text');
+        if (typers.length > 0) { tt.textContent = typers[0] + ' yazıyor'; ti.style.display = 'flex'; }
+        else ti.style.display = 'none';
+    });
+    // Mesajlar
+    const q = query(collection(db,'dms',dmId,'messages'), orderBy('createdAt','asc'));
+    dmMsgUnsub = onSnapshot(q, async snap => {
+        const container = document.getElementById('dm-messages');
+        const wasBottom = container.scrollHeight - container.scrollTop <= container.clientHeight + 60;
+        container.innerHTML = '';
+        const msgs = [];
+        snap.forEach(d => msgs.push({id:d.id,...d.data()}));
+        for (const data of msgs) {
+            const div = renderDMMessage(data, dmId);
+            container.appendChild(div);
+            // Okundu işaretle
+            if (data.uid !== currentUser.uid && !data.readBy?.includes(currentUser.uid)) {
+                updateDoc(doc(db,'dms',dmId,'messages',data.id), {
+                    readBy: arrayUnion(currentUser.uid)
+                }).catch(()=>{});
+            }
+        }
+        if (wasBottom) container.scrollTop = container.scrollHeight;
+    });
+    loadDMList();
+}
+
+function renderDMMessage(data, dmId) {
+    const time = data.createdAt?.toDate().toLocaleTimeString('tr-TR',{hour:'2-digit',minute:'2-digit'}) || '';
+    const div = document.createElement('div'); div.className = 'msg'; div.dataset.msgId = data.id;
+    div.appendChild(makeAvatar(data.photoURL||null, data.name, 'msg-av'));
+    const body = document.createElement('div'); body.className = 'msg-body';
+    const header = document.createElement('div');
+    header.innerHTML = `<span class="msg-name">${data.name||'Kullanıcı'}</span><span class="msg-time">${time}</span>`;
+    body.appendChild(header);
+    if (data.type === 'image') {
+        const img = document.createElement('img'); img.src = data.fileData; img.className = 'msg-image'; img.onclick = () => openImage(data.fileData); body.appendChild(img);
+    } else if (data.type === 'file') {
+        const a = document.createElement('a'); a.href = data.fileData; a.download = data.fileName; a.className = 'msg-file'; a.innerHTML = `📎 ${data.fileName} <span>(${data.fileSize})</span>`; body.appendChild(a);
+    } else {
+        const t = document.createElement('span'); t.className = 'msg-text'; t.textContent = data.text; body.appendChild(t);
+    }
+    // Okundu bilgisi (sadece kendi mesajlarında)
+    if (data.uid === currentUser.uid) {
+        const readInfo = document.createElement('div');
+        const readers = (data.readBy || []).filter(id => id !== currentUser.uid);
+        readInfo.className = 'msg-read-info' + (readers.length > 0 ? ' seen' : '');
+        readInfo.textContent = readers.length > 0 ? '👁️ Görüldü' : '✓ Gönderildi';
+        body.appendChild(readInfo);
+    }
+    div.appendChild(body);
+    return div;
+}
+
+window.sendDMMessage = async () => {
+    const input = document.getElementById('dm-input');
+    const text = input.value.trim();
+    if (!text || !currentDMPartner) return;
+    input.value = '';
+    clearTimeout(dmTypingTimeout);
+    const dmId = getDMId(currentUser.uid, currentDMPartner.uid);
+    try { await setDoc(doc(db,'dms',dmId,'meta','typing'), {[currentUser.uid]:{name:'',ts:0}}, {merge:true}); } catch(e) {}
+    await addDoc(collection(db,'dms',dmId,'messages'), {
+        text, name: currentUser.displayName||currentUser.email,
+        photoURL: window._userPhotoURL||null, uid: currentUser.uid,
+        type: 'text', readBy: [currentUser.uid], createdAt: serverTimestamp()
+    });
+    // Karşı tarafa bildirim için DM listesini güncelle
+    await setDoc(doc(db,'dms',dmId), {
+        participants: [currentUser.uid, currentDMPartner.uid],
+        lastMessage: text, lastMessageTime: serverTimestamp(),
+        lastSender: currentUser.uid
+    }, {merge:true});
+};
+
+window.handleDMTyping = async () => {
+    if (!currentDMPartner) return;
+    const dmId = getDMId(currentUser.uid, currentDMPartner.uid);
+    await setDoc(doc(db,'dms',dmId,'meta','typing'), {[currentUser.uid]:{name:currentUser.displayName||currentUser.email, ts:Date.now()}}, {merge:true});
+    clearTimeout(dmTypingTimeout);
+    dmTypingTimeout = setTimeout(async () => {
+        await setDoc(doc(db,'dms',dmId,'meta','typing'), {[currentUser.uid]:{name:'',ts:0}}, {merge:true});
+    }, 3000);
+};
+
+window.openDMFilePicker = () => document.getElementById('dm-file-input').click();
+window.onDMFileSelected = async (input) => {
+    const file = input.files[0]; if (!file || !currentDMPartner) return;
+    if (file.size > 5*1024*1024) { alert('Dosya 5MB\'dan küçük olmalı.'); return; }
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+        const base64 = e.target.result;
+        const isImage = file.type.startsWith('image/');
+        const dmId = getDMId(currentUser.uid, currentDMPartner.uid);
+        await addDoc(collection(db,'dms',dmId,'messages'), {
+            name: currentUser.displayName||currentUser.email, photoURL: window._userPhotoURL||null,
+            uid: currentUser.uid, type: isImage?'image':'file',
+            fileData: base64, fileName: file.name, fileSize: (file.size/1024).toFixed(1)+' KB',
+            text: '', readBy: [currentUser.uid], createdAt: serverTimestamp()
+        });
+    };
+    reader.readAsDataURL(file); input.value = '';
+};
+
+// Profil kartından DM aç
+window.openDMFromProfile = async (uid, name, photoURL, status) => {
+    hideModal('modal-profile');
+    document.getElementById('dm-screen').style.display = 'flex';
+    document.getElementById('main-layout').style.display = 'none';
+    await loadDMList();
+    openDMChat(uid, name, photoURL, status);
+};
+
+// DM badge güncelle
+async function updateDMBadge() {
+    if (!currentUser) return;
+    try {
+        const uDoc = await getDoc(doc(db,'users',currentUser.uid));
+        const friends = uDoc.data()?.friends || [];
+        let unreadCount = 0;
+        for (const fUid of friends) {
+            const dmId = getDMId(currentUser.uid, fUid);
+            try {
+                const snap = await getDocs(query(collection(db,'dms',dmId,'messages'), orderBy('createdAt','desc')));
+                snap.forEach(d => {
+                    const data = d.data();
+                    if (data.uid !== currentUser.uid && !data.readBy?.includes(currentUser.uid)) unreadCount++;
+                });
+            } catch(e) {}
+        }
+        const badge = document.getElementById('dm-badge');
+        if (badge) { badge.textContent = unreadCount; badge.style.display = unreadCount > 0 ? 'inline' : 'none'; }
+    } catch(e) {}
+}
+setInterval(updateDMBadge, 20000);
+
+// ===================== KANAL MESAJLARI OKUNDU =====================
+// Kanal mesajlarında da okundu bilgisi ekle
+const _origSendMessage = window.sendMessage;
+// Mevcut sendMessage okundu desteğiyle güncellendi (readBy alanı eklendi)
+// openChannel içinde mesaj gönderiminde readBy ekliyoruz
+const origSendMsg = window.sendMessage;
+window.sendMessage = async () => {
+    const input = document.getElementById('msg-input');
+    const text = input.value.trim();
+    if (!text||!currentServerId||!currentChannelId||!currentUser) return;
+    input.value = '';
+    clearTimeout(typingTimeout);
+    try { await setDoc(doc(db,'servers',currentServerId,'channels',currentChannelId,'meta','typing'), {[currentUser.uid]:{name:'',ts:0}}, {merge:true}); } catch(e) {}
+    const msgData = {
+        text, name: currentUser.displayName||currentUser.email,
+        photoURL: window._userPhotoURL||null, uid: currentUser.uid,
+        type: 'text', readBy: [currentUser.uid], createdAt: serverTimestamp()
+    };
+    if (replyTo) { msgData.replyTo = replyTo; cancelReply(); }
+    await addDoc(collection(db,'servers',currentServerId,'channels',currentChannelId,'messages'), msgData);
 };
