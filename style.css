@@ -330,6 +330,20 @@ body { background: var(--dark); color: var(--text); font-family: 'Segoe UI', san
 .reject-btn { flex: 1; padding: 14px; background: var(--red); color: white; border: none; border-radius: 10px; font-size: 15px; font-weight: 700; cursor: pointer; transition: all 0.2s; }
 .reject-btn:hover { background: #c0392b; }
 
+/* YÜKLE BUTONU */
+#install-bar {
+    position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+    z-index: 999; display: flex; justify-content: center;
+}
+#install-btn {
+    background: linear-gradient(135deg, #ff8c00, #f0b132);
+    color: white; border: none; padding: 14px 28px;
+    border-radius: 50px; font-size: 16px; font-weight: 800;
+    cursor: pointer; box-shadow: 0 4px 20px rgba(255,140,0,0.4);
+    transition: all 0.2s;
+}
+#install-btn:hover { transform: scale(1.05); box-shadow: 0 6px 24px rgba(255,140,0,0.5); }
+
 /* MOBİL */
 @media (max-width: 700px) {
     #members-panel { display: none; }
