@@ -385,11 +385,16 @@ function openChannel(serverId, channelId, channelName) {
             const div = document.createElement('div'); div.className = 'msg';
             div.appendChild(makeAvatar(data.photoURL || null, data.name, 'msg-av'));
             const body = document.createElement('div'); body.className = 'msg-body';
-            let content = '';
-            if (data.type === 'image') content = `<img src="${data.fileData}" class="msg-image" onclick="openImage('${data.fileData}')">`;
-            else if (data.type === 'file') content = `<a href="${data.fileData}" download="${data.fileName}" class="msg-file">📎 ${data.fileName} <span>(${data.fileSize})</span></a>`;
-            else content = `<span class="msg-text">${data.text}</span>`;
-            body.innerHTML = `<div><span class="msg-name">${data.name || 'Kullanıcı'}</span><span class="msg-time">${time}</span></div>${content}`;
+            body.innerHTML = `<div><span class="msg-name">${data.name || 'Kullanıcı'}</span><span class="msg-time">${time}</span></div>`;
+            if (data.type === 'image') {
+                body.innerHTML += `<img src="${data.fileData}" class="msg-image" onclick="openImage('${data.fileData}')">`;
+            } else if (data.type === 'file') {
+                body.innerHTML += `<a href="${data.fileData}" download="${data.fileName}" class="msg-file">📎 ${data.fileName} <span>(${data.fileSize})</span></a>`;
+            } else if (data.type === 'audio') {
+                body.appendChild(window._renderAudioMessage(data.fileData, data.duration));
+            } else {
+                body.innerHTML += `<span class="msg-text">${data.text}</span>`;
+            }
             div.appendChild(body);
             if (data.uid === currentUser?.uid) {
                 const del = document.createElement('button'); del.className = 'msg-delete'; del.textContent = '🗑';
@@ -656,3 +661,155 @@ window.toggleScreen = async () => {
     if (screenStream) { screenStream.getTracks().forEach(t => t.stop()); screenStream = null; btn.textContent = '🖥️'; btn.classList.remove('active'); if (pc && localStream) { const camTrack = localStream.getVideoTracks()[0]; if (camTrack) { const sender = pc.getSenders().find(s => s.track?.kind === 'video'); if (sender) sender.replaceTrack(camTrack); } } document.getElementById('local-video').srcObject = localStream; }
     else { try { screenStream = await navigator.mediaDevices.getDisplayMedia({ video: { frameRate: 30 }, audio: true }); btn.textContent = '⏹️'; btn.classList.add('active'); const screenTrack = screenStream.getVideoTracks()[0]; if (pc) { const sender = pc.getSenders().find(s => s.track?.kind === 'video'); if (sender) sender.replaceTrack(screenTrack); } document.getElementById('local-video').srcObject = screenStream; screenTrack.onended = () => window.toggleScreen(); } catch(e) { alert('Ekran paylaşımı başlatılamadı: ' + e.message); } }
 };
+
+// ===================== SES KAYDI =====================
+let mediaRecorder = null;
+let audioChunks = [];
+let voiceTimerInterval = null;
+let voiceSeconds = 0;
+let isCancelled = false;
+
+window.startVoiceRecord = async (e) => {
+    if (e) e.preventDefault();
+    if (mediaRecorder && mediaRecorder.state === 'recording') return;
+    try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        audioChunks = [];
+        isCancelled = false;
+        mediaRecorder = new MediaRecorder(stream);
+        mediaRecorder.ondataavailable = e => { if (e.data.size > 0) audioChunks.push(e.data); };
+        mediaRecorder.onstop = async () => {
+            stream.getTracks().forEach(t => t.stop());
+            clearInterval(voiceTimerInterval);
+            document.getElementById('voice-recording-indicator').style.display = 'none';
+            document.getElementById('voice-btn').classList.remove('recording');
+            if (isCancelled || audioChunks.length === 0) return;
+            const blob = new Blob(audioChunks, { type: 'audio/webm' });
+            if (blob.size > 5 * 1024 * 1024) { alert('Ses kaydı çok uzun, 5MB altında olmalı.'); return; }
+            const reader = new FileReader();
+            reader.onload = async (ev) => {
+                const base64 = ev.target.result;
+                const duration = formatDuration(voiceSeconds);
+                await sendVoiceMessage(base64, duration);
+            };
+            reader.readAsDataURL(blob);
+        };
+        mediaRecorder.start();
+        // UI
+        voiceSeconds = 0;
+        document.getElementById('voice-timer').textContent = '0:00';
+        document.getElementById('voice-recording-indicator').style.display = 'flex';
+        document.getElementById('voice-btn').classList.add('recording');
+        voiceTimerInterval = setInterval(() => {
+            voiceSeconds++;
+            document.getElementById('voice-timer').textContent = formatDuration(voiceSeconds);
+            if (voiceSeconds >= 120) window.stopVoiceRecord(); // max 2 dakika
+        }, 1000);
+    } catch(e) {
+        alert('Mikrofon erişimi reddedildi.');
+    }
+};
+
+window.stopVoiceRecord = (e) => {
+    if (e) e.preventDefault();
+    if (mediaRecorder && mediaRecorder.state === 'recording') {
+        if (voiceSeconds < 1) {
+            // 1 saniyeden kısa, iptal et
+            isCancelled = true;
+        }
+        mediaRecorder.stop();
+    }
+};
+
+window.cancelVoiceRecord = () => {
+    isCancelled = true;
+    if (mediaRecorder && mediaRecorder.state === 'recording') {
+        mediaRecorder.stop();
+    }
+    clearInterval(voiceTimerInterval);
+    document.getElementById('voice-recording-indicator').style.display = 'none';
+    document.getElementById('voice-btn').classList.remove('recording');
+};
+
+async function sendVoiceMessage(base64, duration) {
+    if (!currentServerId || !currentChannelId || !currentUser) return;
+    await addDoc(collection(db, 'servers', currentServerId, 'channels', currentChannelId, 'messages'), {
+        name: currentUser.displayName || currentUser.email,
+        photoURL: window._userPhotoURL || null,
+        uid: currentUser.uid,
+        type: 'audio',
+        fileData: base64,
+        duration: duration,
+        text: '',
+        createdAt: serverTimestamp()
+    });
+}
+
+function formatDuration(seconds) {
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return `${m}:${s.toString().padStart(2, '0')}`;
+}
+
+// Ses mesajı render fonksiyonunu genişlet
+// openChannel içindeki mesaj render kısmına audio tipi eklemek için
+// mevcut onSnapshot'u override ediyoruz
+const _origOpenChannel = openChannel;
+window._renderAudioMessage = (fileData, duration) => {
+    const wrap = document.createElement('div');
+    wrap.className = 'msg-audio';
+
+    const audio = new Audio(fileData);
+    let isPlaying = false;
+
+    const playBtn = document.createElement('button');
+    playBtn.className = 'audio-play-btn';
+    playBtn.textContent = '▶';
+
+    // Dalga çizgisi (sahte ama güzel görünümlü)
+    const canvas = document.createElement('canvas');
+    canvas.className = 'audio-waveform';
+    canvas.width = 120; canvas.height = 28;
+    drawWaveform(canvas, fileData);
+
+    const dur = document.createElement('span');
+    dur.className = 'audio-duration';
+    dur.textContent = duration || '0:00';
+
+    let progInterval = null;
+    playBtn.onclick = () => {
+        if (isPlaying) {
+            audio.pause(); playBtn.textContent = '▶'; isPlaying = false;
+            clearInterval(progInterval);
+        } else {
+            audio.play(); playBtn.textContent = '⏸'; isPlaying = true;
+            progInterval = setInterval(() => {
+                if (!audio.ended) {
+                    const remaining = Math.ceil(audio.duration - audio.currentTime);
+                    dur.textContent = formatDuration(isNaN(remaining) ? 0 : remaining);
+                }
+            }, 500);
+        }
+    };
+    audio.onended = () => { playBtn.textContent = '▶'; isPlaying = false; clearInterval(progInterval); dur.textContent = duration || '0:00'; };
+
+    wrap.appendChild(playBtn); wrap.appendChild(canvas); wrap.appendChild(dur);
+    return wrap;
+};
+
+function drawWaveform(canvas, audioData) {
+    // Görsel dalga çiz (statik ama güzel)
+    const ctx = canvas.getContext('2d');
+    const bars = 24;
+    const barW = 3;
+    const gap = 2;
+    ctx.fillStyle = 'rgba(88,101,242,0.7)';
+    for (let i = 0; i < bars; i++) {
+        const h = 4 + Math.random() * 20;
+        const x = i * (barW + gap);
+        const y = (28 - h) / 2;
+        ctx.beginPath();
+        ctx.roundRect(x, y, barW, h, 2);
+        ctx.fill();
+    }
+}
