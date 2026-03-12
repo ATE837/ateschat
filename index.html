@@ -140,7 +140,10 @@
     </div>
     <div id="chat-area">
         <div id="chat-header">
-            <span id="channel-title"># genel</span>
+            <div style="display:flex;align-items:center;gap:12px;flex:1;overflow:hidden">
+                <span id="channel-title"># genel</span>
+                <div id="channel-online-members" style="display:flex;align-items:center;gap:6px;flex-shrink:0"></div>
+            </div>
             <div id="header-buttons">
                 <button class="call-btn voice" onclick="startCall('voice')">📞</button>
                 <button class="call-btn video" onclick="startCall('video')">📹</button>
