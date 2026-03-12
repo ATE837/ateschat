@@ -249,12 +249,12 @@ function openChannel(serverId,channelId,channelName){
     const btn=$('sidebar-toggle-btn');if(btn)btn.classList.remove('active');
     if(msgUnsub)msgUnsub();
     if(typingUnsub)typingUnsub();
-    typingUnsub=db.collection('servers').doc(serverId).collection('channels').doc(channelId).collection('meta').doc('typing').onSnapshot(snap=>{
+    try{typingUnsub=db.collection('servers').doc(serverId).collection('channels').doc(channelId).collection('meta').doc('typing').onSnapshot(snap=>{
         const data=snap.data()||{},now=Date.now();
         const typers=Object.entries(data).filter(([uid,i])=>uid!==currentUser?.uid&&i.ts&&(now-i.ts)<4000).map(([,i])=>i.name);
         const ti=$('typing-indicator'),tt=$('typing-text');
         if(typers.length){tt.textContent=typers.join(', ')+' yazıyor';ti.style.display='flex';}else ti.style.display='none';
-    });
+    },e=>{});}catch(e){}
     let firstLoad=true;
     const q=db.collection('servers').doc(serverId).collection('channels').doc(channelId).collection('messages').orderBy('createdAt','asc').limit(100);
     msgUnsub=q.onSnapshot(snap=>{
@@ -303,7 +303,7 @@ function openChannel(serverId,channelId,channelName){
             }
         });
         if(wasBottom)container.scrollTop=container.scrollHeight;
-    });
+    },err=>{alert('Chat yüklenemedi: '+err.message);});
 }function buildMessageEl(data){
     const time=data.createdAt?.toDate().toLocaleTimeString('tr-TR',{hour:'2-digit',minute:'2-digit'})||'';
     const div=document.createElement('div');div.className='msg';div.dataset.msgId=data.id;
