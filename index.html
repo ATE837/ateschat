@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>Ateş Chat</title>
+    <title>NovaChat</title>
     <link rel="stylesheet" href="style.css">
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#111214">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="Ateş Chat">
+    <meta name="apple-mobile-web-app-title" content="NovaChat">
     <link rel="apple-touch-icon" href="icon-192.png">
 </head>
 <body>
@@ -17,12 +17,13 @@
 <!-- GİRİŞ -->
 <div id="auth-container">
     <div class="auth-card">
-        <div class="auth-logo">🔥</div>
-        <h1 class="auth-title">Ateş Chat</h1>
-        <p class="auth-subtitle">Arkadaşlarınla buluşmanın en sıcak yolu.</p>
+        <div class="auth-logo">✨</div>
+        <h1 class="auth-title">NovaChat</h1>
+        <p class="auth-subtitle">Yıldızlar kadar parlak, anlık bağlantı.</p>
         <div class="auth-tabs">
             <button id="tab-login" class="tab-btn active" onclick="showTab('login')">Giriş Yap</button>
             <button id="tab-register" class="tab-btn" onclick="showTab('register')">Kayıt Ol</button>
+            <button id="tab-admin" class="tab-btn admin-tab" onclick="showTab('admin')">🛡️</button>
         </div>
         <div id="form-login">
             <input type="email" id="login-email" class="auth-input" placeholder="E-posta">
@@ -37,13 +38,19 @@
             <button class="auth-btn" onclick="doRegister()">Kayıt Ol</button>
             <p id="reg-error" class="auth-error"></p>
         </div>
+        <div id="form-admin" style="display:none">
+            <div class="admin-warning">🛡️ Admin Girişi</div>
+            <input type="password" id="admin-key-input" class="auth-input" placeholder="Admin anahtarı">
+            <button class="auth-btn admin-login-btn" onclick="doAdminLogin()">Admin Girişi</button>
+            <p id="admin-error" class="auth-error"></p>
+        </div>
     </div>
 </div>
 
 <!-- SUNUCU SEÇİM -->
 <div id="server-screen" style="display:none">
     <div class="auth-card">
-        <div class="auth-logo">🔥</div>
+        <div class="auth-logo">✨</div>
         <h2 class="auth-title">Hoş Geldin!</h2>
         <p class="auth-subtitle">Bir sunucuya katıl veya yeni oluştur.</p>
         <button class="auth-btn" style="margin-bottom:10px" onclick="showModal('modal-create')">+ Sunucu Oluştur</button>
@@ -51,14 +58,32 @@
     </div>
 </div>
 
+<!-- ADMİN PANELİ -->
+<div id="admin-panel" style="display:none">
+    <div class="admin-header">
+        <div class="admin-logo">🛡️ <span>NovaChat Admin</span></div>
+        <button class="admin-logout" onclick="adminLogout()">Çıkış</button>
+    </div>
+    <div class="admin-body">
+        <div class="admin-stats" id="admin-stats">
+            <div class="stat-card"><div class="stat-num" id="stat-users">-</div><div class="stat-label">Toplam Kullanıcı</div></div>
+            <div class="stat-card"><div class="stat-num" id="stat-servers">-</div><div class="stat-label">Toplam Sunucu</div></div>
+            <div class="stat-card"><div class="stat-num" id="stat-banned">-</div><div class="stat-label">Banlı Kullanıcı</div></div>
+        </div>
+        <div class="admin-section">
+            <div class="admin-section-title">👥 Kullanıcılar</div>
+            <input type="text" class="admin-search" id="admin-user-search" placeholder="Kullanıcı ara..." oninput="filterAdminUsers()">
+            <div id="admin-users-list"></div>
+        </div>
+    </div>
+</div>
+
 <!-- ANA LAYOUT -->
 <div id="main-layout" style="display:none">
-
     <div id="server-list">
         <div id="server-icons"></div>
         <button class="add-server-btn" onclick="showServerScreen()">+</button>
     </div>
-
     <div id="channel-list">
         <div id="channel-list-header">
             <span id="channel-server-name">Sunucu</span>
@@ -75,7 +100,6 @@
             <span class="settings-icon">⚙️</span>
         </div>
     </div>
-
     <div id="chat-area">
         <div id="chat-header">
             <span id="channel-title"># genel</span>
@@ -87,19 +111,18 @@
         </div>
         <div id="messages"></div>
         <div id="chat-input-wrap">
-            <button class="attach-btn" onclick="openFilePicker()" title="Dosya/Resim gönder">📎</button>
+            <button class="attach-btn" onclick="openFilePicker()" title="Dosya/Resim">📎</button>
             <input type="text" id="msg-input" placeholder="Mesaj gönder..." onkeydown="if(event.key==='Enter')sendMessage()">
             <button onclick="sendMessage()">➤</button>
         </div>
     </div>
-
     <div id="members-panel">
         <div class="members-title">Üyeler</div>
         <div id="members-list"></div>
     </div>
 </div>
 
-<!-- ARAMA EKRANI -->
+<!-- ARAMA -->
 <div id="call-screen" style="display:none">
     <div id="call-videos">
         <video id="remote-video" autoplay playsinline></video>
@@ -171,7 +194,7 @@
     </div>
 </div>
 
-<!-- MODAL: PROFİL KARTI -->
+<!-- MODAL: PROFİL -->
 <div id="modal-profile" class="modal" style="display:none">
     <div class="modal-box profile-box">
         <button class="settings-close" onclick="hideModal('modal-profile')" style="position:absolute;top:12px;right:12px;z-index:2">✕</button>
@@ -190,7 +213,7 @@
 <div id="modal-add-friend" class="modal" style="display:none">
     <div class="modal-box">
         <h3>👤 Arkadaş Ekle</h3>
-        <p style="color:var(--muted);font-size:13px;margin-bottom:14px">Kullanıcı adıyla arkadaş ekle</p>
+        <p style="color:var(--muted);font-size:13px;margin-bottom:14px">Kullanıcı adıyla ara</p>
         <input type="text" class="auth-input" id="friend-search-input" placeholder="Kullanıcı adı">
         <button class="auth-btn" onclick="sendFriendRequest()">İstek Gönder</button>
         <button class="modal-cancel" onclick="hideModal('modal-add-friend')">İptal</button>
@@ -221,8 +244,6 @@
             <span>⚙️ Ayarlar</span>
             <button class="settings-close" onclick="hideModal('modal-settings')">✕</button>
         </div>
-
-        <!-- PROFİL -->
         <div class="settings-section">
             <div class="s-label">PROFİL</div>
             <div class="settings-avatar-row" onclick="openAvatarPicker()">
@@ -236,47 +257,28 @@
             <button class="s-btn blue" onclick="saveDisplayName()">✅ Adı Kaydet</button>
             <p id="name-msg" class="s-msg"></p>
         </div>
-
-        <!-- ŞİFRE -->
         <div class="settings-section">
             <div class="s-label">ŞİFRE DEĞİŞTİR</div>
             <input type="password" class="auth-input" id="settings-newpass" placeholder="Yeni şifre (min. 6 karakter)">
             <button class="s-btn blue" onclick="changePassword()">✅ Şifreyi Güncelle</button>
             <p id="pass-msg" class="s-msg"></p>
         </div>
-
-        <!-- DURUM -->
         <div class="settings-section">
             <div class="s-label">DURUM</div>
             <div class="status-options">
-                <div class="status-option" data-status="online" onclick="setStatus('online')">
-                    <span class="status-dot-sm" style="background:#23a55a"></span> 🟢 Çevrimiçi
-                </div>
-                <div class="status-option" data-status="idle" onclick="setStatus('idle')">
-                    <span class="status-dot-sm" style="background:#faa61a"></span> 🌙 Boşta
-                </div>
-                <div class="status-option" data-status="dnd" onclick="setStatus('dnd')">
-                    <span class="status-dot-sm" style="background:#ed4245"></span> ⛔ Rahatsız Etme
-                </div>
-                <div class="status-option" data-status="offline" onclick="setStatus('offline')">
-                    <span class="status-dot-sm" style="background:#747f8d"></span> ⚫ Görünmez
-                </div>
+                <div class="status-option" data-status="online" onclick="setStatus('online')"><span class="status-dot-sm" style="background:#23a55a"></span> 🟢 Çevrimiçi</div>
+                <div class="status-option" data-status="idle" onclick="setStatus('idle')"><span class="status-dot-sm" style="background:#faa61a"></span> 🌙 Boşta</div>
+                <div class="status-option" data-status="dnd" onclick="setStatus('dnd')"><span class="status-dot-sm" style="background:#ed4245"></span> ⛔ Rahatsız Etme</div>
+                <div class="status-option" data-status="offline" onclick="setStatus('offline')"><span class="status-dot-sm" style="background:#747f8d"></span> ⚫ Görünmez</div>
             </div>
         </div>
-
-        <!-- BİLDİRİM -->
         <div class="settings-section">
             <div class="s-label">BİLDİRİMLER</div>
             <div class="s-row">
                 <span>Mesaj sesi</span>
-                <label class="toggle">
-                    <input type="checkbox" id="notif-sound" onchange="saveSetting(this.checked)" checked>
-                    <span class="toggle-slider"></span>
-                </label>
+                <label class="toggle"><input type="checkbox" id="notif-sound" onchange="saveSetting(this.checked)" checked><span class="toggle-slider"></span></label>
             </div>
         </div>
-
-        <!-- TEMA -->
         <div class="settings-section">
             <div class="s-label">TEMA</div>
             <div class="s-btns">
@@ -284,8 +286,6 @@
                 <button class="s-theme" id="theme-light" onclick="setTheme('light')">☀️ Açık</button>
             </div>
         </div>
-
-        <!-- DİL -->
         <div class="settings-section">
             <div class="s-label">DİL</div>
             <div class="s-btns">
@@ -293,20 +293,15 @@
                 <button class="s-theme" id="lang-en" onclick="setLang('en')">🇬🇧 English</button>
             </div>
         </div>
-
-        <!-- SUNUCU -->
         <div class="settings-section">
             <div class="s-label">SUNUCU</div>
             <button class="s-btn red" onclick="leaveServer()">🚪 Sunucudan Ayrıl</button>
         </div>
-
-        <!-- HESAP -->
         <div class="settings-section">
             <div class="s-label">HESAP</div>
             <button class="s-btn red" onclick="doLogout()">🚶 Çıkış Yap</button>
             <button class="s-btn red" style="margin-top:6px" onclick="deleteAccount()">🗑 Hesabı Sil</button>
         </div>
-
         <p id="settings-msg" class="s-msg" style="text-align:center;padding:8px 0"></p>
     </div>
 </div>
@@ -321,4 +316,4 @@ window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); deferr
 </script>
 <script type="module" src="app.js"></script>
 </body>
-                    </html>
+                                                                                 </html>
