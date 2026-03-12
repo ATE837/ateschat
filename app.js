@@ -220,10 +220,15 @@ async function loadChannels(serverId) {
             return;
         }
 
+        const label = document.createElement('div');
+        label.className = 'channels-label';
+        label.textContent = 'Kanallar';
+        channelList.appendChild(label);
+
         channels.forEach(ch => {
             const el = document.createElement('div');
             el.className = 'channel-item' + (ch.id === currentChannelId ? ' active' : '');
-            el.innerHTML = `<span>#</span>${ch.name}`;
+            el.innerHTML = `<span class="ch-hash">#</span>${ch.name}`;
             el.onclick = () => openChannel(serverId, ch.id, ch.name);
             channelList.appendChild(el);
         });
