@@ -317,6 +317,8 @@ async function openServer(server) {
         const members = snap.data()?.members || [];
         const roles = snap.data()?.roles || {};
         const list = document.getElementById('members-list'); list.innerHTML = '';
+        // Header'da online üye göster
+        updateChannelOnlineMembers(members);
         for (const m of members) {
             let photoURL=null, status='offline';
             try { const u=await getDoc(doc(db,'users',m.uid)); if(u.exists()){photoURL=u.data().photoURL; status=u.data().status||'offline';} } catch(e) {}
@@ -416,7 +418,14 @@ function renderMessages(msgs) {
     msgs.forEach(data => {
         const time = data.createdAt?.toDate().toLocaleTimeString('tr-TR',{hour:'2-digit',minute:'2-digit'})||'';
         const div = document.createElement('div'); div.className='msg'; div.dataset.msgId=data.id;
-        div.appendChild(makeAvatar(data.photoURL||null, data.name, 'msg-av'));
+        const msgAv = makeAvatar(data.photoURL||null, data.name, 'msg-av');
+        msgAv.style.cursor = 'pointer';
+        msgAv.onclick = async () => {
+            let status = 'offline';
+            try { const u = await getDoc(doc(db,'users',data.uid)); if(u.exists()) status = u.data().status||'offline'; } catch(e) {}
+            showProfile(data.uid, data.name, data.photoURL||null, status);
+        };
+        div.appendChild(msgAv);
         const body = document.createElement('div'); body.className='msg-body';
         // Reply referansı
         if (data.replyTo) {
@@ -430,7 +439,11 @@ function renderMessages(msgs) {
         }
         // Header
         const header = document.createElement('div');
-        header.innerHTML = `<span class="msg-name">${data.name||'Kullanıcı'}</span><span class="msg-time">${time}</span>${data.edited?'<span class="msg-edited-tag">(düzenlendi)</span>':''}`;
+        const nameSpan = document.createElement('span'); nameSpan.className = 'msg-name'; nameSpan.textContent = data.name||'Kullanıcı';
+        nameSpan.style.cursor = 'pointer';
+        nameSpan.onclick = () => loadAndShowProfile(data.uid, data.name, data.photoURL);
+        header.appendChild(nameSpan);
+        header.innerHTML += `<span class="msg-time">${time}</span>${data.edited?'<span class="msg-edited-tag">(düzenlendi)</span>':''}`;
         body.appendChild(header);
         // İçerik
         if (data.type==='image') {
@@ -737,6 +750,54 @@ window.deleteAccount = async () => {
 };
 
 // ===================== ARKADAŞ SİSTEMİ =====================
+async function updateChannelOnlineMembers(members) {
+    const container = document.getElementById('channel-online-members');
+    if (!container) return;
+    container.innerHTML = '';
+    // Online üyeleri çek (max 5 avatar göster)
+    let onlineCount = 0;
+    const avatarWrap = document.createElement('div');
+    avatarWrap.style.cssText = 'display:flex;align-items:center';
+    for (const m of members.slice(0, 20)) {
+        try {
+            const uDoc = await getDoc(doc(db,'users',m.uid));
+            const uData = uDoc.data() || {};
+            const status = uData.status || 'offline';
+            if (status !== 'offline') {
+                onlineCount++;
+                if (onlineCount <= 5) {
+                    const av = document.createElement('div');
+                    av.style.cssText = `width:24px;height:24px;border-radius:50%;background:linear-gradient(135deg,#5865f2,#9b59b6);color:white;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;margin-left:${onlineCount>1?'-6px':'0'};border:2px solid var(--dark);position:relative;z-index:${6-onlineCount};cursor:pointer;flex-shrink:0`;
+                    setAvatarEl(av, uData.photoURL||null, m.name);
+                    av.title = m.name;
+                    av.onclick = () => loadAndShowProfile(m.uid, m.name, uData.photoURL);
+                    avatarWrap.appendChild(av);
+                }
+            }
+        } catch(e) {}
+    }
+    if (onlineCount > 0) {
+        container.appendChild(avatarWrap);
+        const countEl = document.createElement('span');
+        countEl.style.cssText = 'color:var(--muted);font-size:12px;font-weight:600;margin-left:8px';
+        countEl.textContent = onlineCount + ' çevrimiçi';
+        container.appendChild(countEl);
+    }
+}
+
+async function loadAndShowProfile(uid, name, photoURL) {
+    let resolvedPhoto = photoURL || null;
+    let status = 'offline';
+    try {
+        const uDoc = await getDoc(doc(db, 'users', uid));
+        if (uDoc.exists()) {
+            resolvedPhoto = uDoc.data().photoURL || resolvedPhoto;
+            status = uDoc.data().status || 'offline';
+        }
+    } catch(e) {}
+    showProfile(uid, name, resolvedPhoto, status);
+}
+
 async function showProfile(uid, name, photoURL, status) {
     setAvatarEl(document.getElementById('profile-av'), photoURL, name);
     document.getElementById('profile-username').textContent = name;
@@ -773,10 +834,17 @@ window.sendFriendRequest = async () => {
     const searchName=document.getElementById('friend-search-input').value.trim(); const msg=document.getElementById('friend-msg');
     if(!searchName){msg.style.color='#ed4245';msg.textContent='Kullanıcı adı girin.';return;}
     msg.style.color='#949ba4';msg.textContent='Aranıyor...';
-    const snap=await getDocs(query(collection(db,'users'),where('displayName','==',searchName)));
-    if(snap.empty){msg.style.color='#ed4245';msg.textContent='Kullanıcı bulunamadı.';return;}
-    const td=snap.docs[0]; if(td.id===currentUser.uid){msg.style.color='#ed4245';msg.textContent='Kendine istek gönderemezsin.';return;}
-    await sendFriendRequestToUid(td.id,td.data().displayName); document.getElementById('friend-search-input').value='';
+    // Tüm kullanıcıları çek, istemci tarafında büyük/küçük harf duyarsız ara
+    const allSnap = await getDocs(collection(db,'users'));
+    let found = null;
+    allSnap.forEach(d => {
+        const dn = (d.data().displayName||'').toLowerCase();
+        if (dn === searchName.toLowerCase() && d.id !== currentUser.uid) found = d;
+    });
+    if(!found){msg.style.color='#ed4245';msg.textContent='Kullanıcı bulunamadı. Kullanıcı adını tam yaz.';return;}
+    if(found.id===currentUser.uid){msg.style.color='#ed4245';msg.textContent='Kendine istek gönderemezsin.';return;}
+    await sendFriendRequestToUid(found.id, found.data().displayName);
+    document.getElementById('friend-search-input').value='';
 };
 
 async function sendFriendRequestToUid(targetUid, targetName) {
