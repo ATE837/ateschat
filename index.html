@@ -28,14 +28,14 @@
         <div id="form-login">
             <input type="email" id="login-email" class="auth-input" placeholder="E-posta">
             <input type="password" id="login-password" class="auth-input" placeholder="Şifre">
-            <button class="auth-btn" id="login-btn">Giriş Yap</button>
+            <button class="auth-btn" id="login-btn" onclick="doLogin()">Giriş Yap</button>
             <p id="login-error" class="auth-error"></p>
         </div>
         <div id="form-register" style="display:none">
             <input type="text" id="reg-name" class="auth-input" placeholder="Kullanıcı Adı">
             <input type="email" id="reg-email" class="auth-input" placeholder="E-posta">
             <input type="password" id="reg-password" class="auth-input" placeholder="Şifre (min. 6 karakter)">
-            <button class="auth-btn" id="register-btn">Kayıt Ol</button>
+            <button class="auth-btn" id="register-btn" onclick="doRegister()">Kayıt Ol</button>
             <p id="reg-error" class="auth-error"></p>
         </div>
         <div id="form-admin" style="display:none">
@@ -106,9 +106,15 @@
             <span id="dm-typing-text"></span>
             <span class="typing-dots"><span></span><span></span><span></span></span>
         </div>
+        <div id="dm-voice-recording-indicator" style="display:none;align-items:center;gap:8px;padding:8px 12px;background:rgba(237,66,69,0.1);border-radius:8px;margin:4px 12px">
+            <span style="color:#ed4245;font-size:13px;font-weight:700">🔴 Kayıt</span>
+            <span id="dm-voice-timer" style="color:#ed4245;font-size:13px;font-weight:700">0:00</span>
+            <button onclick="cancelDMVoiceRecord()" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:18px;margin-left:auto">✕</button>
+        </div>
         <div id="dm-input-wrap">
             <button class="attach-btn" onclick="openDMFilePicker()" title="Dosya">📎</button>
             <input type="text" id="dm-input" placeholder="Mesaj gönder..." onkeydown="if(event.key==='Enter')sendDMMessage()" oninput="handleDMTyping()">
+            <button class="voice-btn" id="dm-voice-btn" title="Ses kaydı">🎙️</button>
             <button onclick="sendDMMessage()">➤</button>
         </div>
     </div>
@@ -417,6 +423,63 @@ let deferredPrompt;
 window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); deferredPrompt = e; });
 // Context menu kapat
 document.addEventListener('click', () => { const m = document.getElementById('msg-context-menu'); if(m) m.style.display='none'; });
+</script>
+<script>
+// Global fonksiyon köprüsü - onclick attribute'ları için
+function doLogin(){window._app&&window._app.doLogin();}
+function doRegister(){window._app&&window._app.doRegister();}
+function doAdminLogin(){window._app&&window._app.doAdminLogin();}
+function adminLogout(){window._app&&window._app.adminLogout();}
+function doLogout(){window._app&&window._app.doLogout();}
+function showTab(t){window._app&&window._app.showTab(t);}
+function showModal(id){window._app&&window._app.showModal(id);}
+function hideModal(id){window._app&&window._app.hideModal(id);}
+function sendMessage(){window._app&&window._app.sendMessage();}
+function sendDMMessage(){window._app&&window._app.sendDMMessage();}
+function handleTyping(){window._app&&window._app.handleTyping();}
+function handleDMTyping(){window._app&&window._app.handleDMTyping();}
+function createServer(){window._app&&window._app.createServer();}
+function joinServer(){window._app&&window._app.joinServer();}
+function addChannel(){window._app&&window._app.addChannel();}
+function showInvite(){window._app&&window._app.showInvite();}
+function copyInvite(){window._app&&window._app.copyInvite();}
+function openFilePicker(){window._app&&window._app.openFilePicker();}
+function openDMFilePicker(){window._app&&window._app.openDMFilePicker();}
+function openAvatarPicker(){window._app&&window._app.openAvatarPicker();}
+function openDMList(){window._app&&window._app.openDMList();}
+function closeDM(){window._app&&window._app.closeDM();}
+function showServerScreen(){window._app&&window._app.showServerScreen();}
+function showDiscover(){window._app&&window._app.showDiscover();}
+function toggleSidebar(){window._app&&window._app.toggleSidebar();}
+function cancelReply(){window._app&&window._app.cancelReply();}
+function cancelVoiceRecord(){window._app&&window._app.cancelVoiceRecord();}
+function cancelDMVoiceRecord(){window._app&&window._app.cancelDMVoiceRecord();}
+function contextReply(){window._app&&window._app.contextReply();}
+function contextEdit(){window._app&&window._app.contextEdit();}
+function contextDelete(){window._app&&window._app.contextDelete();}
+function startCall(t){window._app&&window._app.startCall(t);}
+function startDMCall(t){window._app&&window._app.startDMCall(t);}
+function endCall(){window._app&&window._app.endCall();}
+function acceptCall(){window._app&&window._app.acceptCall();}
+function rejectCall(){window._app&&window._app.rejectCall();}
+function toggleMute(){window._app&&window._app.toggleMute();}
+function toggleCam(){window._app&&window._app.toggleCam();}
+function toggleScreen(){window._app&&window._app.toggleScreen();}
+function saveDisplayName(){window._app&&window._app.saveDisplayName();}
+function changePassword(){window._app&&window._app.changePassword();}
+function sendFriendRequest(){window._app&&window._app.sendFriendRequest();}
+function showFriendTab(t){window._app&&window._app.showFriendTab(t);}
+function setStatus(s){window._app&&window._app.setStatus(s);}
+function setTheme(t){window._app&&window._app.setTheme(t);}
+function setLang(l){window._app&&window._app.setLang(l);}
+function leaveServer(){window._app&&window._app.leaveServer();}
+function deleteAccount(){window._app&&window._app.deleteAccount();}
+function setMemberRole(r){window._app&&window._app.setMemberRole(r);}
+function saveProfileFrame(){window._app&&window._app.saveProfileFrame();}
+function filterAdminUsers(){window._app&&window._app.filterAdminUsers();}
+function filterDiscoverServers(){window._app&&window._app.filterDiscoverServers();}
+function adminBan(u,n){window._app&&window._app.adminBan(u,n);}
+function adminUnban(u,n){window._app&&window._app.adminUnban(u,n);}
 </script>
 <script type="module" src="app.js"></script>
 </body>
