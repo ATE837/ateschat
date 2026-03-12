@@ -65,7 +65,7 @@
         <button class="admin-logout" onclick="adminLogout()">Çıkış</button>
     </div>
     <div class="admin-body">
-        <div class="admin-stats" id="admin-stats">
+        <div class="admin-stats">
             <div class="stat-card"><div class="stat-num" id="stat-users">-</div><div class="stat-label">Toplam Kullanıcı</div></div>
             <div class="stat-card"><div class="stat-num" id="stat-servers">-</div><div class="stat-label">Toplam Sunucu</div></div>
             <div class="stat-card"><div class="stat-num" id="stat-banned">-</div><div class="stat-label">Banlı Kullanıcı</div></div>
@@ -109,11 +109,31 @@
                 <button class="invite-btn" onclick="showInvite()">🔗 Davet</button>
             </div>
         </div>
+        <!-- MESAJ ARAMA -->
+        <div id="search-bar" style="display:none">
+            <input type="text" id="search-input" placeholder="Mesajlarda ara..." oninput="searchMessages()" class="auth-input" style="margin:0;border-radius:0;border-left:none;border-right:none;border-top:none">
+        </div>
         <div id="messages"></div>
+        <!-- YAZIYOR GÖSTERGESİ -->
+        <div id="typing-indicator" style="display:none">
+            <span id="typing-text"></span>
+            <span class="typing-dots"><span></span><span></span><span></span></span>
+        </div>
+        <!-- REPLY ÖNİZLEME -->
+        <div id="reply-preview" style="display:none">
+            <div class="reply-preview-box">
+                <span class="reply-icon">↩️</span>
+                <div class="reply-preview-content">
+                    <span class="reply-preview-name" id="reply-preview-name"></span>
+                    <span class="reply-preview-text" id="reply-preview-text"></span>
+                </div>
+                <button onclick="cancelReply()">✕</button>
+            </div>
+        </div>
         <div id="chat-input-wrap">
             <button class="attach-btn" onclick="openFilePicker()" title="Dosya/Resim">📎</button>
-            <input type="text" id="msg-input" placeholder="Mesaj gönder..." onkeydown="if(event.key==='Enter')sendMessage()">
-            <button class="voice-msg-btn" id="voice-btn" onmousedown="startVoiceRecord()" onmouseup="stopVoiceRecord()" ontouchstart="startVoiceRecord(event)" ontouchend="stopVoiceRecord()" title="Ses kaydı için bas ve tut">🎙️</button>
+            <input type="text" id="msg-input" placeholder="Mesaj gönder..." onkeydown="handleMsgKey(event)" oninput="handleTyping()">
+            <button class="voice-msg-btn" id="voice-btn" onmousedown="startVoiceRecord()" onmouseup="stopVoiceRecord()" ontouchstart="startVoiceRecord(event)" ontouchend="stopVoiceRecord()" title="Bas ve tut">🎙️</button>
             <button onclick="sendMessage()">➤</button>
         </div>
     </div>
@@ -123,7 +143,7 @@
     </div>
 </div>
 
-<!-- ARAMA -->
+<!-- ARAMA EKRANI -->
 <div id="call-screen" style="display:none">
     <div id="call-videos">
         <video id="remote-video" autoplay playsinline></video>
@@ -151,7 +171,16 @@
     </div>
 </div>
 
-<!-- MODAL: SUNUCU OLUŞTUR -->
+<!-- MESAJ CONTEXT MENU -->
+<div id="msg-context-menu" style="display:none">
+    <div class="context-menu">
+        <button onclick="contextReply()">💬 Yanıtla</button>
+        <button id="ctx-edit-btn" onclick="contextEdit()" style="display:none">✏️ Düzenle</button>
+        <button id="ctx-delete-btn" onclick="contextDelete()" style="display:none">🗑️ Sil</button>
+    </div>
+</div>
+
+<!-- MODALLER -->
 <div id="modal-create" class="modal" style="display:none">
     <div class="modal-box">
         <h3>Sunucu Oluştur</h3>
@@ -161,8 +190,6 @@
         <p id="create-error" class="auth-error"></p>
     </div>
 </div>
-
-<!-- MODAL: SUNUCUYA KATIL -->
 <div id="modal-join" class="modal" style="display:none">
     <div class="modal-box">
         <h3>Sunucuya Katıl</h3>
@@ -172,19 +199,15 @@
         <p id="join-error" class="auth-error"></p>
     </div>
 </div>
-
-<!-- MODAL: KANAL EKLE -->
 <div id="modal-add-channel" class="modal" style="display:none">
     <div class="modal-box">
         <h3>Kanal Ekle</h3>
-        <input type="text" id="new-channel-name" class="auth-input" placeholder="Kanal adı (örn: oyun)">
+        <input type="text" id="new-channel-name" class="auth-input" placeholder="Kanal adı">
         <button class="auth-btn" onclick="addChannel()">Oluştur</button>
         <button class="modal-cancel" onclick="hideModal('modal-add-channel')">İptal</button>
         <p id="channel-error" class="auth-error"></p>
     </div>
 </div>
-
-<!-- MODAL: DAVET -->
 <div id="modal-invite" class="modal" style="display:none">
     <div class="modal-box">
         <h3>Davet Kodu</h3>
@@ -194,8 +217,6 @@
         <button class="modal-cancel" onclick="hideModal('modal-invite')">Kapat</button>
     </div>
 </div>
-
-<!-- MODAL: PROFİL -->
 <div id="modal-profile" class="modal" style="display:none">
     <div class="modal-box profile-box">
         <button class="settings-close" onclick="hideModal('modal-profile')" style="position:absolute;top:12px;right:12px;z-index:2">✕</button>
@@ -205,24 +226,20 @@
             <div class="profile-name" id="profile-username">Kullanıcı</div>
             <div class="profile-tag" id="profile-tag">#0000</div>
             <div class="profile-status-row" id="profile-status-text">🟢 Çevrimiçi</div>
+            <div id="profile-role-badge"></div>
             <div id="profile-actions"></div>
         </div>
     </div>
 </div>
-
-<!-- MODAL: ARKADAŞ EKLE -->
 <div id="modal-add-friend" class="modal" style="display:none">
     <div class="modal-box">
         <h3>👤 Arkadaş Ekle</h3>
-        <p style="color:var(--muted);font-size:13px;margin-bottom:14px">Kullanıcı adıyla ara</p>
         <input type="text" class="auth-input" id="friend-search-input" placeholder="Kullanıcı adı">
         <button class="auth-btn" onclick="sendFriendRequest()">İstek Gönder</button>
         <button class="modal-cancel" onclick="hideModal('modal-add-friend')">İptal</button>
-        <p id="friend-msg" class="auth-error" style="min-height:16px"></p>
+        <p id="friend-msg" class="auth-error"></p>
     </div>
 </div>
-
-<!-- MODAL: ARKADAŞLAR -->
 <div id="modal-friends" class="modal" style="display:none">
     <div class="modal-box friends-box">
         <div class="settings-header">
@@ -238,7 +255,30 @@
     </div>
 </div>
 
-<!-- MODAL: AYARLAR -->
+<!-- ROL YÖNETİMİ MODALI -->
+<div id="modal-roles" class="modal" style="display:none">
+    <div class="modal-box">
+        <h3>👑 Rol Yönetimi</h3>
+        <p style="color:var(--muted);font-size:13px;margin-bottom:14px" id="role-target-name"></p>
+        <div class="role-options">
+            <div class="role-option" onclick="setMemberRole('owner')">
+                <span class="role-badge role-owner">👑 Sahibi</span>
+                <span class="role-desc">Tüm yetkiler</span>
+            </div>
+            <div class="role-option" onclick="setMemberRole('mod')">
+                <span class="role-badge role-mod">🛡️ Moderatör</span>
+                <span class="role-desc">Mesaj silebilir, üye yönetebilir</span>
+            </div>
+            <div class="role-option" onclick="setMemberRole('member')">
+                <span class="role-badge role-member">👤 Üye</span>
+                <span class="role-desc">Standart kullanıcı</span>
+            </div>
+        </div>
+        <button class="modal-cancel" onclick="hideModal('modal-roles')">İptal</button>
+    </div>
+</div>
+
+<!-- AYARLAR -->
 <div id="modal-settings" class="modal" style="display:none">
     <div class="modal-box settings-box">
         <div class="settings-header">
@@ -277,7 +317,11 @@
             <div class="s-label">BİLDİRİMLER</div>
             <div class="s-row">
                 <span>Mesaj sesi</span>
-                <label class="toggle"><input type="checkbox" id="notif-sound" onchange="saveSetting(this.checked)" checked><span class="toggle-slider"></span></label>
+                <label class="toggle"><input type="checkbox" id="notif-sound" onchange="saveSetting('notifSound',this.checked)" checked><span class="toggle-slider"></span></label>
+            </div>
+            <div class="s-row" style="margin-top:8px">
+                <span>Tarayıcı bildirimleri</span>
+                <label class="toggle"><input type="checkbox" id="notif-browser" onchange="toggleBrowserNotif(this.checked)"><span class="toggle-slider"></span></label>
             </div>
         </div>
         <div class="settings-section">
@@ -324,6 +368,8 @@
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('/ateschat/sw.js');
 let deferredPrompt;
 window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); deferredPrompt = e; });
+// Context menu kapat
+document.addEventListener('click', () => { const m = document.getElementById('msg-context-menu'); if(m) m.style.display='none'; });
 </script>
 <script type="module" src="app.js"></script>
 </body>
