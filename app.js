@@ -206,6 +206,10 @@ async function openServer(server){
             list.appendChild(div);
         }
     });
+    // Layout: server-list göster, channel-list göster, chat-area beklet
+    $('server-list').style.display='flex';
+    $('channel-list').style.display='flex';
+    $('chat-area').style.display='none';
     loadChannels(server.id);
 }
 async function updateChannelOnlineMembers(members){
@@ -244,6 +248,7 @@ function openChannel(serverId,channelId,channelName){
     cancelReply();
     $('server-list').style.display='none';
     $('channel-list').style.display='none';
+    $('members-panel').style.display='none';
     $('chat-area').style.display='flex';
     $('chat-area').style.flex='1';
     sidebarVisible=false;
@@ -772,6 +777,7 @@ function toggleSidebar(){
     sidebarVisible=!sidebarVisible;
     $('server-list').style.display=sidebarVisible?'flex':'none';
     $('channel-list').style.display=sidebarVisible?'flex':'none';
+    $('chat-area').style.display='flex';
     const btn=$('sidebar-toggle-btn');if(btn)btn.classList.toggle('active',sidebarVisible);
 }
 
