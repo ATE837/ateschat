@@ -945,3 +945,8 @@ body {
     cursor: pointer; margin-top: 6px; width: 100%; font-family: inherit;
 }
 .notif-permission-btn:hover { background: var(--blue); color: white; }
+
+/* Ekran paylaşımı mobilde desteklenmiyor - gizle */
+@media (max-width: 768px) and (pointer: coarse) {
+    .ctrl-btn.screen { display: none !important; }
+}
