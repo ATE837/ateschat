@@ -1,0 +1,1181 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NovaChat - Temiz Sürüm</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        body {
+            background: #1a1a1a;
+            color: white;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Giriş Ekranı */
+        .login-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #1a1a1a 0%, #2f3136 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+        }
+
+        .login-container {
+            background: #2f3136;
+            padding: 40px;
+            border-radius: 16px;
+            width: 400px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+            border: 1px solid #404249;
+            animation: fadeIn 0.5s;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .login-tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 20px;
+            background: #202225;
+            padding: 4px;
+            border-radius: 8px;
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 10px;
+            background: transparent;
+            border: none;
+            color: #8e9297;
+            cursor: pointer;
+            border-radius: 6px;
+            transition: all 0.2s;
+        }
+
+        .tab-btn.active {
+            background: #5865f2;
+            color: white;
+        }
+
+        .login-form {
+            display: none;
+        }
+
+        .login-form.active {
+            display: block;
+        }
+
+        .login-form h2 {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #5865f2;
+        }
+
+        .login-form input {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 12px;
+            background: #202225;
+            border: 2px solid transparent;
+            border-radius: 8px;
+            color: white;
+            outline: none;
+            transition: all 0.2s;
+        }
+
+        .login-form input:focus {
+            border-color: #5865f2;
+        }
+
+        .login-submit {
+            width: 100%;
+            padding: 12px;
+            background: #5865f2;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.2s;
+        }
+
+        .login-submit:hover {
+            background: #4752c4;
+            transform: translateY(-2px);
+        }
+
+        .admin-btn {
+            background: #ed4245;
+        }
+
+        .error-message {
+            color: #ed4245;
+            margin-top: 10px;
+            text-align: center;
+        }
+
+        /* Ana Uygulama */
+        #app {
+            display: flex;
+            height: 100vh;
+        }
+
+        /* Sol Sidebar */
+        .sidebar-left {
+            width: 72px;
+            background: #202225;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 12px 0;
+        }
+
+        .server-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: #36393f;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-bottom: 8px;
+            color: white;
+            font-weight: bold;
+        }
+
+        .server-icon:hover {
+            border-radius: 16px;
+            background: #5865f2;
+            transform: scale(1.1);
+        }
+
+        .server-icon.home {
+            background: #5865f2;
+        }
+
+        .server-divider {
+            width: 32px;
+            height: 2px;
+            background: #36393f;
+            margin: 8px 0;
+        }
+
+        .dm-section {
+            width: 100%;
+            margin-top: 16px;
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .dm-header {
+            padding: 0 12px;
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            color: #8e9297;
+        }
+
+        .dm-item {
+            display: flex;
+            align-items: center;
+            padding: 8px 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border-radius: 8px;
+            margin: 2px 4px;
+        }
+
+        .dm-item:hover {
+            background: #36393f;
+        }
+
+        .dm-item.active {
+            background: #5865f2;
+        }
+
+        .dm-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+
+        .dm-info {
+            flex: 1;
+            overflow: hidden;
+        }
+
+        .dm-name {
+            font-weight: 500;
+            font-size: 14px;
+        }
+
+        .dm-last-message {
+            font-size: 12px;
+            color: #8e9297;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* Orta Panel */
+        .sidebar-middle {
+            width: 240px;
+            background: #2f3136;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .channel-header {
+            padding: 16px;
+            border-bottom: 1px solid #202225;
+        }
+
+        .user-info {
+            padding: 16px;
+            background: #292b2f;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border-top: 1px solid #202225;
+        }
+
+        .user-info img {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+        }
+
+        .user-details {
+            flex: 1;
+        }
+
+        .user-status {
+            font-size: 12px;
+        }
+
+        .user-status.online { color: #3ba55d; }
+
+        /* Chat Alanı */
+        .chat-area {
+            flex: 1;
+            background: #36393f;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .chat-header {
+            padding: 16px;
+            border-bottom: 1px solid #202225;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .chat-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            background: transparent;
+            border: none;
+            color: #b9bbbe;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-icon:hover {
+            background: #404249;
+            color: white;
+        }
+
+        .messages-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px;
+        }
+
+        .message {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 8px;
+            padding: 8px;
+            border-radius: 8px;
+            transition: all 0.2s;
+        }
+
+        .message:hover {
+            background: #404249;
+        }
+
+        .message-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+        }
+
+        .message-author {
+            font-weight: bold;
+            margin-right: 8px;
+        }
+
+        .message-time {
+            font-size: 12px;
+            color: #8e9297;
+        }
+
+        .message-input-container {
+            padding: 16px;
+        }
+
+        .message-input-wrapper {
+            display: flex;
+            background: #404249;
+            border-radius: 8px;
+            padding: 8px;
+        }
+
+        .message-input-wrapper input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: white;
+            padding: 0 8px;
+            outline: none;
+        }
+
+        .send-btn {
+            color: #5865f2 !important;
+        }
+
+        /* Sağ Panel */
+        .sidebar-right {
+            width: 240px;
+            background: #2f3136;
+            padding: 16px;
+        }
+
+        .members-list {
+            margin-top: 16px;
+        }
+
+        .member-item {
+            display: flex;
+            align-items: center;
+            padding: 8px;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        .member-item:hover {
+            background: #36393f;
+        }
+
+        .member-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            align-items: center;
+            justify-content: center;
+            z-index: 3000;
+        }
+
+        .modal.show {
+            display: flex;
+        }
+
+        .modal-content {
+            background: #2f3136;
+            border-radius: 16px;
+            width: 500px;
+            max-width: 90%;
+            padding: 20px;
+            animation: slideUp 0.3s;
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(50px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .close-modal {
+            background: none;
+            border: none;
+            color: #8e9297;
+            font-size: 24px;
+            cursor: pointer;
+        }
+
+        .profile-avatar {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .profile-avatar img {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            border: 3px solid #5865f2;
+        }
+
+        .info-row {
+            margin-bottom: 12px;
+        }
+
+        .info-row label {
+            display: block;
+            color: #8e9297;
+            font-size: 12px;
+            margin-bottom: 4px;
+        }
+
+        .info-value {
+            background: #202225;
+            padding: 8px 12px;
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .btn-small {
+            padding: 4px 12px;
+            background: #5865f2;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .btn-danger {
+            padding: 8px 16px;
+            background: #ed4245;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        .profile-stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            margin: 20px 0;
+        }
+
+        .stat-item {
+            text-align: center;
+            background: #202225;
+            padding: 12px;
+            border-radius: 8px;
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #5865f2;
+        }
+
+        /* Emoji Panel */
+        .emoji-panel {
+            position: absolute;
+            bottom: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #2f3136;
+            border-radius: 8px;
+            padding: 16px;
+            width: 400px;
+            max-height: 300px;
+            overflow-y: auto;
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            gap: 8px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+
+        .emoji-item {
+            font-size: 24px;
+            text-align: center;
+            cursor: pointer;
+            padding: 4px;
+            border-radius: 4px;
+        }
+
+        .emoji-item:hover {
+            background: #5865f2;
+            transform: scale(1.2);
+        }
+    </style>
+</head>
+<body>
+    <!-- GİRİŞ EKRANI -->
+    <div id="loginScreen" class="login-screen">
+        <div class="login-container">
+            <div class="login-tabs">
+                <button class="tab-btn active" onclick="showTab('login')">Giriş</button>
+                <button class="tab-btn" onclick="showTab('register')">Kayıt</button>
+                <button class="tab-btn" onclick="showTab('admin')">Admin</button>
+            </div>
+            
+            <div id="loginForm" class="login-form active">
+                <h2>✨ NovaChat</h2>
+                <input type="email" id="loginEmail" placeholder="E-posta">
+                <input type="password" id="loginPassword" placeholder="Şifre">
+                <button class="login-submit" onclick="login()">Giriş Yap</button>
+                <div id="loginError" class="error-message"></div>
+            </div>
+            
+            <div id="registerForm" class="login-form">
+                <h2>📝 Kayıt Ol</h2>
+                <input type="text" id="registerName" placeholder="Kullanıcı Adı">
+                <input type="email" id="registerEmail" placeholder="E-posta">
+                <input type="password" id="registerPassword" placeholder="Şifre">
+                <input type="password" id="registerConfirm" placeholder="Şifre Tekrar">
+                <button class="login-submit" onclick="register()">Kayıt Ol</button>
+                <div id="registerError" class="error-message"></div>
+            </div>
+            
+            <div id="adminForm" class="login-form">
+                <h2>🔐 Admin</h2>
+                <input type="password" id="adminPassword" placeholder="Admin Şifresi">
+                <button class="login-submit admin-btn" onclick="adminLogin()">Giriş</button>
+                <div id="adminError" class="error-message"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ANA UYGULAMA -->
+    <div id="app" style="display: none;">
+        <!-- SOL MENÜ -->
+        <div class="sidebar-left">
+            <div class="server-icon home" onclick="goHome()">
+                <i class="fas fa-home"></i>
+            </div>
+            <div class="server-icon" onclick="createServer()">
+                <i class="fas fa-plus"></i>
+            </div>
+            <div class="server-divider"></div>
+            <div id="serverList"></div>
+            
+            <div class="dm-section">
+                <div class="dm-header">
+                    <span>DM</span>
+                    <i class="fas fa-pen" onclick="newDM()"></i>
+                </div>
+                <div id="dmList"></div>
+            </div>
+        </div>
+
+        <!-- ORTA PANEL -->
+        <div class="sidebar-middle">
+            <div class="channel-header">
+                <h2 id="currentServerName">Ana Sayfa</h2>
+            </div>
+            <div style="flex:1; overflow-y:auto; padding:8px;">
+                <div id="channelList"></div>
+            </div>
+            <div class="user-info" id="userInfo">
+                <img id="currentUserAvatar" src="https://via.placeholder.com/100">
+                <div class="user-details">
+                    <span id="currentUserName">Yükleniyor...</span>
+                    <span class="user-status online" id="userStatus">🟢 Çevrimiçi</span>
+                </div>
+                <i class="fas fa-user btn-icon" onclick="openProfile()"></i>
+            </div>
+        </div>
+
+        <!-- CHAT ALANI -->
+        <div class="chat-area">
+            <div class="chat-header">
+                <h3 id="currentChannelName"># genel</h3>
+                <div class="chat-actions">
+                    <i class="fas fa-smile btn-icon" onclick="toggleEmoji()"></i>
+                    <i class="fas fa-phone btn-icon" onclick="startCall()"></i>
+                    <i class="fas fa-video btn-icon" onclick="startVideoCall()"></i>
+                    <i class="fas fa-desktop btn-icon" onclick="shareScreen()"></i>
+                </div>
+            </div>
+            
+            <div class="messages-container" id="messages"></div>
+            
+            <!-- Emoji Panel -->
+            <div id="emojiPanel" class="emoji-panel" style="display: none;"></div>
+            
+            <div class="message-input-container">
+                <div class="message-input-wrapper">
+                    <input type="text" id="messageInput" placeholder="Mesaj yaz..." onkeypress="if(event.key==='Enter') sendMessage()">
+                    <i class="fas fa-paper-plane send-btn btn-icon" onclick="sendMessage()"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- SAĞ PANEL -->
+        <div class="sidebar-right">
+            <h3>Üyeler</h3>
+            <div class="members-list" id="membersList"></div>
+        </div>
+    </div>
+
+    <!-- PROFİL MODAL -->
+    <div id="profileModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Profil</h2>
+                <i class="fas fa-times close-modal" onclick="closeModal('profileModal')"></i>
+            </div>
+            <div class="profile-avatar">
+                <img id="modalAvatar" src="https://via.placeholder.com/100">
+            </div>
+            <div class="info-row">
+                <label>Kullanıcı Adı</label>
+                <div class="info-value">
+                    <span id="modalName"></span>
+                    <i class="fas fa-pen" onclick="editName()"></i>
+                </div>
+            </div>
+            <div class="info-row">
+                <label>E-posta</label>
+                <span id="modalEmail"></span>
+            </div>
+            <div class="info-row">
+                <label>Hakkında</label>
+                <div class="info-value">
+                    <span id="modalBio"></span>
+                    <i class="fas fa-pen" onclick="editBio()"></i>
+                </div>
+            </div>
+            <div class="profile-stats">
+                <div class="stat-item">
+                    <span class="stat-value" id="modalFriends">0</span>
+                    <span>Arkadaş</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-value" id="modalServers">0</span>
+                    <span>Sunucu</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-value" id="modalMessages">0</span>
+                    <span>Mesaj</span>
+                </div>
+            </div>
+            <button class="btn-danger" onclick="logout()" style="width:100%;">Çıkış Yap</button>
+        </div>
+    </div>
+
+    <!-- YENİ DM MODAL -->
+    <div id="dmModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Yeni Mesaj</h2>
+                <i class="fas fa-times close-modal" onclick="closeModal('dmModal')"></i>
+            </div>
+            <input type="text" id="userSearch" placeholder="Kullanıcı ara..." style="width:100%; padding:8px; margin-bottom:8px;">
+            <div id="searchResults"></div>
+        </div>
+    </div>
+
+    <!-- FIREBASE -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+
+    <script>
+        // Firebase Config
+        const firebaseConfig = {
+            apiKey: "AIzaSyCwwqd4FfhvLRQu8DUUfbdorIu3iJpkHMM",
+            authDomain: "ateschat-cd9f4.firebaseapp.com",
+            projectId: "ateschat-cd9f4",
+            storageBucket: "ateschat-cd9f4.firebasestorage.app",
+            messagingSenderId: "174732212740",
+            appId: "1:174732212740:web:dcd4b60ed7cc380ca95351"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+
+        // Global Değişkenler
+        let currentUser = null;
+        let currentServer = null;
+        let currentChannel = 'genel';
+        let currentDM = null;
+        let emojis = ['😀','😃','😄','😁','😆','😅','😂','🤣','😊','😇','🙂','😉','😍','🥰','😘','😎','🤔','🤗','😐','😶','😏','😒','😔','😴','😷','🤒','🤕','🤢','🤮','🥴','😵','🤯','🤠','🥳','😎','🤓','🧐','😕','😟','😥','😰','😨','😱','😖','😣','😞','😓','😩','😫','🥺','😢','😭','😤','😠','😡','🤬','🤨','🧐','🤯','😳','🥵','🥶','😱','😨','😰','😥','😓','🤗','🤔','🤭','🤫','🤥','😶','😐','😑','😬','🙄','😯','😦','😧','😮','😲','😴','🤤','😪','😵','🤐','🥴','🤢','🤮','🤧','😷','🤒','🤕','🤑','🤠','😈','👿','👹','👺','🤡','💩','👻','💀','☠️','👽','👾','🤖','🎃'];
+
+        // Auth Durumu
+        auth.onAuthStateChanged(async (user) => {
+            if (user) {
+                currentUser = user;
+                document.getElementById('loginScreen').style.display = 'none';
+                document.getElementById('app').style.display = 'flex';
+                
+                await loadUserData();
+                loadServers();
+                loadDMList();
+                loadEmojis();
+                createTestData();
+            } else {
+                document.getElementById('loginScreen').style.display = 'flex';
+                document.getElementById('app').style.display = 'none';
+            }
+        });
+
+        // Tab Geçiş
+        window.showTab = (tab) => {
+            document.querySelectorAll('.tab-btn').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.login-form').forEach(f => f.classList.remove('active'));
+            
+            if (tab === 'login') {
+                document.querySelectorAll('.tab-btn')[0].classList.add('active');
+                document.getElementById('loginForm').classList.add('active');
+            } else if (tab === 'register') {
+                document.querySelectorAll('.tab-btn')[1].classList.add('active');
+                document.getElementById('registerForm').classList.add('active');
+            } else {
+                document.querySelectorAll('.tab-btn')[2].classList.add('active');
+                document.getElementById('adminForm').classList.add('active');
+            }
+        };
+
+        // Giriş
+        window.login = async () => {
+            const email = document.getElementById('loginEmail').value;
+            const pass = document.getElementById('loginPassword').value;
+            try {
+                await auth.signInWithEmailAndPassword(email, pass);
+            } catch (error) {
+                document.getElementById('loginError').innerText = error.message;
+            }
+        };
+
+        // Kayıt
+        window.register = async () => {
+            const name = document.getElementById('registerName').value;
+            const email = document.getElementById('registerEmail').value;
+            const pass = document.getElementById('registerPassword').value;
+            const confirm = document.getElementById('registerConfirm').value;
+            
+            if (pass !== confirm) {
+                document.getElementById('registerError').innerText = 'Şifreler eşleşmiyor';
+                return;
+            }
+            
+            try {
+                const cred = await auth.createUserWithEmailAndPassword(email, pass);
+                await cred.user.updateProfile({ displayName: name });
+                
+                await db.collection('users').doc(cred.user.uid).set({
+                    displayName: name,
+                    email: email,
+                    photoURL: 'https://via.placeholder.com/100',
+                    bio: 'Merhaba!',
+                    status: 'online',
+                    friends: [],
+                    servers: [],
+                    messagesCount: 0
+                });
+            } catch (error) {
+                document.getElementById('registerError').innerText = error.message;
+            }
+        };
+
+        // Admin Giriş
+        window.adminLogin = async () => {
+            const pass = document.getElementById('adminPassword').value;
+            if (pass === 'NovaChat2024!') {
+                try {
+                    await auth.signInWithEmailAndPassword('admin@novachat.com', 'NovaChat2024!');
+                } catch {
+                    await auth.createUserWithEmailAndPassword('admin@novachat.com', 'NovaChat2024!');
+                    const user = auth.currentUser;
+                    await user.updateProfile({ displayName: 'Admin' });
+                }
+            } else {
+                document.getElementById('adminError').innerText = 'Hatalı şifre';
+            }
+        };
+
+        // Kullanıcı Verileri
+        async function loadUserData() {
+            const doc = await db.collection('users').doc(currentUser.uid).get();
+            if (doc.exists) {
+                const data = doc.data();
+                document.getElementById('currentUserName').innerText = data.displayName;
+                document.getElementById('currentUserAvatar').src = data.photoURL;
+            }
+        }
+
+        // Test Verileri
+        async function createTestData() {
+            const testServer = await db.collection('servers').where('name', '==', 'NovaChat').get();
+            if (testServer.empty) {
+                const server = await db.collection('servers').add({
+                    name: 'NovaChat',
+                    channels: ['genel', 'sohbet'],
+                    members: [currentUser.uid],
+                    createdAt: new Date()
+                });
+                
+                await db.collection('messages').add({
+                    serverId: server.id,
+                    channel: 'genel',
+                    senderId: 'system',
+                    senderName: 'NovaChat',
+                    senderAvatar: 'https://via.placeholder.com/100',
+                    content: '✨ NovaChat\'e hoş geldin!',
+                    timestamp: new Date()
+                });
+            }
+        }
+
+        // Sunucuları Yükle
+        async function loadServers() {
+            const list = document.getElementById('serverList');
+            list.innerHTML = '';
+            
+            const snapshot = await db.collection('servers').get();
+            snapshot.forEach(doc => {
+                const server = doc.data();
+                if (server.members?.includes(currentUser.uid)) {
+                    const div = document.createElement('div');
+                    div.className = 'server-icon';
+                    div.innerText = server.name.charAt(0).toUpperCase();
+                    div.onclick = () => selectServer(doc.id, server);
+                    list.appendChild(div);
+                }
+            });
+        }
+
+        // Sunucu Seç
+        async function selectServer(serverId, server) {
+            currentServer = serverId;
+            currentDM = null;
+            document.getElementById('currentServerName').innerText = server.name;
+            loadChannels(serverId);
+            loadMembers(serverId);
+            listenMessages(serverId, 'genel');
+        }
+
+        // Kanalları Yükle
+        async function loadChannels(serverId) {
+            const doc = await db.collection('servers').doc(serverId).get();
+            const server = doc.data();
+            const list = document.getElementById('channelList');
+            list.innerHTML = '';
+            
+            server.channels?.forEach(channel => {
+                const div = document.createElement('div');
+                div.className = 'channel-item';
+                div.innerHTML = `<i class="fas fa-hashtag"></i> ${channel}`;
+                div.onclick = () => {
+                    currentChannel = channel;
+                    listenMessages(serverId, channel);
+                };
+                list.appendChild(div);
+            });
+        }
+
+        // Üyeleri Yükle
+        async function loadMembers(serverId) {
+            const doc = await db.collection('servers').doc(serverId).get();
+            const server = doc.data();
+            const list = document.getElementById('membersList');
+            list.innerHTML = '';
+            
+            for (const id of (server.members || [])) {
+                const userDoc = await db.collection('users').doc(id).get();
+                const user = userDoc.data();
+                list.innerHTML += `
+                    <div class="member-item" onclick="openUserProfile('${id}')">
+                        <img src="${user.photoURL}" class="member-avatar">
+                        <span>${user.displayName}</span>
+                    </div>
+                `;
+            }
+        }
+
+        // Mesajları Dinle
+        function listenMessages(serverId, channel) {
+            const q = db.collection('messages')
+                .where('serverId', '==', serverId)
+                .where('channel', '==', channel)
+                .orderBy('timestamp', 'asc');
+            
+            q.onSnapshot(snapshot => {
+                const container = document.getElementById('messages');
+                container.innerHTML = '';
+                
+                if (snapshot.empty) {
+                    container.innerHTML = '<div style="text-align:center; color:#72767d; margin-top:50px;">Hoş geldin! Mesaj göndererek başla ✨</div>';
+                    return;
+                }
+                
+                snapshot.forEach(doc => {
+                    const msg = doc.data();
+                    container.innerHTML += `
+                        <div class="message">
+                            <img src="${msg.senderAvatar}" class="message-avatar">
+                            <div>
+                                <div>
+                                    <span class="message-author">${msg.senderName}</span>
+                                    <span class="message-time">${new Date().toLocaleTimeString()}</span>
+                                </div>
+                                <div>${msg.content}</div>
+                            </div>
+                        </div>
+                    `;
+                });
+                container.scrollTop = container.scrollHeight;
+            });
+        }
+
+        // Mesaj Gönder
+        window.sendMessage = async () => {
+            const input = document.getElementById('messageInput');
+            const text = input.value.trim();
+            if (!text || !currentUser) return;
+            
+            if (currentServer) {
+                await db.collection('messages').add({
+                    serverId: currentServer,
+                    channel: currentChannel,
+                    senderId: currentUser.uid,
+                    senderName: currentUser.displayName,
+                    senderAvatar: currentUser.photoURL,
+                    content: text,
+                    timestamp: new Date()
+                });
+            }
+            input.value = '';
+        };
+
+        // DM Listesi
+        async function loadDMList() {
+            const q = db.collection('dms').where('participants', 'array-contains', currentUser.uid);
+            q.onSnapshot(async snapshot => {
+                const list = document.getElementById('dmList');
+                list.innerHTML = '';
+                
+                for (const doc of snapshot.docs) {
+                    const dm = doc.data();
+                    const otherId = dm.participants.find(id => id !== currentUser.uid);
+                    const userDoc = await db.collection('users').doc(otherId).get();
+                    const user = userDoc.data();
+                    
+                    list.innerHTML += `
+                        <div class="dm-item" onclick="openDM('${doc.id}', '${otherId}')">
+                            <img src="${user.photoURL}" class="dm-avatar">
+                            <div class="dm-info">
+                                <div class="dm-name">${user.displayName}</div>
+                                <div class="dm-last-message">${dm.lastMessage || '...'}</div>
+                            </div>
+                        </div>
+                    `;
+                }
+            });
+        }
+
+        // Yeni DM
+        window.newDM = () => {
+            document.getElementById('dmModal').classList.add('show');
+        };
+
+        // Kullanıcı Ara
+        document.getElementById('userSearch').addEventListener('input', async (e) => {
+            const search = e.target.value.toLowerCase();
+            if (!search) return;
+            
+            const snapshot = await db.collection('users').get();
+            const results = document.getElementById('searchResults');
+            results.innerHTML = '';
+            
+            snapshot.forEach(doc => {
+                const user = doc.data();
+                if (user.displayName?.toLowerCase().includes(search) && user.uid !== currentUser.uid) {
+                    results.innerHTML += `
+                        <div class="dm-item" onclick="startDM('${user.uid}')">
+                            <img src="${user.photoURL}" class="dm-avatar">
+                            <span>${user.displayName}</span>
+                        </div>
+                    `;
+                }
+            });
+        });
+
+        // DM Başlat
+        window.startDM = async (userId) => {
+            const dm = await db.collection('dms').add({
+                participants: [currentUser.uid, userId],
+                lastMessage: '',
+                lastMessageTime: new Date()
+            });
+            openDM(dm.id, userId);
+            closeModal('dmModal');
+        };
+
+        // DM Aç
+        function openDM(dmId, userId) {
+            currentDM = dmId;
+            currentServer = null;
+            
+            db.collection('dmMessages').where('dmId', '==', dmId).orderBy('timestamp').onSnapshot(snapshot => {
+                const container = document.getElementById('messages');
+                container.innerHTML = '';
+                snapshot.forEach(doc => {
+                    const msg = doc.data();
+                    container.innerHTML += `
+                        <div class="message">
+                            <img src="${msg.senderAvatar}" class="message-avatar">
+                            <div>${msg.content}</div>
+                        </div>
+                    `;
+                });
+            });
+        }
+
+        // Profil
+        window.openProfile = async () => {
+            const doc = await db.collection('users').doc(currentUser.uid).get();
+            const user = doc.data();
+            
+            document.getElementById('modalAvatar').src = user.photoURL;
+            document.getElementById('modalName').innerText = user.displayName;
+            document.getElementById('modalEmail').innerText = user.email;
+            document.getElementById('modalBio').innerText = user.bio;
+            document.getElementById('modalFriends').innerText = user.friends?.length || 0;
+            document.getElementById('modalServers').innerText = user.servers?.length || 0;
+            document.getElementById('modalMessages').innerText = user.messagesCount || 0;
+            
+            document.getElementById('profileModal').classList.add('show');
+        };
+
+        window.editName = async () => {
+            const name = prompt('Yeni kullanıcı adı:');
+            if (name) {
+                await currentUser.updateProfile({ displayName: name });
+                await db.collection('users').doc(currentUser.uid).update({ displayName: name });
+                document.getElementById('modalName').innerText = name;
+            }
+        };
+
+        window.editBio = async () => {
+            const bio = prompt('Yeni biyografi:');
+            if (bio) {
+                await db.collection('users').doc(currentUser.uid).update({ bio });
+                document.getElementById('modalBio').innerText = bio;
+            }
+        };
+
+        // Emoji
+        function loadEmojis() {
+            const panel = document.getElementById('emojiPanel');
+            panel.innerHTML = '';
+            emojis.forEach(emoji => {
+                const span = document.createElement('span');
+                span.className = 'emoji-item';
+                span.innerText = emoji;
+                span.onclick = () => {
+                    document.getElementById('messageInput').value += emoji;
+                    panel.style.display = 'none';
+                };
+                panel.appendChild(span);
+            });
+        }
+
+        window.toggleEmoji = () => {
+            const panel = document.getElementById('emojiPanel');
+            panel.style.display = panel.style.display === 'none' ? 'grid' : 'none';
+        };
+
+        // Arama
+        window.startCall = () => {
+            alert('Sesli arama başlatılıyor...');
+        };
+
+        window.startVideoCall = () => {
+            alert('Görüntülü arama başlatılıyor...');
+        };
+
+        window.shareScreen = () => {
+            if (navigator.mediaDevices?.getDisplayMedia) {
+                alert('Ekran paylaşımı başlatılıyor...');
+            } else {
+                alert('Tarayıcınız ekran paylaşımını desteklemiyor');
+            }
+        };
+
+        // Ana Sayfa
+        window.goHome = () => {
+            currentServer = null;
+            currentDM = null;
+            document.getElementById('currentServerName').innerText = 'Ana Sayfa';
+            document.getElementById('messages').innerHTML = '<div style="text-align:center; color:#72767d; margin-top:50px;">Bir sunucu veya DM seçin</div>';
+        };
+
+        // Sunucu Oluştur
+        window.createServer = async () => {
+            const name = prompt('Sunucu adı:');
+            if (name) {
+                await db.collection('servers').add({
+                    name: name,
+                    channels: ['genel'],
+                    members: [currentUser.uid],
+                    createdAt: new Date()
+                });
+                loadServers();
+            }
+        };
+
+        // Modal Kapat
+        window.closeModal = (id) => {
+            document.getElementById(id).classList.remove('show');
+        };
+
+        // Çıkış
+        window.logout = () => {
+            auth.signOut();
+        };
+    </script>
+</body>
+  </html>
