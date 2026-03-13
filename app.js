@@ -365,9 +365,12 @@ function openChannel(serverId,channelId,channelName){
         });
         if(wasBottom)container.scrollTop=container.scrollHeight;
     },err=>{alert('Chat yüklenemedi: '+err.message);});
-}function buildMessageEl(data){
+}function buildMessageEl(data, prevData){
     const time=data.createdAt?.toDate().toLocaleTimeString('tr-TR',{hour:'2-digit',minute:'2-digit'})||'';
-    const div=document.createElement('div');div.className='msg';div.dataset.msgId=data.id;
+    const sameUser=prevData&&prevData.uid===data.uid;
+    const sameWindow=prevData&&data.createdAt&&prevData.createdAt&&(data.createdAt.seconds-prevData.createdAt.seconds)<300;
+    const grouped=sameUser&&sameWindow;
+    const div=document.createElement('div');div.className='msg'+(grouped?' grouped':'');div.dataset.msgId=data.id;
     div.appendChild(makeAvatar(data.photoURL||null,data.name,'msg-av'));
     const body=document.createElement('div');body.className='msg-body';
     if(data.replyTo){const ref=document.createElement('div');ref.className='msg-reply-ref';ref.innerHTML=`<div class="msg-reply-ref-name">↩ ${data.replyTo.name}</div><div class="msg-reply-ref-text">${data.replyTo.text||'[medya]'}</div>`;ref.onclick=()=>{const c=$('messages');const el=c.querySelector(`[data-msg-id="${data.replyTo.id}"]`);if(el){el.scrollIntoView({behavior:'smooth',block:'center'});el.style.background='rgba(88,101,242,0.15)';setTimeout(()=>el.style.background='',1500);}};body.appendChild(ref);}
