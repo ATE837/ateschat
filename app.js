@@ -952,3 +952,145 @@ document.addEventListener('DOMContentLoaded',()=>{
 });
 
 if('serviceWorker'in navigator)navigator.serviceWorker.register('/ateschat/sw.js').catch(()=>{});
+
+// ── SUNUCU AYARLARI ──────────────────────────────────────
+async function showServerSettings(){
+    if(!currentServerId||!currentUser)return;
+    const snap=await db.collection('servers').doc(currentServerId).get();
+    const data=snap.data()||{};
+    const members=data.members||[];
+    const roles=data.roles||{};
+    const isOwner=roles[currentUser.uid]==='owner';
+
+    $('ss-server-name').textContent='⚙️ '+data.name;
+    $('ss-invite-code').textContent=data.inviteCode||'---';
+
+    // Owner bölümlerini göster/gizle
+    $('ss-owner-section').style.display=isOwner?'block':'none';
+    $('ss-delete-section').style.display=isOwner?'block':'none';
+
+    // Üye listesi
+    const list=$('ss-members-list');
+    list.innerHTML='<div style="color:var(--muted);font-size:13px;padding:8px">Yükleniyor...</div>';
+
+    // Tüm üyeleri parallel çek
+    const userDocs=await Promise.all(members.map(m=>
+        db.collection('users').doc(m.uid).get().catch(()=>null)
+    ));
+
+    list.innerHTML='';
+    members.forEach((m,i)=>{
+        const uData=userDocs[i]?.data()||{};
+        const role=roles[m.uid]||'member';
+        const roleLabel=role==='owner'?'👑 Sunucu Sahibi':role==='mod'?'🛡️ Moderatör':'👤 Üye';
+        const isMe=m.uid===currentUser.uid;
+
+        const row=document.createElement('div');
+        row.className='ss-member-row';
+
+        // Avatar
+        const av=document.createElement('div');
+        av.className='ss-member-av';
+        setAvatarEl(av, uData.photoURL||null, m.name);
+
+        // İsim + Rol
+        const info=document.createElement('div');
+        info.className='ss-member-info';
+        const statusDot=getStatusColor(uData.status||'offline');
+        info.innerHTML=`
+            <div class="ss-member-name">${m.name}${isMe?' <span style="color:var(--muted);font-size:11px">(Sen)</span>':''}</div>
+            <div class="ss-member-role"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${statusDot};margin-right:4px"></span>${roleLabel}</div>
+        `;
+
+        // Butonlar (sadece owner görebilir, kendi hariç)
+        const btns=document.createElement('div');
+        btns.className='ss-member-btns';
+
+        if(isOwner&&!isMe){
+            // Rol değiştir dropdown
+            const roleBtn=document.createElement('button');
+            roleBtn.className='ss-btn gray';
+            roleBtn.textContent=role==='mod'?'👤 Üye Yap':'🛡️ Mod Yap';
+            roleBtn.onclick=async()=>{
+                const newRole=role==='mod'?'member':'mod';
+                await db.collection('servers').doc(currentServerId).update({
+                    ['roles.'+m.uid]:newRole
+                });
+                showServerSettings(); // Yenile
+            };
+
+            // Sahiplik ver
+            const ownerBtn=document.createElement('button');
+            ownerBtn.className='ss-btn gold';
+            ownerBtn.textContent='👑 Sahip Yap';
+            ownerBtn.onclick=async()=>{
+                if(!confirm(m.name+' sunucu sahibi yapılsın? Sen moderatör olacaksın.'))return;
+                await db.collection('servers').doc(currentServerId).update({
+                    ['roles.'+m.uid]:'owner',
+                    ['roles.'+currentUser.uid]:'mod'
+                });
+                showServerSettings();
+            };
+
+            // At
+            const kickBtn=document.createElement('button');
+            kickBtn.className='ss-btn red';
+            kickBtn.textContent='🚪 At';
+            kickBtn.onclick=async()=>{
+                if(!confirm(m.name+' sunucudan atılsın?'))return;
+                // Sunucudan çıkar
+                const sSnap=await db.collection('servers').doc(currentServerId).get();
+                const newMembers=(sSnap.data()?.members||[]).filter(x=>x.uid!==m.uid);
+                const newRoles={...sSnap.data()?.roles};
+                delete newRoles[m.uid];
+                await db.collection('servers').doc(currentServerId).update({members:newMembers,roles:newRoles});
+                // Kullanıcının server listesinden de çıkar
+                const uSnap=await db.collection('users').doc(m.uid).get();
+                const newServers=(uSnap.data()?.servers||[]).filter(s=>s.id!==currentServerId);
+                await db.collection('users').doc(m.uid).update({servers:newServers});
+                showServerSettings();
+            };
+
+            btns.appendChild(roleBtn);
+            btns.appendChild(ownerBtn);
+            btns.appendChild(kickBtn);
+        }
+
+        row.appendChild(av);
+        row.appendChild(info);
+        row.appendChild(btns);
+        list.appendChild(row);
+    });
+
+    showModal('modal-server-settings');
+}
+
+function copySSInvite(){
+    navigator.clipboard.writeText($('ss-invite-code').textContent);
+    const btn=event.target;btn.textContent='✅ Kopyalandı!';
+    setTimeout(()=>btn.textContent='Kopyala',2000);
+}
+
+async function deleteServer(){
+    if(!currentServerId)return;
+    const roles=currentServerData?.roles||{};
+    if(roles[currentUser.uid]!=='owner'){alert('Sadece sunucu sahibi silebilir.');return;}
+    if(!confirm('Sunucu silinecek. Emin misin?'))return;
+    if(!confirm('Bu işlem geri alınamaz!'))return;
+    try{
+        // Tüm kanalları ve mesajları sil (Firestore'da subcollection'lar manuel silinmeli)
+        const chSnap=await db.collection('servers').doc(currentServerId).collection('channels').get();
+        await Promise.all(chSnap.docs.map(d=>d.ref.delete()));
+        // Üyelerin server listesinden çıkar
+        const sData=(await db.collection('servers').doc(currentServerId).get()).data()||{};
+        await Promise.all((sData.members||[]).map(async m=>{
+            const uSnap=await db.collection('users').doc(m.uid).get();
+            const newServers=(uSnap.data()?.servers||[]).filter(s=>s.id!==currentServerId);
+            return db.collection('users').doc(m.uid).update({servers:newServers});
+        }));
+        await db.collection('servers').doc(currentServerId).delete();
+        hideModal('modal-server-settings');
+        currentServerId=null;currentChannelId=null;
+        loadUserServers();
+    }catch(e){alert('Hata: '+e.message);}
+}
