@@ -1,3 +1,4 @@
+// Firebase yapılandırması
 const firebaseConfig = {
     apiKey: "AIzaSyCwwqd4FfhvLRQu8DUUfbdorIu3iJpkHMM",
     authDomain: "ateschat-cd9f4.firebaseapp.com",
@@ -9,11 +10,13 @@ const firebaseConfig = {
     measurementId: "G-1CBZNR0W3E"
 };
 
+// Firebase'i başlat
 firebase.initializeApp(firebaseConfig);
 
+// Servisler
 const auth = firebase.auth();
 const db = firebase.firestore();
 const storage = firebase.storage();
 const timestamp = firebase.firestore.FieldValue.serverTimestamp;
 
-console.log("✅ Firebase hazır");
+console.log("✅ Firebase başlatıldı");
