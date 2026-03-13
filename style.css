@@ -1176,3 +1176,52 @@ body {
     font-size: 11px;
     color: #5865f2;
 }
+
+/* ARAMA ÜST BAR */
+#call-top-bar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 16px; background: rgba(0,0,0,0.6); z-index:2;
+}
+#call-partner-info { display: flex; align-items: center; gap: 10px; }
+.call-partner-av {
+    width: 42px; height: 42px; border-radius: 50%;
+    background: linear-gradient(135deg,#5865f2,#9b59b6);
+    color: #fff; font-size: 18px; font-weight: 800;
+    display: flex; align-items: center; justify-content: center;
+    background-size: cover; background-position: center;
+    flex-shrink: 0; border: 2px solid rgba(255,255,255,0.2);
+}
+.call-minimize-btn {
+    background: rgba(255,255,255,0.1); border: none; border-radius: 8px;
+    color: #fff; font-size: 18px; padding: 6px 10px; cursor: pointer;
+}
+.call-minimize-btn:hover { background: rgba(255,255,255,0.2); }
+
+/* MİNİ ARAMA BALONU */
+#call-bubble {
+    position: fixed; bottom: 80px; right: 12px;
+    background: #1a1b1e; border: 1px solid rgba(88,101,242,0.5);
+    border-radius: 50px; padding: 8px 12px;
+    display: flex; align-items: center; gap: 8px;
+    z-index: 9999; cursor: pointer; max-width: 200px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+    animation: pulse-border 1.5s infinite;
+}
+@keyframes pulse-border {
+    0%,100%{ border-color: rgba(88,101,242,0.5); }
+    50%{ border-color: rgba(88,101,242,1); }
+}
+.bubble-av {
+    width: 30px; height: 30px; border-radius: 50%;
+    background: linear-gradient(135deg,#5865f2,#9b59b6);
+    color: #fff; font-size: 13px; font-weight: 800;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; background-size: cover; background-position: center;
+}
+.bubble-btn {
+    width: 26px; height: 26px; border-radius: 50%; border: none;
+    font-size: 12px; cursor: pointer; display: flex;
+    align-items: center; justify-content: center; flex-shrink: 0;
+}
+.bubble-btn.green { background: #23a55a; }
+.bubble-btn.red { background: #ed4245; }
