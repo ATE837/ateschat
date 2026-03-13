@@ -3,346 +3,39 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NovaChat - Yıldızlar Kadar Parlak</title>
+    <title>NovaChat</title>
     <link rel="stylesheet" href="style.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body>
     <!-- GİRİŞ EKRANI -->
-    <div id="loginScreen" class="login-screen">
-        <div class="login-container">
-            <div class="login-tabs">
-                <button class="tab-btn active" id="loginTab">Giriş</button>
-                <button class="tab-btn" id="registerTab">Kayıt Ol</button>
-                <button class="tab-btn" id="adminTab">Admin</button>
-            </div>
+    <div id="loginScreen">
+        <div style="background:#2f3136; padding:30px; border-radius:8px; width:300px;">
+            <h2 style="color:#5865f2; text-align:center;">NovaChat</h2>
             
-            <!-- GİRİŞ FORM -->
-            <div id="loginForm" class="login-form active">
-                <h2>✨ NovaChat'e Hoş Geldin</h2>
-                <input type="email" id="loginEmail" placeholder="E-posta">
-                <input type="password" id="loginPassword" placeholder="Şifre">
-                <button id="loginBtn" class="login-submit">Giriş Yap</button>
-                <div id="loginError" class="error-message"></div>
-            </div>
+            <input type="email" id="email" placeholder="E-posta" style="width:100%; padding:10px; margin:10px 0; background:#202225; border:none; color:white;">
+            <input type="password" id="password" placeholder="Şifre" style="width:100%; padding:10px; margin:10px 0; background:#202225; border:none; color:white;">
             
-            <!-- KAYIT FORM -->
-            <div id="registerForm" class="login-form">
-                <h2>✨ Hesap Oluştur</h2>
-                <input type="text" id="registerName" placeholder="Kullanıcı Adı">
-                <input type="email" id="registerEmail" placeholder="E-posta">
-                <input type="password" id="registerPassword" placeholder="Şifre">
-                <input type="password" id="registerConfirm" placeholder="Şifre Tekrar">
-                <button id="registerBtn" class="login-submit">Kayıt Ol</button>
-                <div id="registerError" class="error-message"></div>
-            </div>
+            <button onclick="login()" style="width:100%; padding:10px; background:#5865f2; color:white; border:none; border-radius:4px; margin:5px 0;">Giriş Yap</button>
+            <button onclick="register()" style="width:100%; padding:10px; background:#3ba55d; color:white; border:none; border-radius:4px; margin:5px 0;">Kayıt Ol</button>
+            <button onclick="adminLogin()" style="width:100%; padding:10px; background:#ed4245; color:white; border:none; border-radius:4px; margin:5px 0;">Admin Giriş</button>
             
-            <!-- ADMIN GİRİŞ FORM -->
-            <div id="adminForm" class="login-form">
-                <h2>🔐 Admin Paneli</h2>
-                <input type="text" id="adminUsername" placeholder="Admin Kullanıcı Adı" value="admin">
-                <input type="password" id="adminPassword" placeholder="Admin Şifre">
-                <button id="adminLoginBtn" class="login-submit admin-btn">Admin Giriş</button>
-                <div id="adminError" class="error-message"></div>
-                <div class="admin-info">
-                    <small>Admin şifreniz: <strong>NovaChat2024!</strong></small>
-                </div>
-            </div>
+            <div id="error" style="color:#ed4245; margin-top:10px; text-align:center;"></div>
         </div>
     </div>
 
     <!-- ANA UYGULAMA -->
-    <div id="app" style="display: none;">
-        <!-- SOL MENÜ -->
-        <div class="sidebar-left">
-            <div class="server-list">
-                <div class="server-icon home" id="homeBtn" title="Ana Sayfa">
-                    <i class="fas fa-home"></i>
-                </div>
-                <div class="server-icon add-server" id="addServerBtn" title="Sunucu Oluştur">
-                    <i class="fas fa-plus"></i>
-                </div>
-                <div class="server-icon discover-server" id="discoverBtn" title="Sunucu Keşfet">
-                    <i class="fas fa-compass"></i>
-                </div>
-                <div class="server-divider"></div>
-                <div id="serverList" class="server-items"></div>
-            </div>
-            
-            <div class="dm-section">
-                <div class="dm-header">
-                    <h3><i class="fas fa-comment-dots"></i> DM</h3>
-                    <button id="newDmBtn" class="btn-icon"><i class="fas fa-pen"></i></button>
-                </div>
-                <div id="dmList" class="dm-list"></div>
-            </div>
-        </div>
-
-        <!-- ORTA PANEL -->
-        <div class="sidebar-middle">
-            <div class="channel-header">
-                <h2 id="currentServerName">Ana Sayfa</h2>
-                <div class="header-actions">
-                    <button id="friendRequestsBtn" class="btn-icon" title="Arkadaşlık İstekleri">
-                        <i class="fas fa-user-plus"></i>
-                        <span id="requestBadge" class="badge" style="display: none;">0</span>
-                    </button>
-                    <button id="serverSettingsBtn" class="btn-icon"><i class="fas fa-cog"></i></button>
-                </div>
-            </div>
-            <div class="channel-search">
-                <i class="fas fa-search"></i>
-                <input type="text" placeholder="Ara" id="searchInput">
-            </div>
-            <div class="channel-categories">
-                <div class="category">
-                    <div class="category-header">
-                        <i class="fas fa-chevron-down"></i>
-                        <span>Metin Kanalları</span>
-                        <button id="addChannelBtn" class="btn-icon"><i class="fas fa-plus"></i></button>
-                    </div>
-                    <div id="channelList" class="channel-items"></div>
-                </div>
-                <div class="category">
-                    <div class="category-header">
-                        <i class="fas fa-chevron-down"></i>
-                        <span>Ses Kanalları</span>
-                        <button id="addVoiceChannelBtn" class="btn-icon"><i class="fas fa-plus"></i></button>
-                    </div>
-                    <div id="voiceChannelList" class="channel-items"></div>
-                </div>
-            </div>
-            <div class="user-info" id="currentUserInfo">
-                <img src="https://via.placeholder.com/100" alt="Avatar" id="currentUserAvatar">
-                <div class="user-details">
-                    <span id="currentUserName">Yükleniyor...</span>
-                    <span class="user-status online" id="currentUserStatus">🟢 Çevrimiçi</span>
-                </div>
-                <button id="openProfileBtn" class="btn-icon"><i class="fas fa-user"></i></button>
-            </div>
-        </div>
-
-        <!-- CHAT ALANI -->
-        <div class="chat-area">
-            <div class="chat-header">
-                <div class="channel-info">
-                    <h3 id="currentChannelName"># genel</h3>
-                    <span id="channelTopic"></span>
-                </div>
-                <div class="chat-actions">
-                    <button id="voiceCallBtn" class="btn-icon" title="Sesli Arama">
-                        <i class="fas fa-phone"></i>
-                    </button>
-                    <button id="videoCallBtn" class="btn-icon" title="Görüntülü Arama">
-                        <i class="fas fa-video"></i>
-                    </button>
-                    <div class="member-count" id="memberCount">
-                        <i class="fas fa-user"></i> <span>0</span>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="messages-container" id="messagesContainer"></div>
-            
-            <div class="message-input-container">
-                <div class="message-input-wrapper">
-                    <button class="emoji-picker-btn"><i class="far fa-smile"></i></button>
-                    <input type="text" id="messageInput" placeholder="Mesajınızı yazın..." autocomplete="off">
-                    <button class="file-upload-btn"><i class="fas fa-paperclip"></i></button>
-                    <button class="send-btn" id="sendMessageBtn"><i class="fas fa-paper-plane"></i></button>
-                </div>
-            </div>
-        </div>
-
-        <!-- SAĞ PANEL: Üye Listesi -->
-        <div class="sidebar-right">
-            <div class="members-header">
-                <h3>Üyeler - <span id="onlineCount">0</span></h3>
-                <button id="friendsListBtn" class="btn-icon" title="Arkadaş Listesi">
-                    <i class="fas fa-users"></i>
-                </button>
-            </div>
-            <div id="membersList" class="members-list"></div>
-        </div>
-    </div>
-
-    <!-- PROFİL MODALI -->
-    <div id="profileModal" class="modal">
-        <div class="modal-content profile-modal">
-            <div class="modal-header">
-                <h2 id="profileModalTitle">Profil</h2>
-                <button class="close-modal"><i class="fas fa-times"></i></button>
-            </div>
-            <div class="modal-body">
-                <div class="profile-avatar-section">
-                    <img src="https://via.placeholder.com/100" alt="Avatar" id="modalProfileAvatar">
-                    <div class="avatar-actions">
-                        <button id="changeAvatarBtn" class="btn-small">Fotoğraf Değiştir</button>
-                        <button id="friendActionBtn" class="btn-small friend-btn"></button>
-                    </div>
-                </div>
-                <div class="profile-info-section">
-                    <div class="info-row">
-                        <label>Kullanıcı Adı</label>
-                        <div class="info-value">
-                            <span id="modalProfileName"></span>
-                            <button class="btn-icon-small edit-btn" data-field="displayName" id="editNameBtn"><i class="fas fa-pen"></i></button>
-                        </div>
-                    </div>
-                    <div class="info-row">
-                        <label>E-posta</label>
-                        <span id="modalProfileEmail"></span>
-                    </div>
-                    <div class="info-row">
-                        <label>Hakkında</label>
-                        <div class="info-value">
-                            <p id="modalProfileBio">Kendinizden bahsedin...</p>
-                            <button class="btn-icon-small edit-btn" data-field="bio" id="editBioBtn"><i class="fas fa-pen"></i></button>
-                        </div>
-                    </div>
-                    <div class="info-row">
-                        <label>Durum</label>
-                        <select id="modalProfileStatus">
-                            <option value="online">🟢 Çevrimiçi</option>
-                            <option value="idle">🌙 Boşta</option>
-                            <option value="dnd">⛔ Rahatsız Etme</option>
-                            <option value="invisible">⚫ Görünmez</option>
-                        </select>
-                    </div>
-                    <div class="info-row" id="friendStatusRow" style="display: none;">
-                        <label>Arkadaşlık</label>
-                        <span id="friendStatus"></span>
-                    </div>
-                </div>
-                <div class="profile-stats">
-                    <div class="stat-item">
-                        <span class="stat-value" id="modalFriendCount">0</span>
-                        <span class="stat-label">Arkadaş</span>
-                    </div>
-                    <div class="stat-item">
-                        <span class="stat-value" id="modalServerCount">0</span>
-                        <span class="stat-label">Sunucu</span>
-                    </div>
-                </div>
-                <div class="profile-actions">
-                    <button id="startCallBtn" class="btn-success"><i class="fas fa-phone"></i> Ara</button>
-                    <button id="startVideoCallBtn" class="btn-success"><i class="fas fa-video"></i> Görüntülü Ara</button>
-                    <button id="logoutBtn" class="btn-danger">Çıkış Yap</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- ARKADAŞLIK İSTEKLERİ MODALI -->
-    <div id="friendRequestsModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2>Arkadaşlık İstekleri</h2>
-                <button class="close-modal"><i class="fas fa-times"></i></button>
-            </div>
-            <div class="modal-body">
-                <div id="friendRequestsList"></div>
-            </div>
-        </div>
-    </div>
-
-    <!-- ARKADAŞ LİSTESİ MODALI -->
-    <div id="friendsListModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2>Arkadaşlarım</h2>
-                <button class="close-modal"><i class="fas fa-times"></i></button>
-            </div>
-            <div class="modal-body">
-                <div class="friend-search">
-                    <input type="text" id="friendSearchInput" placeholder="Arkadaş ara...">
-                </div>
-                <div id="friendsList"></div>
-            </div>
-        </div>
-    </div>
-
-    <!-- SUNUCU KEŞFET MODALI -->
-    <div id="discoverModal" class="modal">
-        <div class="modal-content discover-modal">
-            <div class="modal-header">
-                <h2><i class="fas fa-compass"></i> Sunucu Keşfet</h2>
-                <button class="close-modal"><i class="fas fa-times"></i></button>
-            </div>
-            <div class="modal-body">
-                <div class="discover-search">
-                    <i class="fas fa-search"></i>
-                    <input type="text" id="discoverSearch" placeholder="Sunucu ara...">
-                </div>
-                <div id="discoverResults" class="discover-results"></div>
-            </div>
-        </div>
-    </div>
-
-    <!-- ARAMA MODALI (Görüntülü/Sesli) -->
-    <div id="callModal" class="modal">
-        <div class="modal-content call-modal">
-            <div class="call-header">
-                <img id="callAvatar" src="https://via.placeholder.com/100">
-                <h3 id="callUserName"></h3>
-                <p id="callStatus">Arıyor...</p>
-            </div>
-            <div class="call-video-container" id="videoContainer" style="display: none;">
-                <video id="localVideo" autoplay muted></video>
-                <video id="remoteVideo" autoplay></video>
-            </div>
-            <div class="call-actions">
-                <button id="acceptCallBtn" class="btn-success" style="display: none;"><i class="fas fa-phone"></i> Kabul Et</button>
-                <button id="rejectCallBtn" class="btn-danger"><i class="fas fa-phone-slash"></i> Reddet</button>
-                <button id="endCallBtn" class="btn-danger" style="display: none;"><i class="fas fa-phone-slash"></i> Sonlandır</button>
-                <button id="toggleVideoBtn" class="btn-icon" style="display: none;"><i class="fas fa-video"></i></button>
-                <button id="toggleAudioBtn" class="btn-icon" style="display: none;"><i class="fas fa-microphone"></i></button>
-            </div>
-        </div>
-    </div>
-
-    <!-- ADMIN PANELİ MODALI -->
-    <div id="adminPanelModal" class="modal">
-        <div class="modal-content admin-modal">
-            <div class="modal-header">
-                <h2><i class="fas fa-shield-alt"></i> Admin Paneli</h2>
-                <button class="close-modal"><i class="fas fa-times"></i></button>
-            </div>
-            <div class="modal-body">
-                <div class="admin-stats">
-                    <div class="stat-card">
-                        <span class="stat-value" id="adminTotalUsers">0</span>
-                        <span>Toplam Kullanıcı</span>
-                    </div>
-                    <div class="stat-card">
-                        <span class="stat-value" id="adminTotalServers">0</span>
-                        <span>Toplam Sunucu</span>
-                    </div>
-                    <div class="stat-card">
-                        <span class="stat-value" id="adminTotalMessages">0</span>
-                        <span>Toplam Mesaj</span>
-                    </div>
-                </div>
-                <div class="admin-tabs">
-                    <button class="admin-tab active" data-tab="users">Kullanıcılar</button>
-                    <button class="admin-tab" data-tab="servers">Sunucular</button>
-                    <button class="admin-tab" data-tab="reports">Raporlar</button>
-                </div>
-                <div id="adminUsersList" class="admin-list active"></div>
-                <div id="adminServersList" class="admin-list"></div>
-                <div id="adminReportsList" class="admin-list"></div>
-            </div>
-        </div>
+    <div id="app" style="display:none;">
+        <h1>Hoş Geldin!</h1>
+        <button onclick="logout()">Çıkış Yap</button>
     </div>
 
     <!-- FIREBASE -->
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-storage-compat.js"></script>
     
     <!-- UYGULAMA -->
     <script src="firebase.js"></script>
     <script src="app.js"></script>
 </body>
-    </html>
+</html>
