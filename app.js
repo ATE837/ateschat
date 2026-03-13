@@ -808,6 +808,9 @@ async function startDMCall(type){
     pc.onicecandidate=async e=>{if(e.candidate)await callRef.collection('offerCandidates').add(e.candidate.toJSON());};
     const offer=await pc.createOffer();await pc.setLocalDescription(offer);
     await callRef.set({offer:{type:offer.type,sdp:offer.sdp},callType:type,callerName:currentUser.displayName||currentUser.email,callerUid:currentUser.uid,targetUid:currentDMPartner.uid,dmCall:true,status:'ringing',createdAt:firebase.firestore.FieldValue.serverTimestamp()});
+    // Arama karşı taraf bilgisi - sunucu araması için üye listesinden al
+    const callPartnerName = currentServerData?.members?.find(m=>m.uid!==currentUser.uid)?.name || 'Arama';
+    setCallPartnerInfo(currentDMPartner?.name||'Arama', currentDMPartner?.photoURL||null);
     $('call-screen').style.display='flex';$('call-status').textContent='Bağlanıyor...';$('remote-video').style.display=type==='video'?'block':'none';
     callRef.onSnapshot(async snap=>{const data=snap.data();if(!data)return;if(data.answer&&!pc.currentRemoteDescription){await pc.setRemoteDescription(new RTCSessionDescription(data.answer));$('call-status').textContent='Bağlandı ✅';}if(data.status==='rejected'||data.status==='ended')endCall();});
     callRef.collection('answerCandidates').onSnapshot(snap=>{snap.docChanges().forEach(c=>{if(c.type==='added')pc.addIceCandidate(new RTCIceCandidate(c.doc.data()));});});
@@ -868,6 +871,9 @@ async function startCall(type){
     pc.onicecandidate=async e=>{if(e.candidate)await callRef.collection('offerCandidates').add(e.candidate.toJSON());};
     const offer=await pc.createOffer();await pc.setLocalDescription(offer);
     await callRef.set({offer:{type:offer.type,sdp:offer.sdp},callType:type,callerName:currentUser.displayName||currentUser.email,callerUid:currentUser.uid,serverId:currentServerId,status:'ringing',createdAt:firebase.firestore.FieldValue.serverTimestamp()});
+    // Arama karşı taraf bilgisi - sunucu araması için üye listesinden al
+    const callPartnerName = currentServerData?.members?.find(m=>m.uid!==currentUser.uid)?.name || 'Arama';
+    setCallPartnerInfo(callPartnerName, null);
     $('call-screen').style.display='flex';$('call-status').textContent='Bağlanıyor...';$('remote-video').style.display=type==='video'?'block':'none';
     callRef.onSnapshot(async snap=>{const data=snap.data();if(!data)return;if(data.answer&&!pc.currentRemoteDescription){await pc.setRemoteDescription(new RTCSessionDescription(data.answer));$('call-status').textContent='Bağlandı ✅';}if(data.status==='rejected'||data.status==='ended')endCall();});
     callRef.collection('answerCandidates').onSnapshot(snap=>{snap.docChanges().forEach(c=>{if(c.type==='added')pc.addIceCandidate(new RTCIceCandidate(c.doc.data()));});});
@@ -891,14 +897,38 @@ async function acceptCall(){
     await pc.setRemoteDescription(new RTCSessionDescription(callData.offer));const answer=await pc.createAnswer();await pc.setLocalDescription(answer);
     await callRef.update({answer:{type:answer.type,sdp:answer.sdp},status:'accepted'});
     callRef.collection('offerCandidates').onSnapshot(snap=>{snap.docChanges().forEach(c=>{if(c.type==='added')pc.addIceCandidate(new RTCIceCandidate(c.doc.data()));});});
+    setCallPartnerInfo(callData.callerName||'Arayan', null);
     $('call-screen').style.display='flex';$('call-status').textContent='Bağlandı ✅';$('remote-video').style.display=callData.callType==='video'?'block':'none';
 }
 async function rejectCall(){$('incoming-call').style.display='none';if(currentCallId){await db.collection('calls').doc(currentCallId).update({status:'rejected'});currentCallId=null;}}
+
+// ── ARAMA KÜÇÜLTME ───────────────────────────────────────
+function setCallPartnerInfo(name, photoURL){
+    const av=$('call-partner-av');
+    const bav=$('bubble-av');
+    $('call-partner-name').textContent=name||'Arama';
+    $('bubble-name').textContent=name||'Arama';
+    if(photoURL){
+        av.style.backgroundImage='url('+photoURL+')';av.textContent='';
+        bav.style.backgroundImage='url('+photoURL+')';bav.textContent='';
+    }else{
+        av.style.backgroundImage='';av.textContent=(name||'A')[0].toUpperCase();
+        bav.style.backgroundImage='';bav.textContent=(name||'A')[0].toUpperCase();
+    }
+}
+function minimizeCall(){
+    $('call-screen').style.display='none';
+    $('call-bubble').style.display='flex';
+}
+function expandCall(){
+    $('call-bubble').style.display='none';
+    $('call-screen').style.display='flex';
+}
 async function endCall(){
     releaseWakeLock();if(screenStream){screenStream.getTracks().forEach(t=>t.stop());screenStream=null;}
     if(pc){pc.close();pc=null;}if(localStream){localStream.getTracks().forEach(t=>t.stop());localStream=null;}
     if(currentCallId){try{await db.collection('calls').doc(currentCallId).update({status:'ended'});}catch(e){}currentCallId=null;}
-    $('call-screen').style.display='none';$('remote-video').srcObject=null;$('local-video').srcObject=null;$('local-video').style.display='block';
+    $('call-screen').style.display='none';$('call-bubble').style.display='none';$('remote-video').srcObject=null;$('local-video').srcObject=null;$('local-video').style.display='block';
     const btn=$('screen-btn');if(btn){btn.textContent='🖥️';btn.classList.remove('active');}
 }
 function toggleMute(){if(!localStream)return;const a=localStream.getAudioTracks()[0];if(a){a.enabled=!a.enabled;$('mute-btn').textContent=a.enabled?'🎤':'🔇';}}
