@@ -157,6 +157,7 @@
                 <button class="call-btn voice" onclick="startCall('voice')">📞</button>
                 <button class="call-btn video" onclick="startCall('video')">📹</button>
                 <button class="invite-btn" onclick="showInvite()">🔗 Davet</button>
+                <button class="server-settings-btn" onclick="showServerSettings()" title="Sunucu Ayarları">⚙️</button>
             </div>
         </div>
         <!-- MESAJ ARAMA -->
@@ -458,6 +459,37 @@ document.addEventListener('click', () => { const m = document.getElementById('ms
         </div>
         <input type="text" id="discover-search" class="modal-input" placeholder="Sunucu ara..." oninput="filterDiscoverServers()" style="margin-bottom:12px">
         <div id="discover-list" style="overflow-y:auto;max-height:50vh;display:flex;flex-direction:column;gap:8px"></div>
+    </div>
+</div>
+
+<!-- SUNUCU AYARLARI MODAL -->
+<div id="modal-server-settings" class="modal" style="display:none">
+    <div class="modal-box" style="width:500px;max-height:85vh;overflow-y:auto">
+        <div class="modal-header">
+            <h3 id="ss-server-name">⚙️ Sunucu Ayarları</h3>
+            <button onclick="hideModal('modal-server-settings')" class="modal-close">✕</button>
+        </div>
+
+        <!-- Üyeler -->
+        <div class="ss-section">
+            <div class="ss-section-title">👥 Üyeler</div>
+            <div id="ss-members-list" style="display:flex;flex-direction:column;gap:6px"></div>
+        </div>
+
+        <!-- Davet kodu -->
+        <div class="ss-section" id="ss-owner-section" style="display:none">
+            <div class="ss-section-title">🔗 Davet Kodu</div>
+            <div style="display:flex;gap:8px;align-items:center">
+                <code id="ss-invite-code" style="background:var(--input);padding:8px 12px;border-radius:8px;flex:1;font-size:14px"></code>
+                <button class="ss-btn blue" onclick="copySSInvite()">Kopyala</button>
+            </div>
+        </div>
+
+        <!-- Sunucuyu Sil -->
+        <div class="ss-section" id="ss-delete-section" style="display:none">
+            <div class="ss-section-title" style="color:#ed4245">⚠️ Tehlikeli Bölge</div>
+            <button class="ss-btn red" style="width:100%" onclick="deleteServer()">🗑️ Sunucuyu Sil</button>
+        </div>
     </div>
 </div>
 </body>
