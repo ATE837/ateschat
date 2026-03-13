@@ -1,7 +1,4 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getAuth, GoogleAuthProvider } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-import { getFirestore } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-
+// Firebase yapılandırması - SENİN ANAHTARLARIN
 const firebaseConfig = {
   apiKey: "AIzaSyCwwqd4FfhvLRQu8DUUfbdorIu3iJpkHMM",
   authDomain: "ateschat-cd9f4.firebaseapp.com",
@@ -13,7 +10,13 @@ const firebaseConfig = {
   measurementId: "G-1CBZNR0W3E"
 };
 
-const app = initializeApp(firebaseConfig);
-export const auth = getAuth(app);
-export const db = getFirestore(app);
-export const provider = new GoogleAuthProvider();
+// Firebase'i başlat
+firebase.initializeApp(firebaseConfig);
+
+// Servisleri global değişkenlere ata
+const auth = firebase.auth();
+const db = firebase.firestore();
+const storage = firebase.storage();
+const timestamp = firebase.firestore.FieldValue.serverTimestamp;
+
+console.log("✅ Firebase başarıyla başlatıldı!");
