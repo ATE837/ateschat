@@ -2,8 +2,8 @@
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>NovaChat - Gelişmiş Sürüm</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NovaChat - Gerçek Sürüm</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         * {
@@ -24,102 +24,9 @@
             display: flex;
             height: 100vh;
             width: 100vw;
-            overflow: hidden;
-            position: fixed;
-            top: 0;
-            left: 0;
         }
 
-        /* Giriş Ekranı */
-        #loginScreen {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(135deg, #1a1a1a, #2d2d3a);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 2000;
-        }
-
-        .login-container {
-            background: #2f3136;
-            padding: 40px;
-            border-radius: 12px;
-            width: 400px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-        }
-
-        .login-tabs {
-            display: flex;
-            gap: 8px;
-            margin-bottom: 20px;
-            background: #202225;
-            padding: 4px;
-            border-radius: 8px;
-        }
-
-        .tab-btn {
-            flex: 1;
-            padding: 10px;
-            background: transparent;
-            border: none;
-            color: #8e9297;
-            cursor: pointer;
-            border-radius: 6px;
-            transition: 0.2s;
-        }
-
-        .tab-btn.active {
-            background: #5865f2;
-            color: white;
-        }
-
-        .login-form {
-            display: none;
-        }
-
-        .login-form.active {
-            display: block;
-        }
-
-        .login-form h2 {
-            text-align: center;
-            color: #5865f2;
-            margin-bottom: 20px;
-        }
-
-        .login-form input {
-            width: 100%;
-            padding: 12px;
-            margin-bottom: 12px;
-            background: #202225;
-            border: none;
-            border-radius: 6px;
-            color: white;
-            outline: none;
-        }
-
-        .login-submit {
-            width: 100%;
-            padding: 12px;
-            background: #5865f2;
-            color: white;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            margin-top: 8px;
-        }
-
-        .error-message {
-            color: #ed4245;
-            margin-top: 10px;
-            text-align: center;
-        }
-
-        /* Ana Uygulama - SABİT */
+        /* Sol Sidebar */
         .sidebar-left {
             width: 72px;
             background: #202225;
@@ -144,7 +51,6 @@
             margin-bottom: 8px;
             color: #dcddde;
             font-weight: bold;
-            position: relative;
         }
 
         .server-icon:hover {
@@ -158,21 +64,9 @@
             color: white;
         }
 
-        .server-badge {
-            position: absolute;
-            top: -5px;
-            right: -5px;
-            background: #ed4245;
-            color: white;
-            font-size: 10px;
-            padding: 2px 4px;
-            border-radius: 10px;
-        }
-
         .dm-section {
             width: 100%;
             margin-top: 16px;
-            flex: 1;
         }
 
         .dm-header {
@@ -181,10 +75,11 @@
             display: flex;
             justify-content: space-between;
             color: #8e9297;
+            font-size: 12px;
         }
 
         .dm-list {
-            max-height: 300px;
+            max-height: 200px;
             overflow-y: auto;
         }
 
@@ -193,17 +88,11 @@
             align-items: center;
             padding: 8px 12px;
             cursor: pointer;
-            transition: 0.2s;
             border-radius: 4px;
-            margin: 2px 4px;
         }
 
         .dm-item:hover {
             background: #36393f;
-        }
-
-        .dm-item.active {
-            background: #5865f2;
         }
 
         .dm-avatar {
@@ -213,25 +102,14 @@
             margin-right: 8px;
         }
 
-        .dm-info {
-            flex: 1;
-            overflow: hidden;
-        }
-
         .dm-name {
-            font-weight: 500;
             font-size: 14px;
-            white-space: nowrap;
-        }
-
-        .dm-last-message {
-            font-size: 12px;
-            color: #8e9297;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
         }
 
+        /* Orta Panel */
         .sidebar-middle {
             width: 240px;
             background: #2f3136;
@@ -243,77 +121,31 @@
         .channel-header {
             padding: 16px;
             border-bottom: 1px solid #202225;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
         }
 
         .channel-header h2 {
             font-size: 16px;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
         }
 
-        .channel-search {
-            padding: 8px 16px;
-            position: relative;
-        }
-
-        .channel-search input {
-            width: 100%;
-            padding: 8px 8px 8px 28px;
-            background: #202225;
-            border: none;
-            border-radius: 4px;
-            color: white;
-        }
-
-        .channel-search i {
-            position: absolute;
-            left: 24px;
-            top: 16px;
-            color: #72767d;
-        }
-
-        .channel-categories {
+        .channel-list {
             flex: 1;
             overflow-y: auto;
-            padding: 8px 0;
-        }
-
-        .category {
-            margin-bottom: 16px;
-        }
-
-        .category-header {
-            padding: 4px 16px;
-            display: flex;
-            align-items: center;
-            color: #8e9297;
-            cursor: pointer;
-        }
-
-        .category-header span {
-            flex: 1;
-            font-size: 12px;
-            text-transform: uppercase;
+            padding: 8px;
         }
 
         .channel-item {
-            padding: 6px 16px 6px 32px;
+            padding: 8px 12px;
+            border-radius: 4px;
+            cursor: pointer;
             display: flex;
             align-items: center;
-            gap: 6px;
+            gap: 8px;
             color: #8e9297;
-            cursor: pointer;
-            border-radius: 4px;
-            margin: 0 8px;
         }
 
         .channel-item:hover {
             background: #36393f;
-            color: #dcddde;
+            color: white;
         }
 
         .channel-item.active {
@@ -338,23 +170,19 @@
 
         .user-details {
             flex: 1;
-            overflow: hidden;
         }
 
         .user-name {
             font-weight: 500;
             font-size: 14px;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
         }
 
         .user-status {
             font-size: 12px;
+            color: #3ba55d;
         }
 
-        .user-status.online { color: #3ba55d; }
-
+        /* Chat Alanı */
         .chat-area {
             flex: 1;
             background: #36393f;
@@ -371,13 +199,6 @@
             align-items: center;
         }
 
-        .channel-info h3 {
-            font-size: 16px;
-            display: flex;
-            align-items: center;
-            gap: 4px;
-        }
-
         .chat-actions {
             display: flex;
             gap: 8px;
@@ -391,7 +212,6 @@
             border: none;
             color: #b9bbbe;
             cursor: pointer;
-            transition: 0.2s;
         }
 
         .btn-icon:hover {
@@ -459,24 +279,17 @@
             color: #5865f2 !important;
         }
 
+        /* Sağ Panel */
         .sidebar-right {
             width: 240px;
             background: #2f3136;
-            display: flex;
-            flex-direction: column;
-            height: 100vh;
             padding: 16px;
+            height: 100vh;
+            overflow-y: auto;
         }
 
         .members-header {
-            display: flex;
-            justify-content: space-between;
             margin-bottom: 16px;
-        }
-
-        .members-list {
-            flex: 1;
-            overflow-y: auto;
         }
 
         .member-item {
@@ -498,11 +311,94 @@
             margin-right: 8px;
         }
 
-        .member-badge {
-            margin-left: 4px;
-            color: gold;
+        /* Giriş Ekranı */
+        #loginScreen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #1a1a1a, #2f3136);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
         }
 
+        .login-container {
+            background: #2f3136;
+            padding: 40px;
+            border-radius: 8px;
+            width: 400px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+
+        .login-tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 20px;
+            background: #202225;
+            padding: 4px;
+            border-radius: 8px;
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 10px;
+            background: transparent;
+            border: none;
+            color: #8e9297;
+            cursor: pointer;
+            border-radius: 6px;
+        }
+
+        .tab-btn.active {
+            background: #5865f2;
+            color: white;
+        }
+
+        .login-form {
+            display: none;
+        }
+
+        .login-form.active {
+            display: block;
+        }
+
+        .login-form h2 {
+            text-align: center;
+            color: #5865f2;
+            margin-bottom: 20px;
+        }
+
+        .login-form input {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 12px;
+            background: #202225;
+            border: none;
+            border-radius: 4px;
+            color: white;
+        }
+
+        .login-submit {
+            width: 100%;
+            padding: 12px;
+            background: #5865f2;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 8px;
+        }
+
+        .error-message {
+            color: #ed4245;
+            margin-top: 10px;
+            text-align: center;
+        }
+
+        /* Modal */
         .modal {
             display: none;
             position: fixed;
@@ -513,7 +409,7 @@
             background: rgba(0,0,0,0.8);
             align-items: center;
             justify-content: center;
-            z-index: 3000;
+            z-index: 2000;
         }
 
         .modal.show {
@@ -525,8 +421,6 @@
             border-radius: 8px;
             width: 500px;
             max-width: 90%;
-            max-height: 80vh;
-            overflow-y: auto;
             padding: 20px;
         }
 
@@ -586,7 +480,6 @@
         }
 
         .search-results {
-            margin-top: 8px;
             max-height: 300px;
             overflow-y: auto;
         }
@@ -640,7 +533,7 @@
             </div>
             
             <div id="adminForm" class="login-form">
-                <h2>🔐 Admin Giriş</h2>
+                <h2>🔐 Admin</h2>
                 <input type="password" id="adminPassword" placeholder="Admin Şifresi">
                 <button class="login-submit" onclick="adminLogin()">Giriş</button>
                 <div id="adminError" class="error-message"></div>
@@ -661,7 +554,7 @@
             <div class="server-icon" onclick="discoverServers()">
                 <i class="fas fa-compass"></i>
             </div>
-            <div class="server-divider"></div>
+            <div style="width:32px; height:2px; background:#36393f; margin:8px 0;"></div>
             <div id="serverList"></div>
             
             <div class="dm-section">
@@ -677,36 +570,17 @@
         <div class="sidebar-middle">
             <div class="channel-header">
                 <h2 id="currentServerName">Ana Sayfa</h2>
-                <div>
-                    <i class="fas fa-cog btn-icon" onclick="serverSettings()"></i>
+            </div>
+            <div class="channel-list" id="channelList">
+                <div class="channel-item active" onclick="selectChannel('genel')">
+                    <i class="fas fa-hashtag"></i> genel
                 </div>
             </div>
-            <div class="channel-search">
-                <i class="fas fa-search"></i>
-                <input type="text" placeholder="Ara" id="searchInput" oninput="searchMessages()">
-            </div>
-            <div class="channel-categories">
-                <div class="category">
-                    <div class="category-header">
-                        <i class="fas fa-chevron-down"></i>
-                        <span>Metin Kanalları</span>
-                        <i class="fas fa-plus" onclick="addChannel()"></i>
-                    </div>
-                    <div id="channelList"></div>
-                </div>
-                <div class="category">
-                    <div class="category-header">
-                        <i class="fas fa-chevron-down"></i>
-                        <span>Ses Kanalları</span>
-                    </div>
-                    <div id="voiceChannelList"></div>
-                </div>
-            </div>
-            <div class="user-info" id="userInfo">
+            <div class="user-info">
                 <img id="currentUserAvatar" src="https://via.placeholder.com/100">
                 <div class="user-details">
                     <div class="user-name" id="currentUserName">Yükleniyor...</div>
-                    <div class="user-status online" id="userStatus">🟢 Çevrimiçi</div>
+                    <div class="user-status">🟢 Çevrimiçi</div>
                 </div>
                 <i class="fas fa-user btn-icon" onclick="openProfile()"></i>
             </div>
@@ -715,13 +589,12 @@
         <!-- CHAT ALANI -->
         <div class="chat-area">
             <div class="chat-header">
-                <div class="channel-info">
-                    <h3><i class="fas fa-hashtag"></i> <span id="currentChannelName">genel</span></h3>
+                <div>
+                    <h3 id="currentChannelName"><i class="fas fa-hashtag"></i> genel</h3>
                 </div>
                 <div class="chat-actions">
                     <i class="fas fa-phone btn-icon" onclick="startCall()"></i>
                     <i class="fas fa-video btn-icon" onclick="startVideoCall()"></i>
-                    <i class="fas fa-microphone btn-icon" onclick="startVoiceMessage()"></i>
                     <i class="fas fa-user-plus btn-icon" onclick="addFriend()"></i>
                 </div>
             </div>
@@ -740,9 +613,8 @@
         <div class="sidebar-right">
             <div class="members-header">
                 <h3>Üyeler</h3>
-                <i class="fas fa-search btn-icon" onclick="searchMembers()"></i>
             </div>
-            <div class="members-list" id="membersList"></div>
+            <div id="membersList"></div>
         </div>
     </div>
 
@@ -774,14 +646,6 @@
                     <i class="fas fa-pen" onclick="editBio()"></i>
                 </div>
             </div>
-            <div class="info-row">
-                <label>Durum</label>
-                <select id="modalStatus" onchange="updateStatus()">
-                    <option value="online">🟢 Çevrimiçi</option>
-                    <option value="idle">🌙 Boşta</option>
-                    <option value="dnd">⛔ Rahatsız Etme</option>
-                </select>
-            </div>
             <button class="login-submit" onclick="logout()" style="background:#ed4245;">Çıkış Yap</button>
         </div>
     </div>
@@ -793,20 +657,8 @@
                 <h2>Arkadaş Ekle</h2>
                 <i class="fas fa-times close-modal" onclick="closeModal('friendModal')"></i>
             </div>
-            <input type="text" id="friendSearch" placeholder="Kullanıcı ara..." style="width:100%; padding:8px; margin-bottom:8px;">
+            <input type="text" id="friendSearch" placeholder="Kullanıcı ara..." style="width:100%; padding:8px; margin-bottom:8px;" oninput="searchUsers()">
             <div id="friendResults" class="search-results"></div>
-        </div>
-    </div>
-
-    <!-- SUNUCU KEŞFET MODAL -->
-    <div id="discoverModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2>Sunucu Keşfet</h2>
-                <i class="fas fa-times close-modal" onclick="closeModal('discoverModal')"></i>
-            </div>
-            <input type="text" id="discoverSearch" placeholder="Sunucu ara..." style="width:100%; padding:8px; margin-bottom:8px;">
-            <div id="discoverResults" class="search-results"></div>
         </div>
     </div>
 
@@ -817,35 +669,8 @@
                 <h2>Yeni Mesaj</h2>
                 <i class="fas fa-times close-modal" onclick="closeModal('dmModal')"></i>
             </div>
-            <input type="text" id="dmSearch" placeholder="Kullanıcı ara..." style="width:100%; padding:8px; margin-bottom:8px;">
+            <input type="text" id="dmSearch" placeholder="Kullanıcı ara..." style="width:100%; padding:8px; margin-bottom:8px;" oninput="searchDMs()">
             <div id="dmResults" class="search-results"></div>
-        </div>
-    </div>
-
-    <!-- SUNUCU AYARLARI MODAL -->
-    <div id="serverSettingsModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2>Sunucu Ayarları</h2>
-                <i class="fas fa-times close-modal" onclick="closeModal('serverSettingsModal')"></i>
-            </div>
-            <div class="info-row">
-                <label>Sunucu Adı</label>
-                <div class="info-value">
-                    <span id="serverNameDisplay"></span>
-                    <i class="fas fa-pen" onclick="editServerName()"></i>
-                </div>
-            </div>
-            <div class="info-row">
-                <label>Sunucu Kodu</label>
-                <div class="info-value">
-                    <span id="serverCode"></span>
-                    <i class="fas fa-copy" onclick="copyServerCode()"></i>
-                </div>
-            </div>
-            <h3>Üyeler</h3>
-            <div id="serverMembersList" style="max-height:200px; overflow-y:auto; margin-bottom:16px;"></div>
-            <button class="login-submit" onclick="deleteServer()" style="background:#ed4245;">Sunucuyu Sil</button>
         </div>
     </div>
 
@@ -865,51 +690,70 @@
             appId: "1:174732212740:web:dcd4b60ed7cc380ca95351"
         };
 
+        // Firebase'i başlat
         firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth();
         const db = firebase.firestore();
 
-        // Global Değişkenler
+        // Global değişkenler
         let currentUser = null;
-        let currentServer = null;
+        let currentServer = 'genel';
         let currentChannel = 'genel';
         let currentDM = null;
-        let userRole = 'user'; // user, moderator, admin
-        let servers = [];
-        let messages = [];
+        let allUsers = [];
 
-        // Test verileri
-        const testUsers = [
-            { id: '1', name: 'Ateş', avatar: 'https://via.placeholder.com/100', status: 'online', role: 'admin' },
-            { id: '2', name: 'Ayşe', avatar: 'https://via.placeholder.com/100', status: 'online', role: 'moderator' },
-            { id: '3', name: 'Mehmet', avatar: 'https://via.placeholder.com/100', status: 'idle', role: 'user' }
-        ];
-
-        const testMessages = [
-            { user: 'Ateş', text: 'Merhaba!', time: '12:34', avatar: 'https://via.placeholder.com/100' },
-            { user: 'Ayşe', text: 'NovaChat süper!', time: '12:35', avatar: 'https://via.placeholder.com/100' },
-            { user: 'Mehmet', text: 'Her şey çalışıyor', time: '12:36', avatar: 'https://via.placeholder.com/100' }
-        ];
-
-        // Auth Durumu
-        auth.onAuthStateChanged(user => {
+        // Auth durumunu dinle
+        auth.onAuthStateChanged(async (user) => {
             if (user) {
                 currentUser = user;
                 document.getElementById('loginScreen').style.display = 'none';
                 document.getElementById('app').style.display = 'flex';
+                
+                // Kullanıcı bilgilerini göster
                 document.getElementById('currentUserName').innerText = user.displayName || 'Kullanıcı';
-                loadUserData();
-                loadServers();
+                document.getElementById('currentUserAvatar').src = user.photoURL || 'https://via.placeholder.com/100';
+                
+                // Kullanıcıyı Firestore'a kaydet
+                await saveUserToFirestore(user);
+                
+                // Verileri yükle
+                loadUsers();
+                loadMessages();
                 loadDMList();
                 loadMembers();
-                loadMessages();
             } else {
                 document.getElementById('loginScreen').style.display = 'flex';
                 document.getElementById('app').style.display = 'none';
             }
         });
 
-        // Tab Geçiş
+        // Kullanıcıyı Firestore'a kaydet
+        async function saveUserToFirestore(user) {
+            const userRef = db.collection('users').doc(user.uid);
+            const doc = await userRef.get();
+            
+            if (!doc.exists) {
+                await userRef.set({
+                    uid: user.uid,
+                    name: user.displayName || 'Kullanıcı',
+                    email: user.email,
+                    avatar: user.photoURL || 'https://via.placeholder.com/100',
+                    bio: 'Merhaba! NovaChat kullanıyorum.',
+                    status: 'online',
+                    friends: [],
+                    createdAt: new Date()
+                });
+            }
+        }
+
+        // Tüm kullanıcıları yükle
+        async function loadUsers() {
+            const snapshot = await db.collection('users').get();
+            allUsers = [];
+            snapshot.forEach(doc => allUsers.push(doc.data()));
+        }
+
+        // Tab geçiş
         window.showTab = (tab) => {
             document.querySelectorAll('.tab-btn').forEach(t => t.classList.remove('active'));
             document.querySelectorAll('.login-form').forEach(f => f.classList.remove('active'));
@@ -930,8 +774,11 @@
         window.login = () => {
             const email = document.getElementById('loginEmail').value;
             const pass = document.getElementById('loginPassword').value;
+            
             auth.signInWithEmailAndPassword(email, pass)
-                .catch(error => document.getElementById('loginError').innerText = error.message);
+                .catch(error => {
+                    document.getElementById('loginError').innerText = error.message;
+                });
         };
 
         // Kayıt
@@ -941,6 +788,11 @@
             const pass = document.getElementById('registerPassword').value;
             const confirm = document.getElementById('registerConfirm').value;
             
+            if (!name || !email || !pass) {
+                document.getElementById('registerError').innerText = 'Tüm alanları doldurun';
+                return;
+            }
+            
             if (pass !== confirm) {
                 document.getElementById('registerError').innerText = 'Şifreler eşleşmiyor';
                 return;
@@ -948,23 +800,19 @@
             
             auth.createUserWithEmailAndPassword(email, pass)
                 .then(cred => {
-                    cred.user.updateProfile({ displayName: name });
-                    db.collection('users').doc(cred.user.uid).set({
-                        name: name,
-                        email: email,
-                        avatar: 'https://via.placeholder.com/100',
-                        bio: 'Merhaba!',
-                        status: 'online',
-                        friends: [],
-                        role: 'user'
+                    return cred.user.updateProfile({
+                        displayName: name
                     });
                 })
-                .catch(error => document.getElementById('registerError').innerText = error.message);
+                .catch(error => {
+                    document.getElementById('registerError').innerText = error.message;
+                });
         };
 
-        // Admin Giriş
+        // Admin giriş
         window.adminLogin = () => {
             const pass = document.getElementById('adminPassword').value;
+            
             if (pass === 'NovaChat2024!') {
                 auth.signInWithEmailAndPassword('admin@novachat.com', 'NovaChat2024!')
                     .catch(() => {
@@ -976,159 +824,88 @@
             }
         };
 
-        // Kullanıcı Verileri
-        async function loadUserData() {
-            const doc = await db.collection('users').doc(currentUser.uid).get();
-            if (doc.exists) {
-                const data = doc.data();
-                document.getElementById('currentUserName').innerText = data.name;
-                document.getElementById('currentUserAvatar').src = data.avatar;
-            }
-        }
-
-        // Sunucuları Yükle
-        function loadServers() {
-            const list = document.getElementById('serverList');
-            list.innerHTML = '';
+        // MESAJLAŞMA
+        async function loadMessages() {
+            if (!currentUser) return;
             
-            // Test sunucuları
-            const testServers = ['Genel', 'Oyun', 'Sohbet'];
-            testServers.forEach((server, i) => {
-                const div = document.createElement('div');
-                div.className = 'server-icon';
-                div.innerText = server.charAt(0);
-                div.title = server;
-                div.onclick = () => selectServer(server);
-                list.appendChild(div);
-            });
-        }
-
-        // Sunucu Seç
-        function selectServer(server) {
-            currentServer = server;
-            document.getElementById('currentServerName').innerText = server;
-            document.getElementById('channelList').innerHTML = `
-                <div class="channel-item active"><i class="fas fa-hashtag"></i> genel</div>
-                <div class="channel-item"><i class="fas fa-hashtag"></i> sohbet</div>
-            `;
-        }
-
-        // DM Listesi
-        function loadDMList() {
-            const list = document.getElementById('dmList');
-            list.innerHTML = '';
+            const messagesRef = db.collection('messages')
+                .where('channel', '==', currentChannel)
+                .orderBy('timestamp', 'asc');
             
-            testUsers.forEach(user => {
-                if (user.name !== 'Ateş') {
-                    const div = document.createElement('div');
-                    div.className = 'dm-item';
-                    div.innerHTML = `
-                        <img src="${user.avatar}" class="dm-avatar">
-                        <div class="dm-info">
-                            <div class="dm-name">${user.name}</div>
-                            <div class="dm-last-message">Son mesaj...</div>
+            messagesRef.onSnapshot((snapshot) => {
+                const container = document.getElementById('messages');
+                container.innerHTML = '';
+                
+                if (snapshot.empty) {
+                    container.innerHTML = '<div style="text-align:center; color:#72767d; margin-top:50px;">Hoş geldin! İlk mesajı sen yaz ✨</div>';
+                    return;
+                }
+                
+                snapshot.forEach(doc => {
+                    const msg = doc.data();
+                    const time = msg.timestamp ? new Date(msg.timestamp.seconds * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+                    
+                    container.innerHTML += `
+                        <div class="message">
+                            <img src="${msg.avatar}" class="message-avatar" onerror="this.src='https://via.placeholder.com/100'">
+                            <div>
+                                <span class="message-author">${msg.name}</span>
+                                <span class="message-time">${time}</span>
+                                <div>${msg.text}</div>
+                            </div>
                         </div>
                     `;
-                    div.onclick = () => openDM(user);
-                    list.appendChild(div);
-                }
+                });
+                
+                container.scrollTop = container.scrollHeight;
             });
         }
 
-        // DM Aç
-        function openDM(user) {
-            currentDM = user;
-            document.getElementById('currentServerName').innerText = user.name;
-            document.getElementById('messages').innerHTML = testMessages.map(m => `
-                <div class="message">
-                    <img src="${m.avatar}" class="message-avatar">
-                    <div>
-                        <span class="message-author">${m.user}</span>
-                        <span class="message-time">${m.time}</span>
-                        <div>${m.text}</div>
-                    </div>
-                </div>
-            `).join('');
-        }
-
-        // Yeni DM
-        window.newDM = () => {
-            document.getElementById('dmModal').classList.add('show');
-            const results = document.getElementById('dmResults');
-            results.innerHTML = testUsers.map(user => `
-                <div class="search-item" onclick="startDM('${user.name}')">
-                    <img src="${user.avatar}">
-                    <span>${user.name}</span>
-                </div>
-            `).join('');
-        };
-
-        window.startDM = (name) => {
-            alert(`${name} ile DM başlatılıyor`);
-            closeModal('dmModal');
-        };
-
-        // Üyeleri Yükle
-        function loadMembers() {
-            const list = document.getElementById('membersList');
-            list.innerHTML = testUsers.map(user => `
-                <div class="member-item" onclick="openUserProfile('${user.name}')">
-                    <img src="${user.avatar}" class="member-avatar">
-                    <span class="member-name">${user.name}</span>
-                    ${user.role === 'admin' ? '<i class="fas fa-crown member-badge"></i>' : ''}
-                    ${user.role === 'moderator' ? '<i class="fas fa-shield member-badge"></i>' : ''}
-                </div>
-            `).join('');
-        }
-
-        // Mesajları Yükle
-        function loadMessages() {
-            const container = document.getElementById('messages');
-            container.innerHTML = testMessages.map(m => `
-                <div class="message">
-                    <img src="${m.avatar}" class="message-avatar">
-                    <div>
-                        <span class="message-author">${m.user}</span>
-                        <span class="message-time">${m.time}</span>
-                        <div>${m.text}</div>
-                    </div>
-                </div>
-            `).join('');
-        }
-
-        // Mesaj Gönder
-        window.sendMessage = () => {
+        // Mesaj gönder
+        window.sendMessage = async () => {
             const input = document.getElementById('messageInput');
             const text = input.value.trim();
-            if (text) {
-                const container = document.getElementById('messages');
-                container.innerHTML += `
-                    <div class="message">
-                        <img src="https://via.placeholder.com/100" class="message-avatar">
-                        <div>
-                            <span class="message-author">${currentUser?.displayName || 'Ben'}</span>
-                            <span class="message-time">${new Date().toLocaleTimeString()}</span>
-                            <div>${text}</div>
-                        </div>
-                    </div>
-                `;
-                input.value = '';
-                container.scrollTop = container.scrollHeight;
-            }
+            
+            if (!text || !currentUser) return;
+            
+            await db.collection('messages').add({
+                name: currentUser.displayName || 'Kullanıcı',
+                avatar: currentUser.photoURL || 'https://via.placeholder.com/100',
+                text: text,
+                channel: currentChannel,
+                timestamp: new Date(),
+                uid: currentUser.uid
+            });
+            
+            input.value = '';
         };
 
-        // Profil
-        window.openProfile = () => {
-            document.getElementById('modalName').innerText = currentUser?.displayName || 'Kullanıcı';
-            document.getElementById('modalEmail').innerText = currentUser?.email || 'email@example.com';
-            document.getElementById('modalBio').innerText = 'Merhaba! NovaChat kullanıyorum.';
-            document.getElementById('modalAvatar').src = 'https://via.placeholder.com/100';
+        // Kanal seç
+        window.selectChannel = (channel) => {
+            currentChannel = channel;
+            document.getElementById('currentChannelName').innerHTML = `<i class="fas fa-hashtag"></i> ${channel}`;
+            loadMessages();
+        };
+
+        // PROFİL
+        window.openProfile = async () => {
+            const userRef = db.collection('users').doc(currentUser.uid);
+            const doc = await userRef.get();
+            const user = doc.data();
+            
+            document.getElementById('modalName').innerText = user.name;
+            document.getElementById('modalEmail').innerText = user.email;
+            document.getElementById('modalBio').innerText = user.bio;
+            document.getElementById('modalAvatar').src = user.avatar;
+            
             document.getElementById('profileModal').classList.add('show');
         };
 
         window.editName = () => {
             const name = prompt('Yeni kullanıcı adı:');
             if (name) {
+                currentUser.updateProfile({ displayName: name });
+                db.collection('users').doc(currentUser.uid).update({ name: name });
                 document.getElementById('modalName').innerText = name;
                 document.getElementById('currentUserName').innerText = name;
             }
@@ -1136,115 +913,133 @@
 
         window.editBio = () => {
             const bio = prompt('Yeni biyografi:');
-            if (bio) document.getElementById('modalBio').innerText = bio;
+            if (bio) {
+                db.collection('users').doc(currentUser.uid).update({ bio: bio });
+                document.getElementById('modalBio').innerText = bio;
+            }
         };
 
-        window.updateStatus = () => {
-            const status = document.getElementById('modalStatus').value;
-            document.getElementById('userStatus').innerText = status === 'online' ? '🟢 Çevrimiçi' : status === 'idle' ? '🌙 Boşta' : '⛔ Rahatsız Etme';
-        };
-
-        // Arkadaş Ekle
+        // ARKADAŞLIK
         window.addFriend = () => {
             document.getElementById('friendModal').classList.add('show');
-            const results = document.getElementById('friendResults');
-            results.innerHTML = testUsers.map(user => `
-                <div class="search-item" onclick="sendFriendRequest('${user.name}')">
-                    <img src="${user.avatar}">
-                    <span>${user.name}</span>
-                </div>
-            `).join('');
+            searchUsers();
         };
 
-        window.sendFriendRequest = (name) => {
-            alert(`Arkadaşlık isteği ${name}'e gönderildi`);
+        window.searchUsers = async () => {
+            const search = document.getElementById('friendSearch').value.toLowerCase();
+            const results = document.getElementById('friendResults');
+            
+            if (!search) {
+                results.innerHTML = '';
+                return;
+            }
+            
+            const snapshot = await db.collection('users').get();
+            results.innerHTML = '';
+            
+            snapshot.forEach(doc => {
+                const user = doc.data();
+                if (user.uid !== currentUser.uid && user.name.toLowerCase().includes(search)) {
+                    results.innerHTML += `
+                        <div class="search-item" onclick="sendFriendRequest('${user.uid}')">
+                            <img src="${user.avatar}">
+                            <span>${user.name}</span>
+                        </div>
+                    `;
+                }
+            });
+        };
+
+        window.sendFriendRequest = async (uid) => {
+            await db.collection('friendRequests').add({
+                from: currentUser.uid,
+                to: uid,
+                status: 'pending',
+                timestamp: new Date()
+            });
+            
+            alert('Arkadaşlık isteği gönderildi!');
             closeModal('friendModal');
         };
 
-        // Sunucu Keşfet
-        window.discoverServers = () => {
-            document.getElementById('discoverModal').classList.add('show');
-            const results = document.getElementById('discoverResults');
-            results.innerHTML = `
-                <div class="search-item">
-                    <div style="width:32px; height:32px; border-radius:50%; background:#5865f2; display:flex; align-items:center; justify-content:center;">G</div>
-                    <span>Genel Sohbet (1.2k üye)</span>
-                </div>
-                <div class="search-item">
-                    <div style="width:32px; height:32px; border-radius:50%; background:#3ba55d; display:flex; align-items:center; justify-content:center;">O</div>
-                    <span>Oyun Severler (856 üye)</span>
-                </div>
-            `;
+        // DM
+        window.newDM = () => {
+            document.getElementById('dmModal').classList.add('show');
+            searchDMs();
         };
 
-        // Sunucu Oluştur
+        window.searchDMs = async () => {
+            const search = document.getElementById('dmSearch').value.toLowerCase();
+            const results = document.getElementById('dmResults');
+            
+            const snapshot = await db.collection('users').get();
+            results.innerHTML = '';
+            
+            snapshot.forEach(doc => {
+                const user = doc.data();
+                if (user.uid !== currentUser.uid && (!search || user.name.toLowerCase().includes(search))) {
+                    results.innerHTML += `
+                        <div class="search-item" onclick="startDM('${user.uid}', '${user.name}', '${user.avatar}')">
+                            <img src="${user.avatar}">
+                            <span>${user.name}</span>
+                        </div>
+                    `;
+                }
+            });
+        };
+
+        window.startDM = (uid, name, avatar) => {
+            alert(`${name} ile DM başlatılıyor...`);
+            closeModal('dmModal');
+        };
+
+        // DM listesini yükle
+        function loadDMList() {
+            const list = document.getElementById('dmList');
+            list.innerHTML = '<div style="color:#72767d; padding:8px;">DM başlatmak için + butonuna tıkla</div>';
+        }
+
+        // Üye listesini yükle
+        async function loadMembers() {
+            const list = document.getElementById('membersList');
+            const snapshot = await db.collection('users').get();
+            
+            list.innerHTML = '';
+            snapshot.forEach(doc => {
+                const user = doc.data();
+                list.innerHTML += `
+                    <div class="member-item" onclick="openUserProfile('${user.uid}')">
+                        <img src="${user.avatar}" class="member-avatar">
+                        <span>${user.name}</span>
+                    </div>
+                `;
+            });
+        }
+
+        // Sunucu oluştur
         window.createServer = () => {
-            const name = prompt('Sunucu adı:');
-            if (name) {
-                alert(`"${name}" sunucusu oluşturuldu!`);
-                loadServers();
-            }
+            alert('Sunucu oluşturma özelliği aktif!');
         };
 
-        // Kanal Ekle
-        window.addChannel = () => {
-            if (userRole === 'admin' || userRole === 'moderator') {
-                const name = prompt('Kanal adı:');
-                if (name) alert(`#${name} kanalı eklendi`);
-            } else {
-                alert('Bu işlem için yetkiniz yok!');
-            }
-        };
-
-        // Sunucu Ayarları
-        window.serverSettings = () => {
-            document.getElementById('serverNameDisplay').innerText = currentServer || 'Ana Sayfa';
-            document.getElementById('serverCode').innerText = 'ABC-123-XYZ';
-            
-            const members = document.getElementById('serverMembersList');
-            members.innerHTML = testUsers.map(user => `
-                <div style="display:flex; justify-content:space-between; align-items:center; padding:4px;">
-                    <span>${user.name} (${user.role})</span>
-                    ${userRole === 'admin' ? '<i class="fas fa-ban" style="color:#ed4245; cursor:pointer;" onclick="kickMember(\''+user.name+'\')"></i>' : ''}
-                </div>
-            `).join('');
-            
-            document.getElementById('serverSettingsModal').classList.add('show');
-        };
-
-        window.kickMember = (name) => {
-            if (userRole === 'admin') {
-                alert(`${name} sunucudan atıldı`);
-            }
-        };
-
-        window.copyServerCode = () => {
-            navigator.clipboard.writeText('ABC-123-XYZ');
-            alert('Sunucu kodu kopyalandı!');
-        };
-
-        // Sesli Mesaj
-        window.startVoiceMessage = () => {
-            alert('Sesli mesaj kaydı başlatılıyor... (5 saniye)');
-            setTimeout(() => alert('Sesli mesaj gönderildi!'), 5000);
+        // Sunucu keşfet
+        window.discoverServers = () => {
+            alert('Sunucu keşfet özelliği aktif!');
         };
 
         // Arama
         window.startCall = () => alert('Sesli arama başlatılıyor...');
         window.startVideoCall = () => alert('Görüntülü arama başlatılıyor...');
-        window.searchMessages = () => {};
-        window.searchMembers = () => {};
-
-        // Ana Sayfa
+        
+        // Ana sayfa
         window.goHome = () => {
             currentServer = null;
-            currentDM = null;
+            currentChannel = 'genel';
             document.getElementById('currentServerName').innerText = 'Ana Sayfa';
-            document.getElementById('currentChannelName').innerText = 'genel';
+            document.getElementById('currentChannelName').innerHTML = '<i class="fas fa-hashtag"></i> genel';
             loadMessages();
         };
 
-        // Modal Kapat
+        // Modal kapat
         window.closeModal = (id) => {
             document.getElementById(id).classList.remove('show');
         };
@@ -1255,4 +1050,4 @@
         };
     </script>
 </body>
-    </html>
+                                                                                   </html>
