@@ -26,7 +26,7 @@
                 <div id="loginError" class="error-message"></div>
             </div>
             
-            <!-- KAYIT FORM (3 ŞEY İSTİYOR) -->
+            <!-- KAYIT FORM -->
             <div id="registerForm" class="login-form">
                 <h2>📝 Hesap Oluştur</h2>
                 <input type="text" id="registerName" placeholder="Kullanıcı Adı">
@@ -37,13 +37,13 @@
                 <div id="registerError" class="error-message"></div>
             </div>
             
-            <!-- ADMIN GİRİŞ -->
+            <!-- ADMIN GİRİŞ (ŞİFRE GİZLİ) -->
             <div id="adminForm" class="login-form">
                 <h2>🔐 Admin Paneli</h2>
                 <input type="password" id="adminPassword" placeholder="Admin Şifresi">
                 <button id="adminLoginBtn" class="login-submit admin-btn">Giriş</button>
                 <div id="adminError" class="error-message"></div>
-                <div class="admin-info">Admin şifre: <strong>NovaChat2024!</strong></div>
+                <!-- ŞİFRE BURADA YAZMIYOR! -->
             </div>
         </div>
     </div>
@@ -84,11 +84,14 @@
                         <i class="fas fa-user-plus"></i>
                         <span id="requestBadge" class="badge" style="display: none;">0</span>
                     </button>
+                    <button id="themeBtn" class="btn-icon" title="Tema Değiştir">
+                        <i class="fas fa-moon"></i>
+                    </button>
                 </div>
             </div>
             <div class="channel-search">
                 <i class="fas fa-search"></i>
-                <input type="text" placeholder="Ara" id="searchInput">
+                <input type="text" placeholder="Ara (mesajlar, kanallar...)" id="searchInput">
             </div>
             <div class="channel-categories">
                 <div class="category">
@@ -126,31 +129,33 @@
                     <span id="channelTopic"></span>
                 </div>
                 <div class="chat-actions">
-                    <button id="voiceCallBtn" class="btn-icon" title="Sesli Arama">
-                        <i class="fas fa-phone"></i>
-                    </button>
-                    <button id="videoCallBtn" class="btn-icon" title="Görüntülü Arama">
-                        <i class="fas fa-video"></i>
-                    </button>
+                    <button id="emojiPickerBtn" class="btn-icon" title="Emoji"><i class="far fa-smile"></i></button>
+                    <button id="fileUploadBtn" class="btn-icon" title="Dosya Yükle"><i class="fas fa-paperclip"></i></button>
+                    <button id="voiceCallBtn" class="btn-icon" title="Sesli Arama"><i class="fas fa-phone"></i></button>
+                    <button id="videoCallBtn" class="btn-icon" title="Görüntülü Arama"><i class="fas fa-video"></i></button>
+                    <button id="screenShareBtn" class="btn-icon" title="Ekran Paylaş"><i class="fas fa-desktop"></i></button>
                     <div class="member-count" id="memberCount">
                         <i class="fas fa-user"></i> <span>0</span>
                     </div>
                 </div>
             </div>
             
-            <div class="messages-container" id="messagesContainer">
-                <div style="text-align: center; color: #72767d; margin-top: 50px;">
-                    <i class="fas fa-comment-dots" style="font-size: 48px; margin-bottom: 16px;"></i>
-                    <h3>Bir sohbet başlatın</h3>
-                    <p>Bir sunucu seçin veya DM başlatın</p>
+            <div class="messages-container" id="messagesContainer"></div>
+            
+            <!-- Emoji Paneli -->
+            <div id="emojiPanel" class="emoji-panel" style="display: none;">
+                <div class="emoji-search">
+                    <input type="text" id="emojiSearch" placeholder="Emoji ara...">
                 </div>
+                <div id="emojiList" class="emoji-list"></div>
             </div>
             
             <div class="message-input-container">
                 <div class="message-input-wrapper">
-                    <button class="emoji-picker-btn"><i class="far fa-smile"></i></button>
+                    <button class="emoji-quick-btn"><i class="far fa-smile"></i></button>
                     <input type="text" id="messageInput" placeholder="Mesajınızı yazın..." autocomplete="off">
-                    <button class="file-upload-btn"><i class="fas fa-paperclip"></i></button>
+                    <input type="file" id="fileInput" style="display: none;">
+                    <button class="file-quick-btn"><i class="fas fa-paperclip"></i></button>
                     <button class="send-btn" id="sendMessageBtn"><i class="fas fa-paper-plane"></i></button>
                 </div>
             </div>
@@ -168,6 +173,19 @@
         </div>
     </div>
 
+    <!-- EMOJİ MODALI -->
+    <div id="emojiModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Emoji Seç</h2>
+                <button class="close-modal"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body">
+                <div class="emoji-grid" id="emojiGrid"></div>
+            </div>
+        </div>
+    </div>
+
     <!-- PROFİL MODALI -->
     <div id="profileModal" class="modal">
         <div class="modal-content profile-modal">
@@ -176,13 +194,16 @@
                 <button class="close-modal"><i class="fas fa-times"></i></button>
             </div>
             <div class="modal-body">
+                <div class="profile-cover" id="profileCover" style="background: #5865f2; height: 100px; border-radius: 8px 8px 0 0;"></div>
                 <div class="profile-avatar-section">
                     <img src="https://via.placeholder.com/100" alt="Avatar" id="modalProfileAvatar">
                     <div class="avatar-actions">
                         <button id="changeAvatarBtn" class="btn-small">Fotoğraf Değiştir</button>
+                        <button id="changeCoverBtn" class="btn-small">Kapak Değiştir</button>
                         <button id="friendActionBtn" class="btn-small friend-btn"></button>
                     </div>
                 </div>
+                <div class="profile-badges" id="profileBadges"></div>
                 <div class="profile-info-section">
                     <div class="info-row">
                         <label>Kullanıcı Adı</label>
@@ -211,6 +232,13 @@
                             <option value="invisible">⚫ Görünmez</option>
                         </select>
                     </div>
+                    <div class="info-row">
+                        <label>Seviye</label>
+                        <div class="level-bar">
+                            <div class="level-progress" id="levelProgress" style="width: 0%"></div>
+                            <span id="levelText">Seviye 1</span>
+                        </div>
+                    </div>
                 </div>
                 <div class="profile-stats">
                     <div class="stat-item">
@@ -221,8 +249,13 @@
                         <span class="stat-value" id="modalServerCount">0</span>
                         <span class="stat-label">Sunucu</span>
                     </div>
+                    <div class="stat-item">
+                        <span class="stat-value" id="modalMessageCount">0</span>
+                        <span class="stat-label">Mesaj</span>
+                    </div>
                 </div>
                 <div class="profile-actions">
+                    <button id="blockUserBtn" class="btn-danger"><i class="fas fa-ban"></i> Engelle</button>
                     <button id="startCallBtn" class="btn-success"><i class="fas fa-phone"></i> Ara</button>
                     <button id="startVideoCallBtn" class="btn-success"><i class="fas fa-video"></i> Görüntülü Ara</button>
                     <button id="logoutBtn" class="btn-danger">Çıkış Yap</button>
@@ -231,20 +264,36 @@
         </div>
     </div>
 
-    <!-- DİĞER MODALLAR -->
-    <div id="newDmModal" class="modal">
+    <!-- ARKADAŞLIK İSTEKLERİ MODALI -->
+    <div id="friendRequestsModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h2>Yeni Mesaj</h2>
+                <h2>Arkadaşlık İstekleri</h2>
                 <button class="close-modal"><i class="fas fa-times"></i></button>
             </div>
             <div class="modal-body">
-                <input type="text" id="dmUserSearch" placeholder="Kullanıcı ara...">
-                <div id="dmSearchResults" class="search-results"></div>
+                <div id="friendRequestsList"></div>
             </div>
         </div>
     </div>
 
+    <!-- ARKADAŞ LİSTESİ MODALI -->
+    <div id="friendsListModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Arkadaşlarım</h2>
+                <button class="close-modal"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body">
+                <div class="friend-search">
+                    <input type="text" id="friendSearchInput" placeholder="Arkadaş ara...">
+                </div>
+                <div id="friendsList"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- KEŞFET MODALI -->
     <div id="discoverModal" class="modal">
         <div class="modal-content discover-modal">
             <div class="modal-header">
@@ -261,6 +310,7 @@
         </div>
     </div>
 
+    <!-- ARAMA MODALI -->
     <div id="callModal" class="modal">
         <div class="modal-content call-modal">
             <div class="call-header">
@@ -271,13 +321,80 @@
             <div class="call-video-container" id="videoContainer" style="display: none;">
                 <video id="localVideo" autoplay muted></video>
                 <video id="remoteVideo" autoplay></video>
+                <div id="screenShareContainer" style="display: none;">
+                    <video id="screenVideo" autoplay></video>
+                </div>
             </div>
             <div class="call-actions">
+                <button id="muteAudioBtn" class="btn-icon"><i class="fas fa-microphone"></i></button>
+                <button id="muteVideoBtn" class="btn-icon"><i class="fas fa-video"></i></button>
+                <button id="screenShareBtn2" class="btn-icon"><i class="fas fa-desktop"></i></button>
                 <button id="endCallBtn" class="btn-danger"><i class="fas fa-phone-slash"></i> Sonlandır</button>
             </div>
         </div>
     </div>
 
+    <!-- MESAJ ARAMA MODALI -->
+    <div id="searchMessagesModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Mesaj Ara</h2>
+                <button class="close-modal"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body">
+                <input type="text" id="messageSearchInput" placeholder="Aranacak kelime...">
+                <div id="messageSearchResults" class="search-results"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ENGELLENENLER MODALI -->
+    <div id="blockedUsersModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Engellenen Kullanıcılar</h2>
+                <button class="close-modal"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body">
+                <div id="blockedUsersList"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- AYARLAR MODALI -->
+    <div id="settingsModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Ayarlar</h2>
+                <button class="close-modal"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body">
+                <div class="settings-section">
+                    <h3>Bildirimler</h3>
+                    <label>
+                        <input type="checkbox" id="notificationSound" checked> Mesaj sesi
+                    </label>
+                    <label>
+                        <input type="checkbox" id="browserNotifications" checked> Tarayıcı bildirimleri
+                    </label>
+                </div>
+                <div class="settings-section">
+                    <h3>Tema</h3>
+                    <select id="themeSelect">
+                        <option value="dark">Koyu</option>
+                        <option value="light">Açık</option>
+                        <option value="darker">Daha Koyu</option>
+                    </select>
+                </div>
+                <div class="settings-section">
+                    <h3>Engellenenler</h3>
+                    <button id="viewBlockedBtn" class="btn-small">Engellenenleri Göster</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ADMIN PANELİ -->
     <div id="adminPanelModal" class="modal">
         <div class="modal-content admin-modal">
             <div class="modal-header">
@@ -299,7 +416,12 @@
                         <span>Mesaj</span>
                     </div>
                 </div>
-                <div id="adminUsersList" class="admin-list"></div>
+                <div class="admin-tabs">
+                    <button class="admin-tab active" data-tab="users">Kullanıcılar</button>
+                    <button class="admin-tab" data-tab="servers">Sunucular</button>
+                </div>
+                <div id="adminUsersList" class="admin-list active"></div>
+                <div id="adminServersList" class="admin-list"></div>
             </div>
         </div>
     </div>
@@ -314,4 +436,4 @@
     <script src="firebase.js"></script>
     <script src="app.js"></script>
 </body>
-                    </html>
+                </html>
