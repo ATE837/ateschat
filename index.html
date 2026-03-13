@@ -185,7 +185,7 @@
             <button class="attach-btn" onclick="openFilePicker()" title="Dosya/Resim">📎</button>
             <input type="text" id="msg-input" placeholder="Mesaj gönder..." oninput="handleTyping()" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMessage();}">
             <button class="voice-msg-btn" id="voice-btn" onmousedown="startVoiceRecord()" onmouseup="stopVoiceRecord()" ontouchstart="startVoiceRecord(event)" ontouchend="stopVoiceRecord()" title="Bas ve tut">🎙️</button>
-            <button onclick="sendMessage()">➤</button>
+            <button id="send-btn" onclick="sendMessage()">➤</button>
         </div>
     </div>
     <div id="members-panel">
