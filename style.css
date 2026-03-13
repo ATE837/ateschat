@@ -1225,3 +1225,51 @@ body {
 }
 .bubble-btn.green { background: #23a55a; }
 .bubble-btn.red { background: #ed4245; }
+
+/* SUNUCU AYARLARI BUTONU */
+.server-settings-btn {
+    background: none; border: none; color: var(--muted);
+    font-size: 18px; cursor: pointer; padding: 4px 8px;
+    border-radius: 6px; transition: all 0.2s;
+}
+.server-settings-btn:hover { background: var(--input); color: var(--text); }
+
+/* SUNUCU AYARLARI MODAL */
+.ss-section {
+    margin-bottom: 20px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+.ss-section:last-child { border-bottom: none; margin-bottom: 0; }
+.ss-section-title {
+    font-size: 11px; font-weight: 700; color: var(--muted);
+    text-transform: uppercase; letter-spacing: 0.5px;
+    margin-bottom: 10px;
+}
+.ss-member-row {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 10px; border-radius: 8px;
+    transition: background 0.15s;
+}
+.ss-member-row:hover { background: var(--input); }
+.ss-member-av {
+    width: 36px; height: 36px; border-radius: 50%;
+    background: linear-gradient(135deg,#5865f2,#9b59b6);
+    color: #fff; font-size: 15px; font-weight: 800;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; background-size: cover; background-position: center;
+}
+.ss-member-info { flex: 1; min-width: 0; }
+.ss-member-name { font-size: 14px; font-weight: 600; color: var(--text); }
+.ss-member-role { font-size: 11px; color: var(--muted); margin-top: 1px; }
+.ss-member-btns { display: flex; gap: 6px; flex-shrink: 0; }
+.ss-btn {
+    padding: 5px 12px; border-radius: 6px; border: none;
+    font-size: 12px; font-weight: 600; cursor: pointer;
+    transition: opacity 0.15s;
+}
+.ss-btn:hover { opacity: 0.8; }
+.ss-btn.blue { background: #5865f2; color: #fff; }
+.ss-btn.red { background: #ed4245; color: #fff; }
+.ss-btn.gray { background: var(--input); color: var(--text); }
+.ss-btn.gold { background: #faa61a; color: #000; }
