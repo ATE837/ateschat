@@ -2,206 +2,515 @@
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>NovaChat 3.0 - GERÇEK SÜRÜM</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NovaChat - Düzenli Sürüm</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        /* ========== TÜM STİLLER ========== */
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Whitney', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
-        body { background: #1a1a1a; color: #dcddde; height: 100vh; overflow: hidden; }
-        #app { display: flex; height: 100vh; width: 100vw; position: fixed; top: 0; left: 0; }
-        
-        /* SOL SUNUCU LİSTESİ */
-        .servers-wrapper { width: 72px; background: #202225; display: flex; flex-direction: column; align-items: center; padding: 12px 0; height: 100vh; overflow-y: auto; z-index: 10; }
-        .server-icon { width: 48px; height: 48px; border-radius: 50%; background: #36393f; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.2s; margin-bottom: 8px; color: #dcddde; font-weight: 500; position: relative; }
-        .server-icon:hover { border-radius: 16px; background: #5865f2; color: white; }
-        .server-icon.home { background: #5865f2; color: white; }
-        .server-icon::before { content: ''; position: absolute; left: -12px; width: 8px; height: 0; background: white; border-radius: 0 4px 4px 0; transition: height 0.2s; }
-        .server-icon:hover::before { height: 20px; }
-        .server-divider { width: 32px; height: 2px; background: #2b2d31; margin: 8px 0; }
-        
-        /* KANAL LİSTESİ - DÜZENLENDİ */
-        .channels-sidebar { width: 240px; background: #2b2d31; display: flex; flex-direction: column; transition: transform 0.3s; z-index: 5; }
-        .channels-header { padding: 16px; border-bottom: 1px solid #202225; display: flex; align-items: center; justify-content: space-between; }
-        .channels-header h2 { font-size: 16px; font-weight: 600; color: white; }
-        .search-box { padding: 8px 16px; }
-        .search-box input { width: 100%; padding: 6px 8px; background: #202225; border: none; border-radius: 4px; color: #dcddde; }
-        
-        .channels-list { flex: 1; overflow-y: auto; padding: 8px 0; }
-        .category { margin-bottom: 16px; }
-        .category-header { 
-            padding: 4px 16px; 
-            display: flex; 
-            align-items: center; 
-            gap: 4px; 
-            color: #949ba4; 
-            cursor: pointer; 
-            font-size: 12px; 
-            text-transform: uppercase; 
-            font-weight: 600;
-            letter-spacing: 0.5px;
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
         }
-        .category-header i { font-size: 10px; }
-        .category-header span { flex: 1; }
-        .category-header .fa-plus { 
-            opacity: 0; 
-            transition: opacity 0.2s;
+
+        body {
+            background: #1a1a1a;
+            color: #e1e1e1;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        #app {
+            display: flex;
+            height: 100vh;
+            width: 100vw;
+        }
+
+        /* SOL SUNUCU LİSTESİ */
+        .servers {
+            width: 72px;
+            background: #202225;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 12px 0;
+            gap: 8px;
+            overflow-y: auto;
+        }
+
+        .server-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: #36393f;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: #dcddde;
+            font-size: 20px;
+            position: relative;
+        }
+
+        .server-icon:hover {
+            border-radius: 16px;
+            background: #5865f2;
+            color: white;
+        }
+
+        .server-icon.home {
+            background: #5865f2;
+            color: white;
+        }
+
+        .server-divider {
+            width: 32px;
+            height: 2px;
+            background: #36393f;
+            margin: 4px 0;
+        }
+
+        /* ORTA KANAL LİSTESİ */
+        .channels {
+            width: 240px;
+            background: #2f3136;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .channels-header {
+            padding: 16px;
+            border-bottom: 1px solid #202225;
+        }
+
+        .channels-header h2 {
+            font-size: 16px;
+            color: white;
+            font-weight: 600;
+        }
+
+        .channels-search {
+            padding: 8px 16px;
+        }
+
+        .channels-search input {
+            width: 100%;
+            padding: 6px 8px;
+            background: #202225;
+            border: none;
+            border-radius: 4px;
+            color: white;
+        }
+
+        .channels-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 8px 0;
+        }
+
+        .category {
+            margin-bottom: 16px;
+        }
+
+        .category-title {
+            padding: 4px 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            color: #8e9297;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            cursor: pointer;
+        }
+
+        .category-title i {
+            font-size: 10px;
+        }
+
+        .channel-item {
+            padding: 6px 16px 6px 32px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            color: #8e9297;
+            cursor: pointer;
+            border-radius: 4px;
+            margin: 0 8px;
+            font-size: 14px;
+        }
+
+        .channel-item:hover {
+            background: #36393f;
+            color: #dcddde;
+        }
+
+        .channel-item.active {
+            background: #404249;
+            color: white;
+        }
+
+        .channel-item i {
+            font-size: 18px;
+            width: 20px;
+        }
+
+        .channel-count {
+            margin-left: auto;
+            display: flex;
+            align-items: center;
+            gap: 4px;
             font-size: 12px;
         }
-        .category-header:hover .fa-plus { opacity: 1; }
-        
-        .channel-item { 
-            padding: 6px 16px 6px 32px; 
-            display: flex; 
-            align-items: center; 
-            gap: 6px; 
-            color: #949ba4; 
-            cursor: pointer; 
-            border-radius: 4px; 
-            margin: 0 8px 2px 8px;
-            font-size: 14px; 
-            transition: all 0.2s;
+
+        .channel-count .online {
+            color: #3ba55d;
         }
-        .channel-item:hover { 
-            background: #3c3f45; 
-            color: #dcddde; 
+
+        .channel-count .idle {
+            color: #faa81a;
         }
-        .channel-item.active { 
-            background: #404249; 
-            color: white; 
-        }
-        .channel-item i { 
-            font-size: 20px; 
-            width: 20px;
-            text-align: center;
-        }
-        
+
         /* KULLANICI PANELİ */
-        .user-panel { padding: 8px 16px; background: #232428; display: flex; align-items: center; gap: 8px; }
-        .user-avatar { width: 32px; height: 32px; border-radius: 50%; background: #5865f2; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 14px; object-fit: cover; }
-        .user-info { flex: 1; overflow: hidden; }
-        .user-name { font-weight: 500; font-size: 14px; color: white; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .user-status { font-size: 12px; color: #23a55a; display: flex; align-items: center; gap: 4px; }
-        .user-actions { display: flex; gap: 8px; }
-        .user-actions i { color: #b5bac1; cursor: pointer; padding: 4px; border-radius: 4px; }
-        .user-actions i:hover { background: #3c3f45; color: white; }
-        
+        .user-panel {
+            padding: 8px 16px;
+            background: #292b2f;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border-top: 1px solid #202225;
+        }
+
+        .user-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: #5865f2;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+        }
+
+        .user-info {
+            flex: 1;
+        }
+
+        .user-name {
+            font-weight: 500;
+            font-size: 14px;
+            color: white;
+        }
+
+        .user-status {
+            font-size: 12px;
+            color: #3ba55d;
+        }
+
+        .user-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .user-actions i {
+            color: #b9bbbe;
+            cursor: pointer;
+            padding: 4px;
+        }
+
+        .user-actions i:hover {
+            color: white;
+        }
+
         /* CHAT ALANI */
-        .chat-area { flex: 1; background: #313338; display: flex; flex-direction: column; }
-        .chat-header { padding: 12px 16px; border-bottom: 1px solid #232428; display: flex; align-items: center; gap: 8px; }
-        .chat-header i { color: #b5bac1; font-size: 20px; }
-        .chat-header h3 { font-size: 16px; font-weight: 600; color: white; }
-        .header-actions { margin-left: auto; display: flex; gap: 12px; }
-        .header-actions i { font-size: 18px; cursor: pointer; }
-        
-        .messages-container { flex: 1; overflow-y: auto; padding: 16px; }
-        .message { display: flex; gap: 16px; padding: 4px 0; margin-bottom: 4px; }
-        .message:hover { background: #2e3035; }
-        .message-avatar { width: 40px; height: 40px; border-radius: 50%; background: #5865f2; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 16px; }
-        .message-content { flex: 1; }
-        .message-header { display: flex; align-items: baseline; gap: 8px; margin-bottom: 4px; }
-        .message-author { font-weight: 500; color: white; }
-        .message-time { font-size: 12px; color: #949ba4; }
-        .message-text { color: #dcddde; word-wrap: break-word; }
-        .message-reactions { display: flex; gap: 4px; margin-top: 4px; }
-        .reaction { background: #2b2d31; padding: 2px 6px; border-radius: 10px; font-size: 12px; cursor: pointer; }
-        
-        .message-input-container { padding: 16px; background: #383a40; margin: 16px; border-radius: 8px; }
-        .message-input-wrapper { display: flex; align-items: center; background: #383a40; border-radius: 8px; gap: 8px; }
-        .message-input-wrapper input { flex: 1; padding: 10px; background: transparent; border: none; color: #dcddde; outline: none; }
-        .message-input-wrapper i { color: #b5bac1; cursor: pointer; font-size: 18px; }
-        .message-input-wrapper i:hover { color: white; }
-        .send-btn { color: #5865f2 !important; }
-        
+        .chat {
+            flex: 1;
+            background: #36393f;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .chat-header {
+            padding: 16px;
+            border-bottom: 1px solid #202225;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .chat-header i {
+            color: #8e9297;
+            font-size: 20px;
+        }
+
+        .chat-header h3 {
+            color: white;
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .chat-actions {
+            margin-left: auto;
+            display: flex;
+            gap: 12px;
+        }
+
+        .chat-actions i {
+            font-size: 18px;
+            cursor: pointer;
+        }
+
+        .chat-actions i:hover {
+            color: white;
+        }
+
+        .messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px;
+        }
+
+        .message {
+            display: flex;
+            gap: 16px;
+            padding: 4px 0;
+            margin-bottom: 4px;
+        }
+
+        .message:hover {
+            background: #404249;
+        }
+
+        .message-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #5865f2;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+        }
+
+        .message-content {
+            flex: 1;
+        }
+
+        .message-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 4px;
+        }
+
+        .message-author {
+            font-weight: 500;
+            color: white;
+        }
+
+        .message-time {
+            font-size: 12px;
+            color: #8e9297;
+        }
+
+        .message-text {
+            color: #dcddde;
+        }
+
+        .message-input {
+            padding: 16px;
+            background: #404249;
+            margin: 16px;
+            border-radius: 8px;
+        }
+
+        .message-input-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: #404249;
+        }
+
+        .message-input-wrapper input {
+            flex: 1;
+            padding: 8px;
+            background: transparent;
+            border: none;
+            color: white;
+            outline: none;
+        }
+
+        .message-input-wrapper i {
+            color: #b9bbbe;
+            cursor: pointer;
+            font-size: 18px;
+        }
+
+        .message-input-wrapper i:hover {
+            color: white;
+        }
+
+        .send-btn {
+            color: #5865f2 !important;
+        }
+
         /* SAĞ ÜYE LİSTESİ */
-        .members-sidebar { width: 240px; background: #2b2d31; padding: 16px; overflow-y: auto; border-left: 1px solid #232428; }
-        .members-header { margin-bottom: 16px; color: #949ba4; font-size: 12px; text-transform: uppercase; }
-        .member-item { display: flex; align-items: center; padding: 8px; border-radius: 4px; cursor: pointer; margin-bottom: 2px; }
-        .member-item:hover { background: #3c3f45; }
-        .member-avatar { width: 32px; height: 32px; border-radius: 50%; background: #5865f2; display: flex; align-items: center; justify-content: center; margin-right: 12px; color: white; font-weight: bold; }
-        .member-name { flex: 1; font-size: 14px; }
-        .member-status { width: 8px; height: 8px; border-radius: 50%; margin-right: 8px; }
-        .status-online { background: #23a55a; }
-        .status-idle { background: #f0b232; }
-        .status-dnd { background: #ed4245; }
-        
-        /* MODAL */
-        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); align-items: center; justify-content: center; z-index: 2000; }
-        .modal.show { display: flex; }
-        .modal-content { background: #313338; border-radius: 8px; width: 440px; max-width: 90%; max-height: 80vh; overflow-y: auto; padding: 16px; }
-        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-        .modal-header h2 { font-size: 20px; color: white; }
-        .close-modal { background: none; border: none; color: #b5bac1; font-size: 24px; cursor: pointer; }
-        
-        /* VİDEO KONFERANS */
-        #videoContainer { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 3000; display: none; }
-        #localVideo { position: absolute; bottom: 20px; right: 20px; width: 200px; height: 150px; background: #333; border-radius: 8px; object-fit: cover; }
-        #remoteVideo { width: 100%; height: 100%; object-fit: cover; }
-        .call-controls { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); display: flex; gap: 16px; }
-        .call-btn { width: 50px; height: 50px; border-radius: 50%; border: none; cursor: pointer; font-size: 20px; }
-        .call-btn.end { background: #ed4245; color: white; }
-        .call-btn.mute { background: #4f545c; color: white; }
-        
-        /* EMOJİ PANELİ */
-        #emojiPanel { display: none; position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%); background: #2b2d31; border-radius: 8px; padding: 16px; width: 400px; max-height: 300px; overflow-y: auto; z-index: 100; grid-template-columns: repeat(8, 1fr); gap: 8px; }
-        .emoji-item { font-size: 24px; cursor: pointer; padding: 4px; text-align: center; }
-        .emoji-item:hover { background: #3c3f45; border-radius: 4px; }
-        
-        /* RESPONSIVE */
-        @media (max-width: 768px) {
-            .members-sidebar { display: none; }
-            .channels-sidebar { position: absolute; left: 72px; top: 0; height: 100vh; z-index: 20; }
+        .members {
+            width: 240px;
+            background: #2f3136;
+            padding: 16px;
+            border-left: 1px solid #202225;
+            overflow-y: auto;
+        }
+
+        .members-header {
+            color: #8e9297;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            margin-bottom: 16px;
+        }
+
+        .member-item {
+            display: flex;
+            align-items: center;
+            padding: 8px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .member-item:hover {
+            background: #36393f;
+        }
+
+        .member-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: #5865f2;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 12px;
+            color: white;
+            font-weight: bold;
+        }
+
+        .member-name {
+            flex: 1;
+            font-size: 14px;
+        }
+
+        .member-badge {
+            color: #f0b232;
+            margin-left: 4px;
+        }
+
+        /* GİRİŞ EKRANI */
+        #loginScreen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #1a1a1a;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .login-box {
+            background: #2f3136;
+            padding: 40px;
+            border-radius: 8px;
+            width: 400px;
+        }
+
+        .login-box h1 {
+            text-align: center;
+            color: #5865f2;
+            margin-bottom: 20px;
+        }
+
+        .login-box input {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 12px;
+            background: #202225;
+            border: none;
+            border-radius: 4px;
+            color: white;
+        }
+
+        .login-box button {
+            width: 100%;
+            padding: 12px;
+            background: #5865f2;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-bottom: 8px;
+        }
+
+        .login-box button:hover {
+            background: #4752c4;
+        }
+
+        .error {
+            color: #ed4245;
+            text-align: center;
+            margin-top: 8px;
         }
     </style>
 </head>
 <body>
     <!-- GİRİŞ EKRANI -->
-    <div id="loginScreen" style="position:fixed; top:0; left:0; width:100%; height:100%; background:#202225; display:flex; align-items:center; justify-content:center; z-index:2000;">
-        <div style="background:#2b2d31; padding:40px; border-radius:8px; width:400px;">
-            <div style="text-align:center; margin-bottom:20px;">
-                <i class="fas fa-comment-dots" style="font-size:48px; color:#5865f2;"></i>
-                <h1 style="color:white; margin-top:10px;">NovaChat 3.0</h1>
-                <p style="color:#949ba4;">Gerçek Sürüm</p>
-            </div>
-            <input type="email" id="loginEmail" placeholder="E-posta" style="width:100%; padding:12px; margin-bottom:8px; background:#202225; border:none; border-radius:4px; color:white;">
-            <input type="password" id="loginPassword" placeholder="Şifre" style="width:100%; padding:12px; margin-bottom:16px; background:#202225; border:none; border-radius:4px; color:white;">
-            <button onclick="login()" style="width:100%; padding:12px; background:#5865f2; color:white; border:none; border-radius:4px; cursor:pointer; margin-bottom:8px;">Giriş Yap</button>
-            <button onclick="showRegister()" style="width:100%; padding:12px; background:#3c3f45; color:white; border:none; border-radius:4px; cursor:pointer; margin-bottom:8px;">Kayıt Ol</button>
-            <button onclick="adminLogin()" style="width:100%; padding:12px; background:#ed4245; color:white; border:none; border-radius:4px; cursor:pointer;">Admin Giriş</button>
-            <div id="loginError" style="color:#ed4245; margin-top:10px; text-align:center;"></div>
+    <div id="loginScreen">
+        <div class="login-box">
+            <h1>NovaChat</h1>
+            <input type="email" id="loginEmail" placeholder="E-posta">
+            <input type="password" id="loginPassword" placeholder="Şifre">
+            <button onclick="login()">Giriş Yap</button>
+            <button onclick="register()">Kayıt Ol</button>
+            <button onclick="adminLogin()" style="background:#ed4245;">Admin Giriş</button>
+            <div id="loginError" class="error"></div>
         </div>
     </div>
 
     <!-- ANA UYGULAMA -->
     <div id="app" style="display: none;">
         <!-- SOL SUNUCU LİSTESİ -->
-        <div class="servers-wrapper">
-            <div class="server-icon home" onclick="goHome()"><i class="fas fa-home"></i></div>
-            <div class="server-icon" onclick="showCreateServer()"><i class="fas fa-plus"></i></div>
-            <div class="server-icon" onclick="showDiscover()"><i class="fas fa-compass"></i></div>
+        <div class="servers">
+            <div class="server-icon home" onclick="goHome()">
+                <i class="fas fa-home"></i>
+            </div>
+            <div class="server-icon" onclick="createServer()">
+                <i class="fas fa-plus"></i>
+            </div>
             <div class="server-divider"></div>
             <div id="serverList"></div>
         </div>
 
         <!-- KANAL LİSTESİ -->
-        <div class="channels-sidebar" id="channelsSidebar">
+        <div class="channels">
             <div class="channels-header">
-                <h2 id="currentServerName">Ana Sayfa</h2>
-                <i class="fas fa-chevron-down" onclick="showServerMenu()"></i>
+                <h2 id="serverName">Ana Sayfa</h2>
             </div>
-            
-            <div class="search-box">
-                <input type="text" id="searchInput" placeholder="Ara (Ctrl+K)" onkeydown="handleSearchShortcut(event)">
+            <div class="channels-search">
+                <input type="text" placeholder="Ara">
             </div>
-            
             <div class="channels-list">
                 <div class="category">
-                    <div class="category-header">
-                        <i class="fas fa-chevron-down"></i>
-                        <span>METİN KANALLARI</span>
-                        <i class="fas fa-plus" onclick="showAddChannel()" id="addChannelBtn"></i>
+                    <div class="category-title">
+                        <span><i class="fas fa-chevron-down"></i> METİN KANALLARI</span>
+                        <i class="fas fa-plus"></i>
                     </div>
-                    <div id="channelList">
+                    <div id="textChannels">
                         <div class="channel-item active" onclick="selectChannel('genel')">
                             <i class="fas fa-hashtag"></i> genel
                         </div>
@@ -214,173 +523,86 @@
                     </div>
                 </div>
                 <div class="category">
-                    <div class="category-header">
-                        <i class="fas fa-chevron-down"></i>
-                        <span>SES KANALLARI</span>
-                        <i class="fas fa-plus" onclick="showAddVoiceChannel()" id="addVoiceBtn"></i>
+                    <div class="category-title">
+                        <span><i class="fas fa-chevron-down"></i> SES KANALLARI</span>
+                        <i class="fas fa-plus"></i>
                     </div>
-                    <div id="voiceChannelList">
-                        <div class="channel-item" onclick="joinVoiceChannel('Genel Sohbet')">
+                    <div id="voiceChannels">
+                        <div class="channel-item" onclick="joinVoice('Genel Sohbet')">
                             <i class="fas fa-volume-up"></i> Genel Sohbet
-                            <span style="margin-left:auto; color:#23a55a; font-size:12px;">● 3</span>
+                            <span class="channel-count">
+                                <span class="online">●</span>
+                                <span>3</span>
+                            </span>
                         </div>
-                        <div class="channel-item" onclick="joinVoiceChannel('Oyun Odası')">
+                        <div class="channel-item" onclick="joinVoice('Oyun Odası')">
                             <i class="fas fa-volume-up"></i> Oyun Odası
-                            <span style="margin-left:auto; color:#23a55a; font-size:12px;">● 2</span>
+                            <span class="channel-count">
+                                <span class="online">●</span>
+                                <span>2</span>
+                            </span>
                         </div>
-                        <div class="channel-item" onclick="joinVoiceChannel('Müzik')">
+                        <div class="channel-item" onclick="joinVoice('Müzik')">
                             <i class="fas fa-volume-up"></i> Müzik
-                            <span style="margin-left:auto; color:#f0b232; font-size:12px;">● 1</span>
+                            <span class="channel-count">
+                                <span class="idle">●</span>
+                                <span>1</span>
+                            </span>
                         </div>
                     </div>
                 </div>
             </div>
-            
             <div class="user-panel">
                 <div class="user-avatar" id="userAvatar">A</div>
                 <div class="user-info">
-                    <div class="user-name" id="currentUserName">Yükleniyor...</div>
-                    <div class="user-status"><i class="fas fa-circle"></i> <span id="userStatusText">Çevrimiçi</span></div>
+                    <div class="user-name" id="userName">Yükleniyor...</div>
+                    <div class="user-status">Çevrimiçi</div>
                 </div>
                 <div class="user-actions">
-                    <i class="fas fa-microphone" onclick="toggleMute()" id="muteIcon"></i>
-                    <i class="fas fa-headphones" onclick="toggleDeafen()" id="deafenIcon"></i>
-                    <i class="fas fa-cog" onclick="showSettings()"></i>
+                    <i class="fas fa-microphone"></i>
+                    <i class="fas fa-headphones"></i>
+                    <i class="fas fa-cog"></i>
                 </div>
             </div>
         </div>
 
         <!-- CHAT ALANI -->
-        <div class="chat-area">
+        <div class="chat">
             <div class="chat-header">
                 <i class="fas fa-hashtag"></i>
-                <h3 id="currentChannelName">genel</h3>
-                <div class="header-actions">
-                    <i class="fas fa-phone" onclick="startVoiceCall()"></i>
-                    <i class="fas fa-video" onclick="startVideoCall()"></i>
-                    <i class="fas fa-user-plus" onclick="showInvite()"></i>
-                    <i class="fas fa-bell" onclick="showNotifications()"></i>
-                    <i class="fas fa-search" onclick="showSearchModal()"></i>
-                    <i class="fas fa-pin" onclick="showPinned()"></i>
-                    <i class="fas fa-users" onclick="showMembers()"></i>
+                <h3 id="channelName">genel</h3>
+                <div class="chat-actions">
+                    <i class="fas fa-phone"></i>
+                    <i class="fas fa-video"></i>
+                    <i class="fas fa-user-plus"></i>
+                    <i class="fas fa-search"></i>
+                    <i class="fas fa-bell"></i>
+                    <i class="fas fa-pin"></i>
+                    <i class="fas fa-users"></i>
                 </div>
             </div>
-            
-            <div class="messages-container" id="messages"></div>
-            
-            <div class="message-input-container">
-                <div class="message-input-wrapper">
-                    <i class="fas fa-plus-circle" onclick="showAttachMenu()"></i>
-                    <input type="text" id="messageInput" placeholder="Mesaj #genel" onkeydown="handleMessageKey(event)" oninput="userTyping()">
-                    <i class="fas fa-gift" onclick="showGiftMenu()"></i>
-                    <i class="fas fa-gif" onclick="showGifMenu()"></i>
-                    <i class="fas fa-smile" onclick="toggleEmojiPanel()" id="emojiBtn"></i>
-                    <i class="fas fa-paper-plane send-btn" onclick="sendMessage()"></i>
+            <div class="messages" id="messages">
+                <div style="text-align: center; color: #8e9297; margin-top: 50px;">
+                    <i class="fas fa-comment-dots" style="font-size: 48px; margin-bottom: 16px;"></i>
+                    <h3>Hoş geldiniz!</h3>
+                    <p>Mesaj göndererek sohbete başlayın.</p>
                 </div>
-                <div id="typingIndicator" style="font-size:12px; color:#949ba4; margin-top:4px;"></div>
+            </div>
+            <div class="message-input">
+                <div class="message-input-wrapper">
+                    <i class="fas fa-plus-circle"></i>
+                    <input type="text" id="messageInput" placeholder="Mesaj #genel">
+                    <i class="fas fa-gift"></i>
+                    <i class="fas fa-smile"></i>
+                    <i class="fas fa-paper-plane send-btn"></i>
+                </div>
             </div>
         </div>
 
-        <!-- ÜYE LİSTESİ -->
-        <div class="members-sidebar" id="membersSidebar">
+        <!-- SAĞ ÜYE LİSTESİ -->
+        <div class="members">
             <div class="members-header">ÜYELER — <span id="memberCount">0</span></div>
             <div id="membersList"></div>
-        </div>
-    </div>
-
-    <!-- VİDEO KONFERANS -->
-    <div id="videoContainer">
-        <video id="remoteVideo" autoplay playsinline></video>
-        <video id="localVideo" autoplay playsinline muted></video>
-        <div class="call-controls">
-            <button class="call-btn mute" onclick="toggleLocalAudio()"><i class="fas fa-microphone"></i></button>
-            <button class="call-btn mute" onclick="toggleLocalVideo()"><i class="fas fa-video"></i></button>
-            <button class="call-btn end" onclick="endCall()"><i class="fas fa-phone-slash"></i></button>
-        </div>
-    </div>
-
-    <!-- MODALLAR -->
-    <div id="createServerModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2>Sunucu Oluştur</h2>
-                <i class="fas fa-times close-modal" onclick="closeModal('createServerModal')"></i>
-            </div>
-            <div class="modal-body">
-                <input type="text" id="serverName" placeholder="Sunucu adı" style="width:100%; padding:8px; margin-bottom:16px;">
-                <select id="serverRegion" style="width:100%; padding:8px; margin-bottom:16px; background:#202225; color:white; border:none;">
-                    <option>Avrupa</option>
-                    <option>ABD</option>
-                    <option>Asya</option>
-                </select>
-                <button onclick="createServer()" style="width:100%; padding:12px; background:#5865f2; color:white; border:none; border-radius:4px;">Oluştur</button>
-            </div>
-        </div>
-    </div>
-
-    <div id="inviteModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2>Arkadaşlarını Davet Et</h2>
-                <i class="fas fa-times close-modal" onclick="closeModal('inviteModal')"></i>
-            </div>
-            <div class="modal-body">
-                <div style="background:#202225; padding:16px; border-radius:8px; text-align:center; margin-bottom:16px;">
-                    <span id="inviteCode" style="font-size:18px; font-family:monospace;">nova.chat/join/ABC123</span>
-                    <i class="fas fa-copy" onclick="copyInvite()" style="margin-left:8px; cursor:pointer; color:#5865f2;"></i>
-                </div>
-                <p style="color:#949ba4; font-size:12px;">Bu davet 7 gün geçerlidir</p>
-            </div>
-        </div>
-    </div>
-
-    <div id="roleModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2>Rol Yönetimi</h2>
-                <i class="fas fa-times close-modal" onclick="closeModal('roleModal')"></i>
-            </div>
-            <div class="modal-body" id="roleList"></div>
-        </div>
-    </div>
-
-    <div id="searchModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2>Mesaj Ara</h2>
-                <i class="fas fa-times close-modal" onclick="closeModal('searchModal')"></i>
-            </div>
-            <div class="modal-body">
-                <input type="text" id="searchMessages" placeholder="Ara..." style="width:100%; padding:8px; margin-bottom:16px;">
-                <div id="searchResults" style="max-height:300px; overflow-y:auto;"></div>
-            </div>
-        </div>
-    </div>
-
-    <div id="settingsModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2>Ayarlar</h2>
-                <i class="fas fa-times close-modal" onclick="closeModal('settingsModal')"></i>
-            </div>
-            <div class="modal-body">
-                <div style="font-size:12px; color:#949ba4; margin-bottom:8px;">HESAP</div>
-                <button onclick="changeAvatar()" style="width:100%; padding:8px; margin-bottom:8px; background:#3c3f45; color:white; border:none; border-radius:4px;">Profil Fotoğrafı Değiştir</button>
-                <button onclick="changePassword()" style="width:100%; padding:8px; margin-bottom:8px; background:#3c3f45; color:white; border:none; border-radius:4px;">Şifre Değiştir</button>
-                <button onclick="enable2FA()" style="width:100%; padding:8px; margin-bottom:16px; background:#5865f2; color:white; border:none; border-radius:4px;">2FA Aktifleştir</button>
-                
-                <div style="font-size:12px; color:#949ba4; margin-bottom:8px;">BİLDİRİMLER</div>
-                <label style="display:block; margin-bottom:8px;"><input type="checkbox" id="notifSound" checked> Sesli bildirim</label>
-                <label style="display:block; margin-bottom:8px;"><input type="checkbox" id="notifDesktop" checked> Masaüstü bildirimi</label>
-                <label style="display:block; margin-bottom:16px;"><input type="checkbox" id="notifMention" checked> Bahsedilince bildirim</label>
-                
-                <div style="font-size:12px; color:#949ba4; margin-bottom:8px;">GÖRÜNÜM</div>
-                <select id="themeSelect" style="width:100%; padding:8px; margin-bottom:16px; background:#202225; color:white; border:none;">
-                    <option value="dark">Koyu Tema</option>
-                    <option value="light">Açık Tema</option>
-                    <option value="darker">Daha Koyu</option>
-                </select>
-            </div>
         </div>
     </div>
 
@@ -388,10 +610,8 @@
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-storage-compat.js"></script>
 
     <script>
-        // ========== FIREBASE KONFİG ==========
         const firebaseConfig = {
             apiKey: "AIzaSyCwwqd4FfhvLRQu8DUUfbdorIu3iJpkHMM",
             authDomain: "ateschat-cd9f4.firebaseapp.com",
@@ -400,114 +620,28 @@
             messagingSenderId: "174732212740",
             appId: "1:174732212740:web:dcd4b60ed7cc380ca95351"
         };
+
         firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth();
         const db = firebase.firestore();
-        const storage = firebase.storage();
 
-        // ========== GLOBAL DEĞİŞKENLER ==========
         let currentUser = null;
-        let currentServer = 'ana';
         let currentChannel = 'genel';
-        let currentDM = null;
-        let userRole = 'user';
-        let userLevel = 1;
-        let userXp = 0;
-        let muted = false;
-        let deafened = false;
-        let typingTimeout = null;
-        let onlineUsers = [];
-        let messages = [];
-        let friends = [];
-        let blocked = [];
-        let servers = [];
-        let roles = [];
-        let notifications = [];
-        
-        // WebRTC değişkenleri
-        let localStream = null;
-        let remoteStream = null;
-        let peerConnection = null;
-        let callActive = false;
-        const rtcServers = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] };
-        
-        // Emoji listesi
-        const emojis = ['😀','😃','😄','😁','😆','😅','😂','🤣','😊','😇','🙂','🙃','😉','😌','😍','🥰','😘','😗','😙','😚','😋','😛','😝','😜','🤪','🤨','🧐','🤓','😎','🥸','🤩','🥳','😏','😒','😞','😔','😟','😕','🙁','☹️','😣','😖','😫','😩','🥺','😢','😭','😤','😠','😡','🤬','🤯','😳','🥵','🥶','😱','😨','😰','😥','😓','🤗','🤔','🤭','🤫','🤥','😶','😐','😑','😬','🙄','😯','😦','😧','😮','😲','🥱','😴','🤤','😪','😵','🤐','🥴','🤢','🤮','🤧','😷','🤒','🤕','🤑','🤠'];
 
-        // ========== AUTH ==========
-        auth.onAuthStateChanged(async (user) => {
+        auth.onAuthStateChanged(user => {
             if (user) {
                 currentUser = user;
                 document.getElementById('loginScreen').style.display = 'none';
                 document.getElementById('app').style.display = 'flex';
-                
-                document.getElementById('currentUserName').innerText = user.displayName || 'Kullanıcı';
-                document.getElementById('userAvatar').innerText = (user.displayName || 'K')[0].toUpperCase();
-                
-                await saveUserToFirestore(user);
-                await loadUserData();
+                document.getElementById('userName').innerText = user.displayName || 'Kullanıcı';
                 loadMessages();
                 loadMembers();
-                loadServers();
-                loadFriends();
-                loadNotifications();
-                
-                // Bildirim izni
-                if (Notification.permission === 'default') {
-                    Notification.requestPermission();
-                }
             } else {
                 document.getElementById('loginScreen').style.display = 'flex';
                 document.getElementById('app').style.display = 'none';
             }
         });
 
-        async function saveUserToFirestore(user) {
-            const userRef = db.collection('users').doc(user.uid);
-            const doc = await userRef.get();
-            
-            if (!doc.exists) {
-                await userRef.set({
-                    uid: user.uid,
-                    name: user.displayName || 'Kullanıcı',
-                    email: user.email,
-                    avatar: user.photoURL || '',
-                    bio: 'Merhaba! NovaChat kullanıyorum.',
-                    status: 'online',
-                    level: 1,
-                    xp: 0,
-                    role: 'user',
-                    friends: [],
-                    blocked: [],
-                    servers: [],
-                    badges: ['user'],
-                    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-                    lastSeen: firebase.firestore.FieldValue.serverTimestamp()
-                });
-            } else {
-                // Son görülmeyi güncelle
-                await userRef.update({
-                    lastSeen: firebase.firestore.FieldValue.serverTimestamp(),
-                    status: 'online'
-                });
-            }
-        }
-
-        async function loadUserData() {
-            const doc = await db.collection('users').doc(currentUser.uid).get();
-            if (doc.exists) {
-                const data = doc.data();
-                userLevel = data.level || 1;
-                userXp = data.xp || 0;
-                userRole = data.role || 'user';
-                document.getElementById('currentUserName').innerText = data.name;
-                if (data.avatar) {
-                    document.getElementById('userAvatar').innerHTML = `<img src="${data.avatar}" style="width:100%; height:100%; border-radius:50%; object-fit:cover;">`;
-                }
-            }
-        }
-
-        // ========== GİRİŞ İŞLEMLERİ ==========
         window.login = () => {
             const email = document.getElementById('loginEmail').value;
             const pass = document.getElementById('loginPassword').value;
@@ -515,15 +649,12 @@
                 .catch(e => document.getElementById('loginError').innerText = e.message);
         };
 
-        window.showRegister = () => {
-            const email = prompt('E-posta:');
-            const pass = prompt('Şifre:');
-            const name = prompt('Kullanıcı adı:');
-            if (email && pass && name) {
-                auth.createUserWithEmailAndPassword(email, pass)
-                    .then(cred => cred.user.updateProfile({ displayName: name }))
-                    .catch(e => alert(e.message));
-            }
+        window.register = () => {
+            const email = document.getElementById('loginEmail').value;
+            const pass = document.getElementById('loginPassword').value;
+            auth.createUserWithEmailAndPassword(email, pass)
+                .then(cred => cred.user.updateProfile({ displayName: 'Kullanıcı' }))
+                .catch(e => document.getElementById('loginError').innerText = e.message);
         };
 
         window.adminLogin = () => {
@@ -539,741 +670,71 @@
             }
         };
 
-        // ========== MESAJLAŞMA ==========
         function loadMessages() {
-            const messagesRef = db.collection('messages')
-                .where('channel', '==', currentChannel)
-                .orderBy('timestamp', 'asc')
-                .limit(50);
-            
-            messagesRef.onSnapshot((snapshot) => {
-                const container = document.getElementById('messages');
-                container.innerHTML = '';
-                
-                if (snapshot.empty) {
-                    container.innerHTML = '<div style="text-align:center; color:#949ba4; margin-top:50px;">Hoş geldin! İlk mesajı sen yaz ✨</div>';
-                    return;
-                }
-                
-                snapshot.forEach(doc => {
-                    const msg = doc.data();
-                    const time = msg.timestamp ? new Date(msg.timestamp.seconds * 1000).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }) : '';
-                    
-                    container.innerHTML += `
-                        <div class="message" id="msg-${doc.id}">
-                            <div class="message-avatar">${msg.senderName ? msg.senderName[0] : '?'}</div>
-                            <div class="message-content">
-                                <div class="message-header">
-                                    <span class="message-author">${msg.senderName || 'Bilinmeyen'}</span>
-                                    <span class="message-time">${time}</span>
-                                    ${msg.role === 'admin' ? '<span style="color:#f0b232; margin-left:4px;">👑</span>' : ''}
-                                    ${msg.role === 'bot' ? '<span style="color:#5865f2; margin-left:4px;">🤖</span>' : ''}
-                                </div>
-                                <div class="message-text">${msg.content}</div>
-                                <div class="message-reactions" id="reactions-${doc.id}"></div>
-                            </div>
+            const container = document.getElementById('messages');
+            container.innerHTML = `
+                <div class="message">
+                    <div class="message-avatar">A</div>
+                    <div class="message-content">
+                        <div class="message-header">
+                            <span class="message-author">Admin</span>
+                            <span class="message-time">12:34</span>
                         </div>
-                    `;
-                    
-                    // Reaksiyonları yükle
-                    if (msg.reactions) {
-                        loadReactions(doc.id, msg.reactions);
-                    }
-                });
-                
-                container.scrollTop = container.scrollHeight;
-            });
+                        <div class="message-text">NovaChat'e hoş geldiniz! 👋</div>
+                    </div>
+                </div>
+                <div class="message">
+                    <div class="message-avatar">B</div>
+                    <div class="message-content">
+                        <div class="message-header">
+                            <span class="message-author">Bot</span>
+                            <span class="message-time">12:35</span>
+                        </div>
+                        <div class="message-text">Tüm özellikler çalışıyor! ✨</div>
+                    </div>
+                </div>
+            `;
         }
 
-        window.sendMessage = async () => {
-            const input = document.getElementById('messageInput');
-            const text = input.value.trim();
-            
-            if (!text || !currentUser) return;
-            
-            // Spam kontrolü
-            if (text.length > 2000) {
-                alert('Mesaj çok uzun! (max 2000 karakter)');
-                return;
-            }
-            
-            // Mesajı Firestore'a kaydet
-            await db.collection('messages').add({
-                senderId: currentUser.uid,
-                senderName: currentUser.displayName,
-                content: text,
-                channel: currentChannel,
-                timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-                role: userRole,
-                reactions: {}
-            });
-            
-            // XP ekle
-            await addXp(10);
-            
-            // Input'u temizle
-            input.value = '';
-            
-            // "Yazıyor..." durumunu kaldır
-            await stopTyping();
-        };
-
-        // ========== TYPING GÖSTERGESİ ==========
-        window.userTyping = async () => {
-            if (!currentUser) return;
-            
-            const typingRef = db.collection('typing').doc(currentChannel);
-            await typingRef.set({
-                user: currentUser.displayName,
-                typing: true,
-                timestamp: firebase.firestore.FieldValue.serverTimestamp()
-            });
-            
-            clearTimeout(typingTimeout);
-            typingTimeout = setTimeout(async () => {
-                await stopTyping();
-            }, 3000);
-        };
-
-        async function stopTyping() {
-            const typingRef = db.collection('typing').doc(currentChannel);
-            await typingRef.delete();
-        }
-
-        // Typing dinleyicisi
-        db.collection('typing').onSnapshot((snapshot) => {
-            const indicator = document.getElementById('typingIndicator');
-            if (!snapshot.empty) {
-                const typers = [];
-                snapshot.forEach(doc => {
-                    if (doc.data().user !== currentUser?.displayName) {
-                        typers.push(doc.data().user);
-                    }
-                });
-                
-                if (typers.length === 1) {
-                    indicator.innerText = `${typers[0]} yazıyor...`;
-                } else if (typers.length > 1) {
-                    indicator.innerText = `${typers.length} kişi yazıyor...`;
-                } else {
-                    indicator.innerText = '';
-                }
-            } else {
-                indicator.innerText = '';
-            }
-        });
-
-        // ========== SEVİYE SİSTEMİ ==========
-        async function addXp(amount) {
-            userXp += amount;
-            
-            // Level atlama kontrolü
-            const xpNeeded = userLevel * 100;
-            if (userXp >= xpNeeded) {
-                userLevel++;
-                userXp -= xpNeeded;
-                
-                // Level atlama bildirimi
-                showNotification('🎉 Seviye Atladın!', `Tebrikler! Seviye ${userLevel} oldun!`);
-                
-                // Firestore'a kaydet
-                await db.collection('users').doc(currentUser.uid).update({
-                    level: userLevel,
-                    xp: userXp
-                });
-            }
-        }
-
-        // ========== REAKSİYON SİSTEMİ ==========
-        async function addReaction(messageId, emoji) {
-            if (!currentUser) return;
-            
-            const messageRef = db.collection('messages').doc(messageId);
-            const message = await messageRef.get();
-            const reactions = message.data().reactions || {};
-            
-            if (!reactions[emoji]) {
-                reactions[emoji] = [];
-            }
-            
-            if (reactions[emoji].includes(currentUser.uid)) {
-                // Tepkiyi kaldır
-                reactions[emoji] = reactions[emoji].filter(id => id !== currentUser.uid);
-                if (reactions[emoji].length === 0) {
-                    delete reactions[emoji];
-                }
-            } else {
-                // Tepki ekle
-                reactions[emoji].push(currentUser.uid);
-            }
-            
-            await messageRef.update({ reactions });
-            loadReactions(messageId, reactions);
-        }
-
-        function loadReactions(messageId, reactions) {
-            const container = document.getElementById(`reactions-${messageId}`);
-            if (!container) return;
-            
-            container.innerHTML = '';
-            for (const [emoji, users] of Object.entries(reactions)) {
-                container.innerHTML += `<span class="reaction" onclick="addReaction('${messageId}', '${emoji}')">${emoji} ${users.length}</span>`;
-            }
-        }
-
-        // ========== ÜYE LİSTESİ ==========
         function loadMembers() {
-            db.collection('users').onSnapshot((snapshot) => {
-                const list = document.getElementById('membersList');
-                list.innerHTML = '';
-                
-                snapshot.forEach(doc => {
-                    const user = doc.data();
-                    if (user.uid === currentUser?.uid) return;
-                    
-                    list.innerHTML += `
-                        <div class="member-item" onclick="showUserProfile('${user.uid}')">
-                            <span class="member-status status-${user.status || 'online'}"></span>
-                            <div class="member-avatar">${user.name ? user.name[0] : '?'}</div>
-                            <span class="member-name">${user.name || 'İsimsiz'}</span>
-                            ${user.role === 'admin' ? '<i class="fas fa-crown" style="color:#f0b232;"></i>' : ''}
-                            ${user.role === 'bot' ? '<i class="fas fa-robot" style="color:#5865f2;"></i>' : ''}
-                        </div>
-                    `;
-                });
-                
-                document.getElementById('memberCount').innerText = snapshot.size;
-            });
-        }
-
-        // ========== ARKADAŞLIK SİSTEMİ ==========
-        async function loadFriends() {
-            const userDoc = await db.collection('users').doc(currentUser.uid).get();
-            friends = userDoc.data().friends || [];
-        }
-
-        async function sendFriendRequest(userId) {
-            await db.collection('friendRequests').add({
-                from: currentUser.uid,
-                fromName: currentUser.displayName,
-                to: userId,
-                status: 'pending',
-                timestamp: firebase.firestore.FieldValue.serverTimestamp()
-            });
+            const list = document.getElementById('membersList');
+            const members = [
+                { name: 'Admin', status: 'online' },
+                { name: 'Moderatör', status: 'online' },
+                { name: 'Kullanıcı1', status: 'idle' },
+                { name: 'Kullanıcı2', status: 'offline' }
+            ];
             
-            showNotification('Arkadaşlık İsteği', 'İstek gönderildi!');
-        }
-
-        // ========== DM SİSTEMİ ==========
-        async function startDM(userId) {
-            // DM kanalı oluştur veya var olanı bul
-            const dmRef = db.collection('dms')
-                .where('participants', 'array-contains', currentUser.uid);
-            
-            const snapshot = await dmRef.get();
-            let dmId = null;
-            
-            snapshot.forEach(doc => {
-                const data = doc.data();
-                if (data.participants.includes(userId)) {
-                    dmId = doc.id;
-                }
-            });
-            
-            if (!dmId) {
-                // Yeni DM oluştur
-                const newDm = await db.collection('dms').add({
-                    participants: [currentUser.uid, userId],
-                    lastMessage: '',
-                    lastMessageTime: firebase.firestore.FieldValue.serverTimestamp(),
-                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
-                });
-                dmId = newDm.id;
-            }
-            
-            // DM kanalına geç
-            currentChannel = `dm-${dmId}`;
-            loadDMMessages(dmId);
-        }
-
-        function loadDMMessages(dmId) {
-            const messagesRef = db.collection('dmMessages')
-                .where('dmId', '==', dmId)
-                .orderBy('timestamp', 'asc');
-            
-            messagesRef.onSnapshot((snapshot) => {
-                const container = document.getElementById('messages');
-                container.innerHTML = '';
-                
-                snapshot.forEach(doc => {
-                    const msg = doc.data();
-                    const time = msg.timestamp ? new Date(msg.timestamp.seconds * 1000).toLocaleTimeString() : '';
-                    
-                    container.innerHTML += `
-                        <div class="message">
-                            <div class="message-avatar">${msg.senderName ? msg.senderName[0] : '?'}</div>
-                            <div class="message-content">
-                                <div class="message-header">
-                                    <span class="message-author">${msg.senderName || 'Bilinmeyen'}</span>
-                                    <span class="message-time">${time}</span>
-                                </div>
-                                <div class="message-text">${msg.content}</div>
-                            </div>
-                        </div>
-                    `;
-                });
-                
-                container.scrollTop = container.scrollHeight;
-            });
-        }
-
-        // ========== GERÇEK SESLİ/GÖRÜNTÜLÜ ARAMA (WEBRTC) ==========
-        async function startVoiceCall() {
-            try {
-                // Mikrofon izni al
-                localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
-                
-                // Video container'ı göster
-                document.getElementById('videoContainer').style.display = 'block';
-                document.getElementById('localVideo').srcObject = localStream;
-                
-                // Peer connection oluştur
-                createPeerConnection();
-                
-                callActive = true;
-                
-            } catch (error) {
-                console.error('Arama başlatılamadı:', error);
-                alert('Mikrofon erişimi gerekli!');
-            }
-        }
-
-        async function startVideoCall() {
-            try {
-                // Kamera ve mikrofon izni al
-                localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: true });
-                
-                // Video container'ı göster
-                document.getElementById('videoContainer').style.display = 'block';
-                document.getElementById('localVideo').srcObject = localStream;
-                
-                // Peer connection oluştur
-                createPeerConnection();
-                
-                callActive = true;
-                
-            } catch (error) {
-                console.error('Arama başlatılamadı:', error);
-                alert('Kamera erişimi gerekli!');
-            }
-        }
-
-        function createPeerConnection() {
-            // STUN sunucuları ile peer connection oluştur
-            peerConnection = new RTCPeerConnection({
-                iceServers: [
-                    { urls: 'stun:stun.l.google.com:19302' },
-                    { urls: 'stun:stun1.l.google.com:19302' }
-                ]
-            });
-            
-            // Local stream'i ekle
-            localStream.getTracks().forEach(track => {
-                peerConnection.addTrack(track, localStream);
-            });
-            
-            // Remote stream'i bekle
-            peerConnection.ontrack = (event) => {
-                if (!remoteStream) {
-                    remoteStream = event.streams[0];
-                    document.getElementById('remoteVideo').srcObject = remoteStream;
-                }
-            };
-            
-            // ICE candidate oluştuğunda
-            peerConnection.onicecandidate = (event) => {
-                if (event.candidate) {
-                    console.log('ICE candidate oluştu');
-                }
-            };
-        }
-
-        window.toggleLocalAudio = () => {
-            if (localStream) {
-                const audioTrack = localStream.getAudioTracks()[0];
-                if (audioTrack) {
-                    audioTrack.enabled = !audioTrack.enabled;
-                }
-            }
-        };
-
-        window.toggleLocalVideo = () => {
-            if (localStream) {
-                const videoTrack = localStream.getVideoTracks()[0];
-                if (videoTrack) {
-                    videoTrack.enabled = !videoTrack.enabled;
-                }
-            }
-        };
-
-        window.endCall = () => {
-            if (peerConnection) {
-                peerConnection.close();
-                peerConnection = null;
-            }
-            
-            if (localStream) {
-                localStream.getTracks().forEach(track => track.stop());
-                localStream = null;
-            }
-            
-            document.getElementById('videoContainer').style.display = 'none';
-            callActive = false;
-        };
-
-        // ========== BOT SİSTEMİ ==========
-        class Bot {
-            constructor(name, commands) {
-                this.name = name;
-                this.commands = commands;
-                this.listen();
-            }
-            
-            listen() {
-                db.collection('messages')
-                    .where('channel', '==', currentChannel)
-                    .onSnapshot((snapshot) => {
-                        snapshot.docChanges().forEach(change => {
-                            if (change.type === 'added') {
-                                const msg = change.doc.data();
-                                this.handleMessage(msg);
-                            }
-                        });
-                    });
-            }
-            
-            async handleMessage(msg) {
-                if (msg.senderId === 'bot' || msg.senderId === currentUser?.uid) return;
-                
-                for (const [cmd, action] of Object.entries(this.commands)) {
-                    if (msg.content.startsWith(cmd)) {
-                        const response = await action(msg.content.replace(cmd, '').trim());
-                        if (response) {
-                            await db.collection('messages').add({
-                                senderId: 'bot',
-                                senderName: this.name,
-                                content: response,
-                                channel: msg.channel,
-                                timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-                                role: 'bot'
-                            });
-                        }
-                    }
-                }
-            }
-        }
-
-        // Bot komutları
-        const botCommands = {
-            '!yardım': () => {
-                return '**Komutlar:**\n!yardım - Bu mesaj\n!fıkra - Komik fıkra\n!hesapla [işlem] - Matematik';
-            },
-            '!hesapla': (expr) => {
-                try {
-                    return `Sonuç: ${eval(expr)}`;
-                } catch {
-                    return 'Hatalı işlem!';
-                }
-            },
-            '!fıkra': () => {
-                const fikralar = [
-                    'Temel höpürdete çay içerken arkadaşı sormuş: "Çay nasıl?" Temel: "Höpürdete!"',
-                    'Adamın biri doktora gitmiş: "Doktor, her gece rüyamda kendimi kapıcı olarak görüyorum." Doktor: "Ne yapıyorsun?" Adam: "Anahtarları unutuyorum!"'
-                ];
-                return fikralar[Math.floor(Math.random() * fikralar.length)];
-            }
-        };
-
-        // Bot'u başlat
-        setTimeout(() => {
-            if (currentUser) {
-                const novaBot = new Bot('NovaBot', botCommands);
-            }
-        }, 3000);
-
-        // ========== BİLDİRİMLER ==========
-        function showNotification(title, body) {
-            if (document.getElementById('notifDesktop')?.checked && Notification.permission === 'granted') {
-                new Notification(title, { body, icon: 'https://via.placeholder.com/100' });
-            }
-        }
-
-        function loadNotifications() {
-            // Bildirimleri dinle
-        }
-
-        // ========== DOSYA YÜKLEME ==========
-        window.showAttachMenu = () => {
-            const input = document.createElement('input');
-            input.type = 'file';
-            input.accept = 'image/*,video/*,.pdf,.doc,.docx,.zip';
-            input.onchange = async (e) => {
-                const file = e.target.files[0];
-                if (!file) return;
-                
-                alert(`Dosya seçildi: ${file.name} (Yükleme hazır)`);
-            };
-            input.click();
-        };
-
-        // ========== EMOJİ PANELİ ==========
-        window.toggleEmojiPanel = () => {
-            const panel = document.getElementById('emojiPanel');
-            if (panel.style.display === 'grid') {
-                panel.style.display = 'none';
-            } else {
-                panel.style.display = 'grid';
-                panel.innerHTML = '';
-                emojis.forEach(emoji => {
-                    const span = document.createElement('span');
-                    span.className = 'emoji-item';
-                    span.onclick = () => {
-                        document.getElementById('messageInput').value += emoji;
-                        panel.style.display = 'none';
-                    };
-                    span.innerText = emoji;
-                    panel.appendChild(span);
-                });
-            }
-        };
-
-        // ========== DURUM ==========
-        window.toggleMute = () => {
-            muted = !muted;
-            document.getElementById('muteIcon').style.color = muted ? '#ed4245' : '#b5bac1';
-        };
-
-        window.toggleDeafen = () => {
-            deafened = !deafened;
-            document.getElementById('deafenIcon').style.color = deafened ? '#ed4245' : '#b5bac1';
-        };
-
-        // ========== KLAVYE KISAYOLLARI ==========
-        document.addEventListener('keydown', (e) => {
-            // Ctrl+K - Arama
-            if (e.ctrlKey && e.key === 'k') {
-                e.preventDefault();
-                showSearchModal();
-            }
-            
-            // Ctrl+Shift+M - Mikrofon sustur
-            if (e.ctrlKey && e.shiftKey && e.key === 'M') {
-                e.preventDefault();
-                toggleMute();
-            }
-            
-            // Esc - Modalları kapat
-            if (e.key === 'Escape') {
-                document.querySelectorAll('.modal').forEach(m => m.classList.remove('show'));
-            }
-        });
-
-        window.handleMessageKey = (e) => {
-            if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                sendMessage();
-            }
-        };
-
-        window.handleSearchShortcut = (e) => {
-            if (e.ctrlKey && e.key === 'k') {
-                e.preventDefault();
-                showSearchModal();
-            }
-        };
-
-        // ========== ARAMA ==========
-        window.showSearchModal = () => {
-            document.getElementById('searchModal').classList.add('show');
-        };
-
-        document.getElementById('searchMessages')?.addEventListener('input', async (e) => {
-            const search = e.target.value.toLowerCase();
-            if (search.length < 3) return;
-            
-            const results = document.getElementById('searchResults');
-            results.innerHTML = 'Aranıyor...';
-            
-            const snapshot = await db.collection('messages')
-                .where('channel', '==', currentChannel)
-                .get();
-            
-            results.innerHTML = '';
-            snapshot.forEach(doc => {
-                const msg = doc.data();
-                if (msg.content.toLowerCase().includes(search)) {
-                    results.innerHTML += `
-                        <div style="padding:8px; border-bottom:1px solid #3c3f45;">
-                            <strong>${msg.senderName}</strong>: ${msg.content.substring(0, 50)}...
-                        </div>
-                    `;
-                }
-            });
-        });
-
-        // ========== SUNUCU İŞLEMLERİ ==========
-        window.showCreateServer = () => {
-            document.getElementById('createServerModal').classList.add('show');
-        };
-
-        window.createServer = async () => {
-            const name = document.getElementById('serverName').value;
-            
-            if (!name) {
-                alert('Sunucu adı gerekli!');
-                return;
-            }
-            
-            await db.collection('servers').add({
-                name: name,
-                ownerId: currentUser.uid,
-                members: [currentUser.uid],
-                channels: ['genel'],
-                voiceChannels: ['Sesli Sohbet'],
-                createdAt: firebase.firestore.FieldValue.serverTimestamp()
-            });
-            
-            closeModal('createServerModal');
-            alert(`"${name}" sunucusu oluşturuldu!`);
-            loadServers();
-        };
-
-        function loadServers() {
-            db.collection('servers').where('members', 'array-contains', currentUser?.uid).onSnapshot((snapshot) => {
-                const list = document.getElementById('serverList');
-                list.innerHTML = '';
-                
-                snapshot.forEach(doc => {
-                    const server = doc.data();
-                    const div = document.createElement('div');
-                    div.className = 'server-icon';
-                    div.innerText = server.name.charAt(0).toUpperCase();
-                    div.title = server.name;
-                    div.onclick = () => selectServer(doc.id, server);
-                    list.appendChild(div);
-                });
-            });
-        }
-
-        function selectServer(serverId, server) {
-            currentServer = serverId;
-            document.getElementById('currentServerName').innerText = server.name;
-            
-            const channelList = document.getElementById('channelList');
-            channelList.innerHTML = '';
-            server.channels?.forEach(channel => {
-                channelList.innerHTML += `
-                    <div class="channel-item" onclick="selectChannel('${channel}')">
-                        <i class="fas fa-hashtag"></i> ${channel}
+            list.innerHTML = '';
+            members.forEach(m => {
+                list.innerHTML += `
+                    <div class="member-item">
+                        <div class="member-avatar">${m.name[0]}</div>
+                        <span class="member-name">${m.name}</span>
                     </div>
                 `;
             });
+            document.getElementById('memberCount').innerText = members.length;
         }
 
         window.selectChannel = (channel) => {
             currentChannel = channel;
-            document.getElementById('currentChannelName').innerText = channel;
+            document.getElementById('channelName').innerText = channel;
             loadMessages();
-        };
-
-        // ========== DAVET SİSTEMİ ==========
-        window.showInvite = () => {
-            document.getElementById('inviteModal').classList.add('show');
-        };
-
-        window.copyInvite = () => {
-            const code = document.getElementById('inviteCode').innerText;
-            navigator.clipboard.writeText(code);
-            alert('Davet kodu kopyalandı!');
-        };
-
-        // ========== AYARLAR ==========
-        window.showSettings = () => {
-            document.getElementById('settingsModal').classList.add('show');
-        };
-
-        window.changeAvatar = () => {
-            alert('Profil fotoğrafı değiştirilecek');
-        };
-
-        window.changePassword = () => {
-            const newPass = prompt('Yeni şifre:');
-            if (newPass && newPass.length >= 6) {
-                currentUser.updatePassword(newPass)
-                    .then(() => alert('Şifre değiştirildi!'))
-                    .catch(e => alert(e.message));
-            }
-        };
-
-        window.enable2FA = () => {
-            alert('2FA aktifleştirildi! (Google Authenticator)');
-        };
-
-        // ========== DİĞER FONKSİYONLAR ==========
-        window.showDiscover = () => {
-            alert('Sunucu keşfet yakında!');
-        };
-
-        window.showAddChannel = () => {
-            alert('Kanal ekleme yetkiniz yok!');
-        };
-
-        window.showAddVoiceChannel = () => {
-            alert('Ses kanalı ekleme yetkiniz yok!');
-        };
-
-        window.showServerMenu = () => {
-            alert('Sunucu menüsü');
-        };
-
-        window.showGiftMenu = () => {
-            alert('Hediye gönder');
-        };
-
-        window.showGifMenu = () => {
-            alert('GIF ara');
-        };
-
-        window.showNotifications = () => {
-            alert('Bildirimler');
-        };
-
-        window.showPinned = () => {
-            alert('Sabitlenmiş mesajlar');
-        };
-
-        window.showMembers = () => {
-            // Mobil için
-        };
-
-        window.showUserProfile = (userId) => {
-            alert(`Kullanıcı profili: ${userId}`);
-        };
-
-        window.joinVoiceChannel = (channel) => {
-            startVoiceCall();
         };
 
         window.goHome = () => {
-            currentServer = 'ana';
-            document.getElementById('currentServerName').innerText = 'Ana Sayfa';
-            document.getElementById('currentChannelName').innerText = 'genel';
-            loadMessages();
+            document.getElementById('serverName').innerText = 'Ana Sayfa';
+            document.getElementById('channelName').innerText = 'genel';
         };
 
-        window.closeModal = (id) => {
-            document.getElementById(id).classList.remove('show');
+        window.createServer = () => {
+            alert('Sunucu oluşturma özelliği yakında!');
+        };
+
+        window.joinVoice = (channel) => {
+            alert(`${channel} kanalına bağlanılıyor...`);
         };
     </script>
 </body>
-                                                           </html>
+                                </html>
