@@ -20,20 +20,61 @@
         .server-icon:hover::before { height: 20px; }
         .server-divider { width: 32px; height: 2px; background: #2b2d31; margin: 8px 0; }
         
-        /* KANAL LİSTESİ */
+        /* KANAL LİSTESİ - DÜZENLENDİ */
         .channels-sidebar { width: 240px; background: #2b2d31; display: flex; flex-direction: column; transition: transform 0.3s; z-index: 5; }
         .channels-header { padding: 16px; border-bottom: 1px solid #202225; display: flex; align-items: center; justify-content: space-between; }
         .channels-header h2 { font-size: 16px; font-weight: 600; color: white; }
         .search-box { padding: 8px 16px; }
         .search-box input { width: 100%; padding: 6px 8px; background: #202225; border: none; border-radius: 4px; color: #dcddde; }
+        
         .channels-list { flex: 1; overflow-y: auto; padding: 8px 0; }
         .category { margin-bottom: 16px; }
-        .category-header { padding: 4px 16px; display: flex; align-items: center; gap: 4px; color: #949ba4; cursor: pointer; font-size: 12px; text-transform: uppercase; font-weight: 600; }
+        .category-header { 
+            padding: 4px 16px; 
+            display: flex; 
+            align-items: center; 
+            gap: 4px; 
+            color: #949ba4; 
+            cursor: pointer; 
+            font-size: 12px; 
+            text-transform: uppercase; 
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
         .category-header i { font-size: 10px; }
-        .channel-item { padding: 6px 16px 6px 32px; display: flex; align-items: center; gap: 6px; color: #949ba4; cursor: pointer; border-radius: 4px; margin: 0 8px; font-size: 14px; }
-        .channel-item:hover { background: #3c3f45; color: #dcddde; }
-        .channel-item.active { background: #5865f2; color: white; }
-        .channel-item i { font-size: 20px; }
+        .category-header span { flex: 1; }
+        .category-header .fa-plus { 
+            opacity: 0; 
+            transition: opacity 0.2s;
+            font-size: 12px;
+        }
+        .category-header:hover .fa-plus { opacity: 1; }
+        
+        .channel-item { 
+            padding: 6px 16px 6px 32px; 
+            display: flex; 
+            align-items: center; 
+            gap: 6px; 
+            color: #949ba4; 
+            cursor: pointer; 
+            border-radius: 4px; 
+            margin: 0 8px 2px 8px;
+            font-size: 14px; 
+            transition: all 0.2s;
+        }
+        .channel-item:hover { 
+            background: #3c3f45; 
+            color: #dcddde; 
+        }
+        .channel-item.active { 
+            background: #404249; 
+            color: white; 
+        }
+        .channel-item i { 
+            font-size: 20px; 
+            width: 20px;
+            text-align: center;
+        }
         
         /* KULLANICI PANELİ */
         .user-panel { padding: 8px 16px; background: #232428; display: flex; align-items: center; gap: 8px; }
@@ -62,6 +103,8 @@
         .message-author { font-weight: 500; color: white; }
         .message-time { font-size: 12px; color: #949ba4; }
         .message-text { color: #dcddde; word-wrap: break-word; }
+        .message-reactions { display: flex; gap: 4px; margin-top: 4px; }
+        .reaction { background: #2b2d31; padding: 2px 6px; border-radius: 10px; font-size: 12px; cursor: pointer; }
         
         .message-input-container { padding: 16px; background: #383a40; margin: 16px; border-radius: 8px; }
         .message-input-wrapper { display: flex; align-items: center; background: #383a40; border-radius: 8px; gap: 8px; }
@@ -92,12 +135,17 @@
         
         /* VİDEO KONFERANS */
         #videoContainer { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 3000; display: none; }
-        #localVideo { position: absolute; bottom: 20px; right: 20px; width: 200px; height: 150px; background: #333; border-radius: 8px; }
+        #localVideo { position: absolute; bottom: 20px; right: 20px; width: 200px; height: 150px; background: #333; border-radius: 8px; object-fit: cover; }
         #remoteVideo { width: 100%; height: 100%; object-fit: cover; }
         .call-controls { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); display: flex; gap: 16px; }
         .call-btn { width: 50px; height: 50px; border-radius: 50%; border: none; cursor: pointer; font-size: 20px; }
         .call-btn.end { background: #ed4245; color: white; }
         .call-btn.mute { background: #4f545c; color: white; }
+        
+        /* EMOJİ PANELİ */
+        #emojiPanel { display: none; position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%); background: #2b2d31; border-radius: 8px; padding: 16px; width: 400px; max-height: 300px; overflow-y: auto; z-index: 100; grid-template-columns: repeat(8, 1fr); gap: 8px; }
+        .emoji-item { font-size: 24px; cursor: pointer; padding: 4px; text-align: center; }
+        .emoji-item:hover { background: #3c3f45; border-radius: 4px; }
         
         /* RESPONSIVE */
         @media (max-width: 768px) {
@@ -150,25 +198,40 @@
                 <div class="category">
                     <div class="category-header">
                         <i class="fas fa-chevron-down"></i>
-                        <span>Metin Kanalları</span>
+                        <span>METİN KANALLARI</span>
                         <i class="fas fa-plus" onclick="showAddChannel()" id="addChannelBtn"></i>
                     </div>
                     <div id="channelList">
-                        <div class="channel-item active" onclick="selectChannel('genel')"><i class="fas fa-hashtag"></i> genel</div>
-                        <div class="channel-item" onclick="selectChannel('sohbet')"><i class="fas fa-hashtag"></i> sohbet</div>
-                        <div class="channel-item" onclick="selectChannel('duyuru')"><i class="fas fa-bullhorn"></i> duyuru</div>
+                        <div class="channel-item active" onclick="selectChannel('genel')">
+                            <i class="fas fa-hashtag"></i> genel
+                        </div>
+                        <div class="channel-item" onclick="selectChannel('sohbet')">
+                            <i class="fas fa-hashtag"></i> sohbet
+                        </div>
+                        <div class="channel-item" onclick="selectChannel('duyuru')">
+                            <i class="fas fa-bullhorn"></i> duyuru
+                        </div>
                     </div>
                 </div>
                 <div class="category">
                     <div class="category-header">
                         <i class="fas fa-chevron-down"></i>
-                        <span>Ses Kanalları</span>
+                        <span>SES KANALLARI</span>
                         <i class="fas fa-plus" onclick="showAddVoiceChannel()" id="addVoiceBtn"></i>
                     </div>
                     <div id="voiceChannelList">
-                        <div class="channel-item" onclick="joinVoiceChannel('genel-sohbet')"><i class="fas fa-volume-up"></i> Genel Sohbet <span style="margin-left:auto; color:#23a55a;">● 3</span></div>
-                        <div class="channel-item" onclick="joinVoiceChannel('oyun')"><i class="fas fa-volume-up"></i> Oyun Odası <span style="margin-left:auto; color:#23a55a;">● 2</span></div>
-                        <div class="channel-item" onclick="joinVoiceChannel('müzik')"><i class="fas fa-volume-up"></i> Müzik <span style="margin-left:auto; color:#f0b232;">● 1</span></div>
+                        <div class="channel-item" onclick="joinVoiceChannel('Genel Sohbet')">
+                            <i class="fas fa-volume-up"></i> Genel Sohbet
+                            <span style="margin-left:auto; color:#23a55a; font-size:12px;">● 3</span>
+                        </div>
+                        <div class="channel-item" onclick="joinVoiceChannel('Oyun Odası')">
+                            <i class="fas fa-volume-up"></i> Oyun Odası
+                            <span style="margin-left:auto; color:#23a55a; font-size:12px;">● 2</span>
+                        </div>
+                        <div class="channel-item" onclick="joinVoiceChannel('Müzik')">
+                            <i class="fas fa-volume-up"></i> Müzik
+                            <span style="margin-left:auto; color:#f0b232; font-size:12px;">● 1</span>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -236,9 +299,6 @@
         </div>
     </div>
 
-    <!-- EMOJİ PANELİ -->
-    <div id="emojiPanel" style="display:none; position:fixed; bottom:100px; left:50%; transform:translateX(-50%); background:#2b2d31; border-radius:8px; padding:16px; width:400px; max-height:300px; overflow-y:auto; z-index:100; grid-template-columns:repeat(8,1fr); gap:8px;"></div>
-
     <!-- MODALLAR -->
     <div id="createServerModal" class="modal">
         <div class="modal-content">
@@ -304,17 +364,17 @@
                 <i class="fas fa-times close-modal" onclick="closeModal('settingsModal')"></i>
             </div>
             <div class="modal-body">
-                <div class="category-header">HESAP</div>
+                <div style="font-size:12px; color:#949ba4; margin-bottom:8px;">HESAP</div>
                 <button onclick="changeAvatar()" style="width:100%; padding:8px; margin-bottom:8px; background:#3c3f45; color:white; border:none; border-radius:4px;">Profil Fotoğrafı Değiştir</button>
                 <button onclick="changePassword()" style="width:100%; padding:8px; margin-bottom:8px; background:#3c3f45; color:white; border:none; border-radius:4px;">Şifre Değiştir</button>
                 <button onclick="enable2FA()" style="width:100%; padding:8px; margin-bottom:16px; background:#5865f2; color:white; border:none; border-radius:4px;">2FA Aktifleştir</button>
                 
-                <div class="category-header">BİLDİRİMLER</div>
+                <div style="font-size:12px; color:#949ba4; margin-bottom:8px;">BİLDİRİMLER</div>
                 <label style="display:block; margin-bottom:8px;"><input type="checkbox" id="notifSound" checked> Sesli bildirim</label>
                 <label style="display:block; margin-bottom:8px;"><input type="checkbox" id="notifDesktop" checked> Masaüstü bildirimi</label>
                 <label style="display:block; margin-bottom:16px;"><input type="checkbox" id="notifMention" checked> Bahsedilince bildirim</label>
                 
-                <div class="category-header">GÖRÜNÜM</div>
+                <div style="font-size:12px; color:#949ba4; margin-bottom:8px;">GÖRÜNÜM</div>
                 <select id="themeSelect" style="width:100%; padding:8px; margin-bottom:16px; background:#202225; color:white; border:none;">
                     <option value="dark">Koyu Tema</option>
                     <option value="light">Açık Tema</option>
@@ -324,14 +384,11 @@
         </div>
     </div>
 
-    <!-- FIREBASE - DÜZELTİLDİ -->
+    <!-- FIREBASE -->
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-storage-compat.js"></script>
-
-    <!-- WEBRTC (GERÇEK ARAMA) -->
-    <script src="https://cdn.socket.io/4.5.0/socket.io.min.js"></script>
 
     <script>
         // ========== FIREBASE KONFİG ==========
@@ -374,8 +431,8 @@
         let callActive = false;
         const rtcServers = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] };
         
-        // Socket.io (sinyalleşme için)
-        let socket = null;
+        // Emoji listesi
+        const emojis = ['😀','😃','😄','😁','😆','😅','😂','🤣','😊','😇','🙂','🙃','😉','😌','😍','🥰','😘','😗','😙','😚','😋','😛','😝','😜','🤪','🤨','🧐','🤓','😎','🥸','🤩','🥳','😏','😒','😞','😔','😟','😕','🙁','☹️','😣','😖','😫','😩','🥺','😢','😭','😤','😠','😡','🤬','🤯','😳','🥵','🥶','😱','😨','😰','😥','😓','🤗','🤔','🤭','🤫','🤥','😶','😐','😑','😬','🙄','😯','😦','😧','😮','😲','🥱','😴','🤤','😪','😵','🤐','🥴','🤢','🤮','🤧','😷','🤒','🤕','🤑','🤠'];
 
         // ========== AUTH ==========
         auth.onAuthStateChanged(async (user) => {
@@ -394,10 +451,6 @@
                 loadServers();
                 loadFriends();
                 loadNotifications();
-                checkForUpdates();
-                
-                // Socket.io bağlantısı (gerçek zamanlı sinyalleşme için)
-                connectSocket();
                 
                 // Bildirim izni
                 if (Notification.permission === 'default') {
@@ -486,7 +539,7 @@
             }
         };
 
-        // ========== GERÇEK ZAMANLI MESAJLAŞMA ==========
+        // ========== MESAJLAŞMA ==========
         function loadMessages() {
             const messagesRef = db.collection('messages')
                 .where('channel', '==', currentChannel)
@@ -776,8 +829,6 @@
 
         // ========== GERÇEK SESLİ/GÖRÜNTÜLÜ ARAMA (WEBRTC) ==========
         async function startVoiceCall() {
-            if (!currentChannel) return;
-            
             try {
                 // Mikrofon izni al
                 localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
@@ -786,7 +837,8 @@
                 document.getElementById('videoContainer').style.display = 'block';
                 document.getElementById('localVideo').srcObject = localStream;
                 
-                alert('Sesli arama başlatıldı! (WebRTC aktif)');
+                // Peer connection oluştur
+                createPeerConnection();
                 
                 callActive = true;
                 
@@ -798,18 +850,52 @@
 
         async function startVideoCall() {
             try {
+                // Kamera ve mikrofon izni al
                 localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: true });
                 
+                // Video container'ı göster
                 document.getElementById('videoContainer').style.display = 'block';
                 document.getElementById('localVideo').srcObject = localStream;
                 
-                alert('Görüntülü arama başlatıldı!');
+                // Peer connection oluştur
+                createPeerConnection();
                 
                 callActive = true;
                 
             } catch (error) {
+                console.error('Arama başlatılamadı:', error);
                 alert('Kamera erişimi gerekli!');
             }
+        }
+
+        function createPeerConnection() {
+            // STUN sunucuları ile peer connection oluştur
+            peerConnection = new RTCPeerConnection({
+                iceServers: [
+                    { urls: 'stun:stun.l.google.com:19302' },
+                    { urls: 'stun:stun1.l.google.com:19302' }
+                ]
+            });
+            
+            // Local stream'i ekle
+            localStream.getTracks().forEach(track => {
+                peerConnection.addTrack(track, localStream);
+            });
+            
+            // Remote stream'i bekle
+            peerConnection.ontrack = (event) => {
+                if (!remoteStream) {
+                    remoteStream = event.streams[0];
+                    document.getElementById('remoteVideo').srcObject = remoteStream;
+                }
+            };
+            
+            // ICE candidate oluştuğunda
+            peerConnection.onicecandidate = (event) => {
+                if (event.candidate) {
+                    console.log('ICE candidate oluştu');
+                }
+            };
         }
 
         window.toggleLocalAudio = () => {
@@ -831,6 +917,11 @@
         };
 
         window.endCall = () => {
+            if (peerConnection) {
+                peerConnection.close();
+                peerConnection = null;
+            }
+            
             if (localStream) {
                 localStream.getTracks().forEach(track => track.stop());
                 localStream = null;
@@ -839,16 +930,6 @@
             document.getElementById('videoContainer').style.display = 'none';
             callActive = false;
         };
-
-        // ========== EKRAN PAYLAŞIMI ==========
-        async function startScreenShare() {
-            try {
-                const screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true });
-                alert('Ekran paylaşımı başlatıldı!');
-            } catch (error) {
-                alert('Ekran paylaşımı başlatılamadı');
-            }
-        }
 
         // ========== BOT SİSTEMİ ==========
         class Bot {
@@ -925,10 +1006,6 @@
             if (document.getElementById('notifDesktop')?.checked && Notification.permission === 'granted') {
                 new Notification(title, { body, icon: 'https://via.placeholder.com/100' });
             }
-            
-            if (document.getElementById('notifSound')?.checked) {
-                // Ses çalma kodu buraya gelebilir
-            }
         }
 
         function loadNotifications() {
@@ -950,8 +1027,6 @@
         };
 
         // ========== EMOJİ PANELİ ==========
-        const emojis = ['😀','😃','😄','😁','😆','😅','😂','🤣','😊','😇','🙂','🙃','😉','😌','😍','🥰','😘','😗','😙','😚','😋','😛','😝','😜','🤪','🤨','🧐','🤓','😎','🥸','🤩','🥳','😏','😒','😞','😔','😟','😕','🙁','☹️','😣','😖','😫','😩','🥺','😢','😭','😤','😠','😡','🤬','🤯','😳','🥵','🥶','😱','😨','😰','😥','😓','🤗','🤔','🤭','🤫','🤥','😶','😐','😑','😬','🙄','😯','😦','😧','😮','😲','🥱','😴','🤤','😪','😵','🤐','🥴','🤢','🤮','🤧','😷','🤒','🤕','🤑','🤠'];
-
         window.toggleEmojiPanel = () => {
             const panel = document.getElementById('emojiPanel');
             if (panel.style.display === 'grid') {
@@ -961,9 +1036,7 @@
                 panel.innerHTML = '';
                 emojis.forEach(emoji => {
                     const span = document.createElement('span');
-                    span.style.fontSize = '24px';
-                    span.style.cursor = 'pointer';
-                    span.style.padding = '4px';
+                    span.className = 'emoji-item';
                     span.onclick = () => {
                         document.getElementById('messageInput').value += emoji;
                         panel.style.display = 'none';
@@ -1188,7 +1261,6 @@
         };
 
         window.joinVoiceChannel = (channel) => {
-            alert(`🔊 ${channel} kanalına bağlanıldı!`);
             startVoiceCall();
         };
 
@@ -1202,17 +1274,6 @@
         window.closeModal = (id) => {
             document.getElementById(id).classList.remove('show');
         };
-
-        // ========== GÜNCELLEME KONTROLÜ ==========
-        function checkForUpdates() {
-            // Güncelleme kontrolü
-        }
-
-        // ========== CONNECT SOCKET ==========
-        function connectSocket() {
-            // Socket.io bağlantısı (gerçek sunucu gerektirir)
-            console.log('Socket bağlantısı hazırlanıyor...');
-        }
     </script>
 </body>
-                            </html>
+                                                           </html>
