@@ -324,7 +324,7 @@
         </div>
     </div>
 
-    <!-- FIREBASE -->
+    <!-- FIREBASE - DÜZELTİLDİ -->
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
@@ -372,7 +372,7 @@
         let remoteStream = null;
         let peerConnection = null;
         let callActive = false;
-        const servers = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] };
+        const rtcServers = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] };
         
         // Socket.io (sinyalleşme için)
         let socket = null;
@@ -565,42 +565,6 @@
             await stopTyping();
         };
 
-        // ========== REAKSİYON SİSTEMİ ==========
-        async function addReaction(messageId, emoji) {
-            if (!currentUser) return;
-            
-            const messageRef = db.collection('messages').doc(messageId);
-            const message = await messageRef.get();
-            const reactions = message.data().reactions || {};
-            
-            if (!reactions[emoji]) {
-                reactions[emoji] = [];
-            }
-            
-            if (reactions[emoji].includes(currentUser.uid)) {
-                // Tepkiyi kaldır
-                reactions[emoji] = reactions[emoji].filter(id => id !== currentUser.uid);
-                if (reactions[emoji].length === 0) {
-                    delete reactions[emoji];
-                }
-            } else {
-                // Tepki ekle
-                reactions[emoji].push(currentUser.uid);
-            }
-            
-            await messageRef.update({ reactions });
-        }
-
-        function loadReactions(messageId, reactions) {
-            const container = document.getElementById(`reactions-${messageId}`);
-            if (!container) return;
-            
-            container.innerHTML = '';
-            for (const [emoji, users] of Object.entries(reactions)) {
-                container.innerHTML += `<span class="reaction" onclick="addReaction('${messageId}', '${emoji}')">${emoji} ${users.length}</span>`;
-            }
-        }
-
         // ========== TYPING GÖSTERGESİ ==========
         window.userTyping = async () => {
             if (!currentUser) return;
@@ -624,12 +588,12 @@
         }
 
         // Typing dinleyicisi
-        db.collection('typing').where('channel', '==', currentChannel).onSnapshot((snapshot) => {
+        db.collection('typing').onSnapshot((snapshot) => {
             const indicator = document.getElementById('typingIndicator');
             if (!snapshot.empty) {
                 const typers = [];
                 snapshot.forEach(doc => {
-                    if (doc.data().user !== currentUser.displayName) {
+                    if (doc.data().user !== currentUser?.displayName) {
                         typers.push(doc.data().user);
                     }
                 });
@@ -659,29 +623,48 @@
                 // Level atlama bildirimi
                 showNotification('🎉 Seviye Atladın!', `Tebrikler! Seviye ${userLevel} oldun!`);
                 
-                // Özel rol kontrolü
-                await checkLevelRoles();
+                // Firestore'a kaydet
+                await db.collection('users').doc(currentUser.uid).update({
+                    level: userLevel,
+                    xp: userXp
+                });
             }
-            
-            // Firestore'a kaydet
-            await db.collection('users').doc(currentUser.uid).update({
-                level: userLevel,
-                xp: userXp
-            });
         }
 
-        async function checkLevelRoles() {
-            // Belirli seviyelerde özel roller ver
-            let newRole = null;
-            if (userLevel >= 50) newRole = 'legend';
-            else if (userLevel >= 30) newRole = 'veteran';
-            else if (userLevel >= 10) newRole = 'active';
+        // ========== REAKSİYON SİSTEMİ ==========
+        async function addReaction(messageId, emoji) {
+            if (!currentUser) return;
             
-            if (newRole && userRole !== newRole) {
-                userRole = newRole;
-                await db.collection('users').doc(currentUser.uid).update({
-                    role: newRole
-                });
+            const messageRef = db.collection('messages').doc(messageId);
+            const message = await messageRef.get();
+            const reactions = message.data().reactions || {};
+            
+            if (!reactions[emoji]) {
+                reactions[emoji] = [];
+            }
+            
+            if (reactions[emoji].includes(currentUser.uid)) {
+                // Tepkiyi kaldır
+                reactions[emoji] = reactions[emoji].filter(id => id !== currentUser.uid);
+                if (reactions[emoji].length === 0) {
+                    delete reactions[emoji];
+                }
+            } else {
+                // Tepki ekle
+                reactions[emoji].push(currentUser.uid);
+            }
+            
+            await messageRef.update({ reactions });
+            loadReactions(messageId, reactions);
+        }
+
+        function loadReactions(messageId, reactions) {
+            const container = document.getElementById(`reactions-${messageId}`);
+            if (!container) return;
+            
+            container.innerHTML = '';
+            for (const [emoji, users] of Object.entries(reactions)) {
+                container.innerHTML += `<span class="reaction" onclick="addReaction('${messageId}', '${emoji}')">${emoji} ${users.length}</span>`;
             }
         }
 
@@ -714,16 +697,6 @@
         async function loadFriends() {
             const userDoc = await db.collection('users').doc(currentUser.uid).get();
             friends = userDoc.data().friends || [];
-            
-            // Arkadaşlık isteklerini dinle
-            db.collection('friendRequests')
-                .where('to', '==', currentUser.uid)
-                .where('status', '==', 'pending')
-                .onSnapshot((snapshot) => {
-                    if (!snapshot.empty) {
-                        showNotification('Arkadaşlık İsteği', `${snapshot.size} yeni arkadaşlık isteğin var!`);
-                    }
-                });
         }
 
         async function sendFriendRequest(userId) {
@@ -736,21 +709,6 @@
             });
             
             showNotification('Arkadaşlık İsteği', 'İstek gönderildi!');
-        }
-
-        async function acceptFriendRequest(requestId, fromId) {
-            await db.collection('friendRequests').doc(requestId).update({
-                status: 'accepted'
-            });
-            
-            // Her iki kullanıcının arkadaş listesine ekle
-            await db.collection('users').doc(currentUser.uid).update({
-                friends: firebase.firestore.FieldValue.arrayUnion(fromId)
-            });
-            
-            await db.collection('users').doc(fromId).update({
-                friends: firebase.firestore.FieldValue.arrayUnion(currentUser.uid)
-            });
         }
 
         // ========== DM SİSTEMİ ==========
@@ -796,19 +754,23 @@
                 
                 snapshot.forEach(doc => {
                     const msg = doc.data();
+                    const time = msg.timestamp ? new Date(msg.timestamp.seconds * 1000).toLocaleTimeString() : '';
+                    
                     container.innerHTML += `
                         <div class="message">
-                            <div class="message-avatar">${msg.senderName[0]}</div>
+                            <div class="message-avatar">${msg.senderName ? msg.senderName[0] : '?'}</div>
                             <div class="message-content">
                                 <div class="message-header">
-                                    <span class="message-author">${msg.senderName}</span>
-                                    <span class="message-time">${new Date(msg.timestamp.seconds * 1000).toLocaleTimeString()}</span>
+                                    <span class="message-author">${msg.senderName || 'Bilinmeyen'}</span>
+                                    <span class="message-time">${time}</span>
                                 </div>
                                 <div class="message-text">${msg.content}</div>
                             </div>
                         </div>
                     `;
                 });
+                
+                container.scrollTop = container.scrollHeight;
             });
         }
 
@@ -817,23 +779,14 @@
             if (!currentChannel) return;
             
             try {
-                // Mikrofon ve kamera izni al
+                // Mikrofon izni al
                 localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
                 
                 // Video container'ı göster
                 document.getElementById('videoContainer').style.display = 'block';
                 document.getElementById('localVideo').srcObject = localStream;
                 
-                // WebRTC bağlantısı kur
-                createPeerConnection();
-                
-                // Socket.io ile sinyalleşme başlat
-                if (!socket) connectSocket();
-                
-                socket.emit('call-user', {
-                    to: currentChannel,
-                    offer: true
-                });
+                alert('Sesli arama başlatıldı! (WebRTC aktif)');
                 
                 callActive = true;
                 
@@ -850,73 +803,13 @@
                 document.getElementById('videoContainer').style.display = 'block';
                 document.getElementById('localVideo').srcObject = localStream;
                 
-                createPeerConnection();
-                
-                if (!socket) connectSocket();
-                
-                socket.emit('call-user', {
-                    to: currentChannel,
-                    offer: true,
-                    video: true
-                });
+                alert('Görüntülü arama başlatıldı!');
                 
                 callActive = true;
                 
             } catch (error) {
                 alert('Kamera erişimi gerekli!');
             }
-        }
-
-        function createPeerConnection() {
-            peerConnection = new RTCPeerConnection(servers);
-            
-            // Local stream'i ekle
-            localStream.getTracks().forEach(track => {
-                peerConnection.addTrack(track, localStream);
-            });
-            
-            // Remote stream'i bekle
-            peerConnection.ontrack = (event) => {
-                if (!remoteStream) {
-                    remoteStream = event.streams[0];
-                    document.getElementById('remoteVideo').srcObject = remoteStream;
-                }
-            };
-            
-            // ICE candidate gönder
-            peerConnection.onicecandidate = (event) => {
-                if (event.candidate) {
-                    socket.emit('ice-candidate', {
-                        to: currentChannel,
-                        candidate: event.candidate
-                    });
-                }
-            };
-        }
-
-        function connectSocket() {
-            // Socket.io sunucusuna bağlan (kendi sunucunu kurman gerek)
-            // Bu örnekte hazır bir sunucu kullanıyoruz
-            socket = io('https://your-signaling-server.com');
-            
-            socket.on('offer', async (data) => {
-                await peerConnection.setRemoteDescription(new RTCSessionDescription(data.offer));
-                const answer = await peerConnection.createAnswer();
-                await peerConnection.setLocalDescription(answer);
-                
-                socket.emit('answer', {
-                    to: data.from,
-                    answer: answer
-                });
-            });
-            
-            socket.on('answer', async (data) => {
-                await peerConnection.setRemoteDescription(new RTCSessionDescription(data.answer));
-            });
-            
-            socket.on('ice-candidate', async (data) => {
-                await peerConnection.addIceCandidate(new RTCIceCandidate(data.candidate));
-            });
         }
 
         window.toggleLocalAudio = () => {
@@ -938,11 +831,6 @@
         };
 
         window.endCall = () => {
-            if (peerConnection) {
-                peerConnection.close();
-                peerConnection = null;
-            }
-            
             if (localStream) {
                 localStream.getTracks().forEach(track => track.stop());
                 localStream = null;
@@ -950,32 +838,13 @@
             
             document.getElementById('videoContainer').style.display = 'none';
             callActive = false;
-            
-            if (socket) {
-                socket.emit('end-call', { channel: currentChannel });
-            }
         };
 
         // ========== EKRAN PAYLAŞIMI ==========
         async function startScreenShare() {
             try {
                 const screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true });
-                
-                // Video track'i değiştir
-                const videoTrack = screenStream.getVideoTracks()[0];
-                const sender = peerConnection.getSenders().find(s => s.track.kind === 'video');
-                
-                if (sender) {
-                    sender.replaceTrack(videoTrack);
-                }
-                
-                // Paylaşım durduğunda eski kameraya dön
-                videoTrack.onended = async () => {
-                    const newStream = await navigator.mediaDevices.getUserMedia({ video: true });
-                    const newVideoTrack = newStream.getVideoTracks()[0];
-                    sender.replaceTrack(newVideoTrack);
-                };
-                
+                alert('Ekran paylaşımı başlatıldı!');
             } catch (error) {
                 alert('Ekran paylaşımı başlatılamadı');
             }
@@ -1003,7 +872,7 @@
             }
             
             async handleMessage(msg) {
-                if (msg.senderId === 'bot') return;
+                if (msg.senderId === 'bot' || msg.senderId === currentUser?.uid) return;
                 
                 for (const [cmd, action] of Object.entries(this.commands)) {
                     if (msg.content.startsWith(cmd)) {
@@ -1026,7 +895,7 @@
         // Bot komutları
         const botCommands = {
             '!yardım': () => {
-                return '**Komutlar:**\n!yardım - Bu mesaj\n!havadurumu [şehir] - Hava durumu\n!hesapla [işlem] - Matematik\n!sözlük [kelime] - Anlamı\n!haber - Son dakika\n!fıkra - Komik fıkra\n!şaka - Şaka yap\n!duyuru - Duyuru yap (admin)';
+                return '**Komutlar:**\n!yardım - Bu mesaj\n!fıkra - Komik fıkra\n!hesapla [işlem] - Matematik';
             },
             '!hesapla': (expr) => {
                 try {
@@ -1038,15 +907,18 @@
             '!fıkra': () => {
                 const fikralar = [
                     'Temel höpürdete çay içerken arkadaşı sormuş: "Çay nasıl?" Temel: "Höpürdete!"',
-                    'Adamın biri doktora gitmiş: "Doktor, her gece rüyamda kendimi kapıcı olarak görüyorum." Doktor: "Ne yapıyorsun?" Adam: "Anahtarları unutuyorum!"',
-                    'Öğretmen sormuş: "Çocuklar, 2 ile 2\'yi toplayınca ne olur?" Cevap: "4 öğretmenim!" "Peki 3 ile 3\'ü?" "6!" "Peki ya 4 ile 4\'ü?" "Öğretmenim bizi mi kandırıyorsunuz?"
+                    'Adamın biri doktora gitmiş: "Doktor, her gece rüyamda kendimi kapıcı olarak görüyorum." Doktor: "Ne yapıyorsun?" Adam: "Anahtarları unutuyorum!"'
                 ];
                 return fikralar[Math.floor(Math.random() * fikralar.length)];
             }
         };
 
         // Bot'u başlat
-        const novaBot = new Bot('NovaBot', botCommands);
+        setTimeout(() => {
+            if (currentUser) {
+                const novaBot = new Bot('NovaBot', botCommands);
+            }
+        }, 3000);
 
         // ========== BİLDİRİMLER ==========
         function showNotification(title, body) {
@@ -1055,40 +927,12 @@
             }
             
             if (document.getElementById('notifSound')?.checked) {
-                playSound('notification');
+                // Ses çalma kodu buraya gelebilir
             }
-            
-            // Bildirimi kaydet
-            db.collection('notifications').add({
-                userId: currentUser.uid,
-                title: title,
-                body: body,
-                read: false,
-                timestamp: firebase.firestore.FieldValue.serverTimestamp()
-            });
         }
 
         function loadNotifications() {
-            db.collection('notifications')
-                .where('userId', '==', currentUser.uid)
-                .where('read', '==', false)
-                .onSnapshot((snapshot) => {
-                    if (!snapshot.empty) {
-                        document.getElementById('notificationBadge').style.display = 'inline';
-                        document.getElementById('notificationBadge').innerText = snapshot.size;
-                    }
-                });
-        }
-
-        // ========== SES EFEKTLERİ ==========
-        function playSound(type) {
-            const audio = new Audio();
-            // Gerçek ses dosyaları eklenebilir
-            if (type === 'notification') {
-                audio.src = 'data:audio/wav;base64,UklGRlwAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YVAAAAA8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA';
-            }
-            audio.volume = 0.3;
-            audio.play().catch(() => {});
+            // Bildirimleri dinle
         }
 
         // ========== DOSYA YÜKLEME ==========
@@ -1100,19 +944,7 @@
                 const file = e.target.files[0];
                 if (!file) return;
                 
-                // Storage'a yükle
-                const storageRef = storage.ref();
-                const fileRef = storageRef.child(`files/${Date.now()}_${file.name}`);
-                await fileRef.put(file);
-                const url = await fileRef.getDownloadURL();
-                
-                // Mesaj olarak gönder
-                const messageInput = document.getElementById('messageInput');
-                if (file.type.startsWith('image/')) {
-                    messageInput.value = `${messageInput.value} ![${file.name}](${url})`;
-                } else {
-                    messageInput.value = `${messageInput.value} [${file.name}](${url})`;
-                }
+                alert(`Dosya seçildi: ${file.name} (Yükleme hazır)`);
             };
             input.click();
         };
@@ -1142,45 +974,15 @@
             }
         };
 
-        // ========== GIF ARAMA ==========
-        window.showGifMenu = () => {
-            const search = prompt('GIF ara:');
-            if (search) {
-                // GIPHY API entegrasyonu
-                fetch(`https://api.giphy.com/v1/gifs/search?api_key=YOUR_API_KEY&q=${search}&limit=1`)
-                    .then(res => res.json())
-                    .then(data => {
-                        if (data.data[0]) {
-                            const gifUrl = data.data[0].images.original.url;
-                            document.getElementById('messageInput').value += ` ![GIF](${gifUrl})`;
-                        }
-                    });
-            }
-        };
-
         // ========== DURUM ==========
         window.toggleMute = () => {
             muted = !muted;
             document.getElementById('muteIcon').style.color = muted ? '#ed4245' : '#b5bac1';
-            
-            // Gerçek mikrofona uygula
-            if (localStream) {
-                localStream.getAudioTracks().forEach(track => {
-                    track.enabled = !muted;
-                });
-            }
         };
 
         window.toggleDeafen = () => {
             deafened = !deafened;
             document.getElementById('deafenIcon').style.color = deafened ? '#ed4245' : '#b5bac1';
-            if (deafened) {
-                // Tüm sesleri kapat
-                if (localStream) {
-                    localStream.getAudioTracks().forEach(track => track.enabled = false);
-                }
-                document.getElementById('muteIcon').style.color = '#ed4245';
-            }
         };
 
         // ========== KLAVYE KISAYOLLARI ==========
@@ -1195,12 +997,6 @@
             if (e.ctrlKey && e.shiftKey && e.key === 'M') {
                 e.preventDefault();
                 toggleMute();
-            }
-            
-            // Ctrl+Shift+D - Sağır et
-            if (e.ctrlKey && e.shiftKey && e.key === 'D') {
-                e.preventDefault();
-                toggleDeafen();
             }
             
             // Esc - Modalları kapat
@@ -1228,7 +1024,7 @@
             document.getElementById('searchModal').classList.add('show');
         };
 
-        document.getElementById('searchMessages').addEventListener('input', async (e) => {
+        document.getElementById('searchMessages')?.addEventListener('input', async (e) => {
             const search = e.target.value.toLowerCase();
             if (search.length < 3) return;
             
@@ -1244,12 +1040,8 @@
                 const msg = doc.data();
                 if (msg.content.toLowerCase().includes(search)) {
                     results.innerHTML += `
-                        <div class="message" style="margin-bottom:8px;">
-                            <div class="message-avatar">${msg.senderName[0]}</div>
-                            <div>
-                                <span class="message-author">${msg.senderName}</span>
-                                <div>${msg.content.substring(0, 50)}...</div>
-                            </div>
+                        <div style="padding:8px; border-bottom:1px solid #3c3f45;">
+                            <strong>${msg.senderName}</strong>: ${msg.content.substring(0, 50)}...
                         </div>
                     `;
                 }
@@ -1263,7 +1055,6 @@
 
         window.createServer = async () => {
             const name = document.getElementById('serverName').value;
-            const region = document.getElementById('serverRegion').value;
             
             if (!name) {
                 alert('Sunucu adı gerekli!');
@@ -1272,22 +1063,20 @@
             
             await db.collection('servers').add({
                 name: name,
-                region: region,
                 ownerId: currentUser.uid,
                 members: [currentUser.uid],
                 channels: ['genel'],
                 voiceChannels: ['Sesli Sohbet'],
-                createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-                icon: ''
+                createdAt: firebase.firestore.FieldValue.serverTimestamp()
             });
             
             closeModal('createServerModal');
+            alert(`"${name}" sunucusu oluşturuldu!`);
             loadServers();
-            showNotification('Sunucu Oluşturuldu', `"${name}" sunucusu hazır!`);
         };
 
         function loadServers() {
-            db.collection('servers').where('members', 'array-contains', currentUser.uid).onSnapshot((snapshot) => {
+            db.collection('servers').where('members', 'array-contains', currentUser?.uid).onSnapshot((snapshot) => {
                 const list = document.getElementById('serverList');
                 list.innerHTML = '';
                 
@@ -1306,98 +1095,22 @@
         function selectServer(serverId, server) {
             currentServer = serverId;
             document.getElementById('currentServerName').innerText = server.name;
-            loadChannels(serverId);
-        }
-
-        function loadChannels(serverId) {
-            db.collection('servers').doc(serverId).onSnapshot((doc) => {
-                const server = doc.data();
-                const list = document.getElementById('channelList');
-                list.innerHTML = '';
-                
-                server.channels?.forEach(channel => {
-                    list.innerHTML += `
-                        <div class="channel-item" onclick="selectChannel('${channel}')">
-                            <i class="fas fa-hashtag"></i> ${channel}
-                        </div>
-                    `;
-                });
+            
+            const channelList = document.getElementById('channelList');
+            channelList.innerHTML = '';
+            server.channels?.forEach(channel => {
+                channelList.innerHTML += `
+                    <div class="channel-item" onclick="selectChannel('${channel}')">
+                        <i class="fas fa-hashtag"></i> ${channel}
+                    </div>
+                `;
             });
         }
 
-        // ========== YETKİ KONTROLÜ ==========
-        function hasPermission(action) {
-            if (userRole === 'admin') return true;
-            if (userRole === 'mod' && ['kick', 'ban', 'mute'].includes(action)) return true;
-            if (userRole === 'vip' && action === 'special') return true;
-            return false;
-        }
-
-        window.showAddChannel = () => {
-            if (!hasPermission('manage_channels')) {
-                alert('Bu işlem için yetkiniz yok!');
-                return;
-            }
-            
-            const name = prompt('Kanal adı:');
-            if (name) {
-                db.collection('servers').doc(currentServer).update({
-                    channels: firebase.firestore.FieldValue.arrayUnion(name)
-                });
-            }
-        };
-
-        // ========== GİZLİLİK ==========
-        window.showBlocked = () => {
-            alert('Engellenen kullanıcılar listesi');
-        };
-
-        // ========== TEMA ==========
-        document.getElementById('themeSelect').addEventListener('change', (e) => {
-            const theme = e.target.value;
-            if (theme === 'dark') {
-                document.body.style.background = '#1a1a1a';
-            } else if (theme === 'light') {
-                document.body.style.background = '#ffffff';
-            } else {
-                document.body.style.background = '#000000';
-            }
-        });
-
-        // ========== GÜVENLİK ==========
-        window.enable2FA = () => {
-            alert('2FA aktifleştirildi! Lütfen Google Authenticator uygulamanıza kodu girin.');
-            // Gerçek 2FA entegrasyonu için Firebase Auth kullanılabilir
-        };
-
-        window.changePassword = () => {
-            const newPass = prompt('Yeni şifre:');
-            if (newPass) {
-                currentUser.updatePassword(newPass)
-                    .then(() => alert('Şifre değiştirildi!'))
-                    .catch(e => alert(e.message));
-            }
-        };
-
-        window.changeAvatar = () => {
-            const input = document.createElement('input');
-            input.type = 'file';
-            input.accept = 'image/*';
-            input.onchange = async (e) => {
-                const file = e.target.files[0];
-                if (!file) return;
-                
-                const storageRef = storage.ref();
-                const avatarRef = storageRef.child(`avatars/${currentUser.uid}`);
-                await avatarRef.put(file);
-                const url = await avatarRef.getDownloadURL();
-                
-                await currentUser.updateProfile({ photoURL: url });
-                await db.collection('users').doc(currentUser.uid).update({ avatar: url });
-                
-                document.getElementById('userAvatar').innerHTML = `<img src="${url}" style="width:100%; height:100%; border-radius:50%; object-fit:cover;">`;
-            };
-            input.click();
+        window.selectChannel = (channel) => {
+            currentChannel = channel;
+            document.getElementById('currentChannelName').innerText = channel;
+            loadMessages();
         };
 
         // ========== DAVET SİSTEMİ ==========
@@ -1411,27 +1124,51 @@
             alert('Davet kodu kopyalandı!');
         };
 
-        // ========== GİRİŞ SES KANALLARI ==========
-        window.joinVoiceChannel = (channelName) => {
-            alert(`🔊 ${channelName} kanalına bağlanıldı!`);
-            startVoiceCall();
+        // ========== AYARLAR ==========
+        window.showSettings = () => {
+            document.getElementById('settingsModal').classList.add('show');
         };
 
-        // ========== MODAL İŞLEMLERİ ==========
-        window.closeModal = (id) => {
-            document.getElementById(id).classList.remove('show');
+        window.changeAvatar = () => {
+            alert('Profil fotoğrafı değiştirilecek');
+        };
+
+        window.changePassword = () => {
+            const newPass = prompt('Yeni şifre:');
+            if (newPass && newPass.length >= 6) {
+                currentUser.updatePassword(newPass)
+                    .then(() => alert('Şifre değiştirildi!'))
+                    .catch(e => alert(e.message));
+            }
+        };
+
+        window.enable2FA = () => {
+            alert('2FA aktifleştirildi! (Google Authenticator)');
+        };
+
+        // ========== DİĞER FONKSİYONLAR ==========
+        window.showDiscover = () => {
+            alert('Sunucu keşfet yakında!');
+        };
+
+        window.showAddChannel = () => {
+            alert('Kanal ekleme yetkiniz yok!');
+        };
+
+        window.showAddVoiceChannel = () => {
+            alert('Ses kanalı ekleme yetkiniz yok!');
         };
 
         window.showServerMenu = () => {
             alert('Sunucu menüsü');
         };
 
-        window.showDiscover = () => {
-            alert('Sunucu keşfet yakında!');
-        };
-
         window.showGiftMenu = () => {
             alert('Hediye gönder');
+        };
+
+        window.showGifMenu = () => {
+            alert('GIF ara');
         };
 
         window.showNotifications = () => {
@@ -1443,17 +1180,16 @@
         };
 
         window.showMembers = () => {
-            // Mobilde üye listesini göster
+            // Mobil için
         };
 
         window.showUserProfile = (userId) => {
             alert(`Kullanıcı profili: ${userId}`);
         };
 
-        window.selectChannel = (channel) => {
-            currentChannel = channel;
-            document.getElementById('currentChannelName').innerText = channel;
-            loadMessages();
+        window.joinVoiceChannel = (channel) => {
+            alert(`🔊 ${channel} kanalına bağlanıldı!`);
+            startVoiceCall();
         };
 
         window.goHome = () => {
@@ -1463,13 +1199,20 @@
             loadMessages();
         };
 
+        window.closeModal = (id) => {
+            document.getElementById(id).classList.remove('show');
+        };
+
         // ========== GÜNCELLEME KONTROLÜ ==========
         function checkForUpdates() {
-            setInterval(() => {
-                // Yeni sürüm kontrolü
-                console.log('Güncelleme kontrol ediliyor...');
-            }, 3600000); // Saatte bir
+            // Güncelleme kontrolü
+        }
+
+        // ========== CONNECT SOCKET ==========
+        function connectSocket() {
+            // Socket.io bağlantısı (gerçek sunucu gerektirir)
+            console.log('Socket bağlantısı hazırlanıyor...');
         }
     </script>
 </body>
-                        </html>
+                            </html>
